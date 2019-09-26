@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --safe #-}
+{-# OPTIONS --without-K #-}
 open import Function using (_$_)
 
 open import Data.Sum using (_⊎_)
@@ -25,8 +25,8 @@ open import Relation.Binary.Reasoning.Base.Triple ≤-isPreorder <-trans (resp�
 
 module Primality where
 
--- postulate
---   TODO : ∀ {a} {A : Set a} → A
+postulate
+  TODO : ∀ {a} {A : Set a} → A
 
 record IsPrime (p : ℕ) : Set where
   constructor IsPrime✓
@@ -48,20 +48,20 @@ exclusive (IsPrime✓ _ primality) (IsComposite✓ p p<n (IsPrime✓ 1<p _) p∣
 ... | inj₂ n≡p = <-irrefl (sym n≡p) p<n
 
 ¬prime<2 : ∀ p → p < 2 → IsPrime p → ⊥
-¬prime<2 .(suc (suc _)) (s≤s (s≤s ())) (IsPrime✓ (s≤s (s≤s 1<p)) primality)
+¬prime<2 .(suc (suc _)) (s≤s (s≤s ())) (IsPrime✓ (s≤s (s≤s _)) _)
 
 compositionality?
   : ∀ n
   → 1 < n
   → (∀ m → 1 < m → m < n → IsPrime m ⊎ IsComposite m)
   → IsComposite n ⊎ (∀ p → p < n → IsPrime p → p ∤ n)
-compositionality? n 1<n primality? = loop (n ∸ 2) 2 (m∸n+n≡m 1<n) 1<2 ¬prime∣2
+compositionality? n 1<n primality? = loop (n ∸ 2) 2 (m∸n+n≡m 1<n) 1<2 ¬p<2∣n
   where
   1<2 : 1 < 2
   1<2 = s≤s (s≤s z≤n)
 
-  ¬prime∣2 : ∀ p → p < 2 → IsPrime p → p ∤ n
-  ¬prime∣2 p p<2 p-isPrime = ⊥-elim (¬prime<2 p p<2 p-isPrime)
+  ¬p<2∣n : ∀ p → p < 2 → IsPrime p → p ∤ n
+  ¬p<2∣n p p<2 p-isPrime = ⊥-elim (¬prime<2 p p<2 p-isPrime)
 
   cons
     : ∀ {x}
@@ -183,4 +183,4 @@ composite? n with 1 <? n
 
 -- {-# TERMINATING #-}
 -- sieve : Sieve (λ n → IsPrime n ⊎ IsComposite n) 2 ∞
--- sieve = TODO -- enumerate 2 (λ x 1<x → primality? x 1<x (λ m 1<m m<x → index m 1<m sieve))
+-- sieve = enumerate 2 (λ x 1<x → primality? x 1<x (λ m 1<m m<x → index m 1<m sieve))
