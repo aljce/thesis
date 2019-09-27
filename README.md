@@ -19,5 +19,5 @@ echo "$HOME/.agda/agda-stdlib/standard-library.agda-lib" >> ~/.agda/libraries
 ```
 Install Agda (This will take awhile >1 hour)
 ```
-nix-env -i nix/agda.nix
+nix-env -i --file nix/agda.nix
 ```
