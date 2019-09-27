@@ -35,7 +35,9 @@ take : ∀ {a} {A : Set a} → (n : ℕ) → Stream A ∞ → Vec A n
 take zero _ = []
 take (suc n) (x ∷ xs) = x ∷ take n (force xs ∞)
 
-zipWith : ∀ {a b c} {A : Set a} {B : Set b} {C : Set c} → (i : Size) → (A → B → C) → Stream A i → Stream B i → Stream C i
+zipWith
+  : ∀ {a b c} {A : Set a} {B : Set b} {C : Set c}
+  → (i : Size) → (A → B → C) → Stream A i → Stream B i → Stream C i
 zipWith i _⊕_ (a ∷ as) (b ∷ bs) = a ⊕ b ∷ λ where .force j → zipWith j _⊕_ (force as j) (force bs j)
 
 fib : ∀ i → Stream ℕ i
@@ -43,6 +45,7 @@ fib i = 0 ∷ λ where .force j → 1 ∷ λ where .force k → zipWith k _+_ (f
 
 module Lexicographic {a r} {A : Set a} (_<_ : A → A → Set r) (<-trans : Transitive _<_) where
 
+  infix 3 _⊢_≤_
   data _⊢_≤_ (i : Size) (xs : Stream A ∞) (ys : Stream A ∞) : Set (a ⊔ r) where
     <-lex : head xs < head ys → i ⊢ xs ≤ ys
     ≡-lex : head xs ≡ head ys → Thunk (λ j → j ⊢ force (tail xs) ∞ ≤ force (tail ys) ∞) i → i ⊢ xs ≤ ys
@@ -57,12 +60,31 @@ module Lexicographic {a r} {A : Set a} (_<_ : A → A → Set r) (<-trans : Tran
   ≤-trans i (≡-lex x≡y xs≤ys) (≡-lex y≡z ys≤zs) =
     ≡-lex (≡-trans x≡y y≡z) λ where .force j → ≤-trans j (force xs≤ys j) (force ys≤zs j)
 
-module Merge {a} {A : Set a} where
-  open import Data.Product using (_×_)
+  -- open import Algebra.Structures {A = A} _≡_ using (IsSemigroup)
+  -- module _ (_∙_ : A → A → A) (∙-isSemigroup : IsSemigroup _∙_) where
 
-  merge : ∀ i → Stream A i → Stream A i → Stream A i
-  merge i (x ∷ xs) ys = x ∷ λ where .force j → merge j ys (force xs j)
+  --   infix 4 _⊙_
+  --   _⊙_ : ∀ {i} → Stream A i → Stream A i → Stream A i
+  --   _⊙_ {i} = zipWith i _∙_
 
+  --   ⊙-mono-≤
+  --     : ∀ {i} {as : Stream A ∞} {bs : Stream A ∞} {cs : Stream A ∞} {ds : Stream A ∞}
+  --     → i ⊢ as ≤ cs
+  --     → i ⊢ bs ≤ ds
+  --     → i ⊢ as ⊙ bs ≤ cs ⊙ ds
+  --   ⊙-mono-≤ (<-lex a<c) (<-lex b<d) = <-lex {!!}
+  --   ⊙-mono-≤ (<-lex a<c) (≡-lex b≡d bs≤ds) = <-lex {!!}
+  --   ⊙-mono-≤ (≡-lex a≡c as≤cs) (<-lex b<d) = <-lex {!!}
+  --   ⊙-mono-≤ (≡-lex a≡c as≤cs) (≡-lex b≡d bs≤ds) = ≡-lex {!!} λ where .force j → ⊙-mono-≤ (force as≤cs j) (force bs≤ds j)
+
+-- module Merge {a} {A : Set a} where
+--   open import Data.Product using (_×_)
+
+--   merge : ∀ i → Stream A i → Stream A i → Stream A i
+--   merge i (x ∷ xs) ys = x ∷ λ where .force j → merge j ys (force xs j)
+
+--   split : ∀ i → Stream A i → Stream A i × Stream A i
+--   split i (x ∷ xs) = {!!}
 
 module Test where
 
