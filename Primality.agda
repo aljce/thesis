@@ -77,6 +77,24 @@ upward {P = P} {s} {n} s≤n rec start = loop (n ∸ s) s ≤-refl (m∸n+n≡m 
   loop (suc down) up s≤up down+up≡n p rewrite sym (+-suc down up)
     = loop down (suc up) (≤-step s≤up) down+up≡n (rec up s≤up (lemma down+up≡n) p)
 
+module Accessibility where
+  open import Level using (_⊔_)
+  open import Data.Nat.Properties using (∸-mono; n∸m≤n; ≤-trans)
+
+  data Upwards {a r} {A : Set a} (_<_ : A → A → Set r) (bot : A) (top : A) : Set (a ⊔ r) where
+    upwards : (∀ mid → bot < mid → mid < top → Upwards _<_ mid top) → Upwards _<_ bot top
+
+  ∸-mono-< : ∀ {m n o} → m < n → n < o → o ∸ n < o ∸ m
+  ∸-mono-< {m} {n} {o} m<n n<o = begin-strict
+    o ∸ n <⟨ TODO ⟩ o ∸ m ∎
+
+  <-upwards : ∀ {bot top : ℕ} → bot < top → Upwards _<_ bot top
+  <-upwards {bot} {top} bot<top = loop bot (<-wellFounded (top ∸ bot))
+    where
+    loop : ∀ x → Acc _<_ (top ∸ x) → Upwards _<_ x top
+    loop x (acc downward) = upwards λ mid x<mid mid<top →
+      loop mid (downward (top ∸ mid) (∸-mono-< x<mid mid<top))
+
 compositionality
   : ∀ n → 1 < n
   → (∀ m → 1 < m → m < n → Primality m)
@@ -96,8 +114,24 @@ compositionality n 1<n primality = TODO
   -- ... | Prime m-isPrime = {!!}
   -- ... | Composite m-isComposite = {!!}
 
-data 𝕊 {a} (f : ℕ → Set a) : ℕ → ℕ → Set a where
+open import Data.Nat.Properties using (≤-antisym)
 
+data _∈[_∙∙_] {r} (f : ℕ → Set r) : ℕ → ℕ → Set r where
+  f∈[n] : ∀ {n} → f n → f ∈[ n ∙∙ n ]
+  f∈[n∙∙m-1] : ∀ {n m} → f (suc m) → f ∈[ n ∙∙ m ] → f ∈[ n ∙∙ suc m ]
+
+-- test : Primality ∈[ 2 ∙∙ 4 ]
+-- test = f∈[n∙∙m-1] {!!} (f∈[n∙∙m-1] {!!} (f∈[n] {!!}))
+
+module _ {ℓ} {f : ℕ → Set ℓ} where
+
+  index : ∀ {n l r} → l ≤ n → n ≤ r → f ∈[ l ∙∙ r ] → f n
+  index = TODO
+  -- index l≤n n≤r (f∈[n] f) rewrite ≤-antisym l≤n n≤r = f
+  -- index {n} {r = r} l≤n n≤r (f∈[n∙∙m-1] f fs) with <-cmp n r
+
+  -- index zero z≤n (s≤s z≤n) (f∈[n] f) = f
+  -- index (suc n) l≤n n<r f = {!!}
 
 a∣n∧a>n⇒n≡0 : ∀ {a n} → a ∣ n → a > n → 0 ≡ n
 a∣n∧a>n⇒n≡0 (divides zero n≡q*a) a>n = sym n≡q*a
