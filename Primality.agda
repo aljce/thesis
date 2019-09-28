@@ -1,4 +1,3 @@
-{-# OPTIONS --without-K #-}
 open import Data.Empty using (⊥; ⊥-elim)
 open import Relation.Nullary using (¬_; Dec)
 open Dec
@@ -26,6 +25,12 @@ module Primality where
 postulate
   TODO : ∀ {a} {A : Set a} → A
   .irrelevance : ∀ {a} {A : Set a} -> .A -> A
+  ≡-recomp : ∀ {a} {A : Set a} {x y : A} → .(x ≡ y) → x ≡ y
+
+-- open import Relation.Binary.PropositionalEquality.WithK using (≡-erase)
+
+-- ≡-recomputable : ∀ {a} {A : Set a} {x y : A} → .(x ≡ y) → x ≡ y
+-- ≡-recomputable x≡y = ≡-erase (≡-recomp x≡y)
 
 auto : ∀ {a} {A : Set a} {{it : A}} → A
 auto {{it}} = it
@@ -49,8 +54,8 @@ data Primality (n : ℕ) : Set where
   Composite : IsComposite n → Primality n
 
 exclusive : ∀ {n} → IsPrime n → IsComposite n → ⊥
-exclusive (IsPrime✓ _ ∀i∣p[i≡p]) (IsComposite✓ p p<n (IsPrime✓ 1<p _) p∣n)
-  = <-irrefl (∀i∣p[i≡p] 1<p p∣n) p<n
+exclusive (IsPrime✓ _ ∀i∣n[i≡n]) (IsComposite✓ p p<n (IsPrime✓ 1<p _) p∣n)
+  = <-irrefl (∀i∣n[i≡n] 1<p p∣n) p<n
   -- p is a prime divisor of n so p must be n but p < n ⇒⇐
 
 ¬prime<2 : ∀ p → p < 2 → ¬ (IsPrime p)
@@ -76,10 +81,11 @@ compositionality
   : ∀ n → 1 < n
   → (∀ m → 1 < m → m < n → Primality m)
   → IsComposite n ⊎ (∀ p → p < n → IsPrime p → p ∤ n)
-compositionality n 1<n primality = TODO -- upward 1<n ? (inj₂ ¬p<2∣n)
+compositionality n 1<n primality = TODO
   where
-  ¬p<2∣n : ∀ p → p < 2 → IsPrime p → p ∤ n
-  ¬p<2∣n p p<2 p-isPrime = ⊥-elim (¬prime<2 p p<2 p-isPrime)
+  -- ¬p<2∣n : ∀ p → p < 2 → IsPrime p → p ∤ n
+  -- ¬p<2∣n p p<2 p-isPrime = ⊥-elim (¬prime<2 p p<2 p-isPrime)
+  -- loop : ∀ m → 1 < m → m < n → 
 
   -- test
   --   : ∀ m → 1 < m → m < n
@@ -89,6 +95,8 @@ compositionality n 1<n primality = TODO -- upward 1<n ? (inj₂ ¬p<2∣n)
   -- test m 1<m m<n (inj₂ ∀p<m[p∤n]) with primality m 1<m m<n
   -- ... | Prime m-isPrime = {!!}
   -- ... | Composite m-isComposite = {!!}
+
+data 𝕊 {a} (f : ℕ → Set a) : ℕ → ℕ → Set a where
 
 
 a∣n∧a>n⇒n≡0 : ∀ {a n} → a ∣ n → a > n → 0 ≡ n
