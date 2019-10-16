@@ -1,73 +1,71 @@
 open import Level using (_⊔_)
 
-open import Relation.Binary using (Rel; IsTotalOrder; Reflexive; Transitive)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Nullary using (¬_)
+open import Relation.Binary using (Rel; IsTotalOrder)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 
-open import Data.Nat using (ℕ; suc)
+open import Data.Nat using (ℕ; suc; _+_)
+open import Data.Nat.Properties using (+-suc; +-assoc; +-comm; +-identityʳ)
 open import Data.Maybe using (Maybe)
 open Maybe
 open import Data.Sum using (_⊎_)
 open _⊎_
+open import Data.List using (List)
+open List
+open import Data.List.Relation.Unary.All using (All)
+open All
 open import Data.Vec using (Vec)
 open Vec
+open import Data.Product using (∃; _,_)
 
 module Heap.Indexed {k r v} {Key : Set k}
   (_≤_ : Rel Key r) (≤-isTotalOrder : IsTotalOrder _≡_ _≤_)
   (V : Key → Set v) where
 
-open IsTotalOrder ≤-isTotalOrder using () renaming (total to ≤-total; refl to ≤-refl; trans to ≤-trans)
+open import Heap.Key _≤_ ≤-isTotalOrder public
 
-data Bound : Set k where
-  -∞  : Bound
-  ⟨_⟩ : Key → Bound
+open IsTotalOrder ≤-isTotalOrder using () renaming (total to ≤-total)
 
-data _≤ᵇ_ : Rel Bound (k ⊔ r) where
-  instance
-    -∞≤ : ∀ {top} → -∞ ≤ᵇ top
-    ⟨_⟩  : ∀ {bot top} → bot ≤ top → ⟨ bot ⟩ ≤ᵇ ⟨ top ⟩
+sum : List ℕ → ℕ
+sum [] = 0
+sum (x ∷ xs) = x + sum xs
 
-≤ᵇ-refl : Reflexive _≤ᵇ_
-≤ᵇ-refl { -∞ } = -∞≤
-≤ᵇ-refl {⟨ x ⟩} = ⟨ ≤-refl ⟩
+data Heap (bot : Bound) : ℕ → Set (k ⊔ r ⊔ v) where
+  Node : ∀ {n} key → bot ≤ᵇ ⟨ key ⟩ → V key → {ns : List ℕ} → All (Heap ⟨ key ⟩) ns → sum ns ≡ n → Heap bot (1 + n)
 
-≤ᵇ-trans : Transitive _≤ᵇ_
-≤ᵇ-trans -∞≤ _ = -∞≤
-≤ᵇ-trans ⟨ x≤y ⟩ ⟨ y≤z ⟩ = ⟨ ≤-trans x≤y y≤z ⟩
+singleton : ∀ {bot} key → bot ≤ᵇ ⟨ key ⟩ → V key → Heap bot 1
+singleton key bound val = Node key bound val [] refl
 
-record Heap (bot : Bound) : Set (k ⊔ r ⊔ v) where
-  inductive
-  constructor Node
-  field
-    key : Key
-    val : V key
-    bot≤key : bot ≤ᵇ ⟨ key ⟩
-    {c} : ℕ
-    children : Vec (Heap ⟨ key ⟩) c
+private
+  lemma₁ : ∀ {a b} → 1 + (a + b) ≡ b + (1 + a)
+  lemma₁ {a} {b} rewrite +-suc a b | sym (+-comm (1 + a) b) = refl
+  lemma₂ : ∀ {a b} → 1 + (a + b) ≡ a + (1 + b)
+  lemma₂ {a} {b} rewrite +-suc a b = refl
 
-singleton : ∀ {bot} key → bot ≤ᵇ ⟨ key ⟩ → V key → Heap bot
-singleton key bound val = Node key val bound []
+_∪_ : ∀ {n m} {bot} → Heap bot n → Heap bot m → Heap bot (n + m)
+Node key₁ bot≤key₁ val₁ {sizes₁} children₁ refl ∪ Node key₂ bot≤key₂ val₂ {sizes₂} children₂ refl with ≤-total key₁ key₂
+... | inj₁ key₁≤key₂ = Node key₁ bot≤key₁ val₁ (Node key₂ ⟨ key₁≤key₂ ⟩ val₂ children₂ refl ∷ children₁) lemma₁
+... | inj₂ key₁≥key₂ = Node key₂ bot≤key₂ val₂ (Node key₁ ⟨ key₁≥key₂ ⟩ val₁ children₁ refl ∷ children₂) lemma₂
 
-_∪_ : ∀ {bot} → Heap bot → Heap bot → Heap bot
-Node key₁ val₁ bot≤key₁ children₁ ∪ Node key₂ val₂ bot≤key₂ children₂ with ≤-total key₁ key₂
-... | inj₁ key₁≤key₂ = Node key₁ val₁ bot≤key₁ (Node key₂ val₂ ⟨ key₁≤key₂ ⟩ children₂ ∷ children₁)
-... | inj₂ key₁≥key₂ = Node key₂ val₂ bot≤key₂ (Node key₁ val₁ ⟨ key₁≥key₂ ⟩ children₁ ∷ children₂)
-
-insert : ∀ {bot} key → bot ≤ᵇ ⟨ key ⟩ → V key → Heap bot → Heap bot
+insert : ∀ {bot} {n} key → bot ≤ᵇ ⟨ key ⟩ → V key → Heap bot n → Heap bot (1 + n)
 insert key bound val heap = singleton key bound val ∪ heap
 
-record Min (bot : Bound) : Set (k ⊔ r ⊔ v) where
-  constructor Node
-  field
-    min-key : Key
-    min-val : V min-key
-    bot≤min-key : bot ≤ᵇ ⟨ min-key ⟩
-    next-heap : Maybe (Heap ⟨ min-key ⟩)
+data Sized {a} (f : ℕ → Set a) : ℕ → Set a where
+  [] : Sized f 0
+  [_]  : ∀ {n} → f (1 + n) → Sized f (1 + n)
 
-min-view : ∀ {bot} → Heap bot → Min bot
-min-view (Node key val bot≤key {0} _) = Node key val bot≤key nothing
-min-view (Node key val bot≤key {suc _} hs) = Node key val bot≤key (just (mergePairs hs))
-  where
-  mergePairs : ∀ {c} {bot} → Vec (Heap bot) (suc c) → Heap bot
-  mergePairs {_} (a ∷ []) = a
-  mergePairs {_} (a ∷ b ∷ []) = a ∪ b
-  mergePairs {suc (suc _)} (a ∷ b ∷ cs) = (a ∪ b) ∪ mergePairs cs
+data Min (bot : Bound) : ℕ → Set (k ⊔ r ⊔ v) where
+  Node : ∀ {n} min-key → bot ≤ᵇ ⟨ min-key ⟩ → V min-key → Sized (Heap ⟨ min-key ⟩) n → Min bot (1 + n)
+
+mergePairs : ∀ {n} {ns} {bot} → All (Heap bot) (n ∷ ns) → Heap bot (n + sum ns)
+mergePairs {n₁} {[]} (h₁ ∷ []) rewrite +-identityʳ n₁ = h₁
+mergePairs {n₁} {n₂ ∷ []} (h₁ ∷ h₂ ∷ []) rewrite +-identityʳ n₂ = h₁ ∪ h₂
+mergePairs {n₁} {n₂ ∷ n₃ ∷ ns} (h₁ ∷ h₂ ∷ hs) rewrite sym (+-assoc n₁ n₂ (n₃ + sum ns)) = (h₁ ∪ h₂) ∪ mergePairs hs
+
+min-view : ∀ {n} {bot} → Heap bot n → Min bot n
+min-view {bot} (Node min-key bot≤min-key min-val [] refl) = Node min-key bot≤min-key min-val []
+min-view {bot} (Node min-key bot≤min-key min-val {suc _ ∷ _} hs refl) with mergePairs hs
+... | merged@(Node _ _ _ _ _) = Node min-key bot≤min-key min-val [ merged ]
+
+¬heap[0] : ∀ {bot} → ¬ (Heap bot 0)
+¬heap[0] ()
