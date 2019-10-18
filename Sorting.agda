@@ -22,7 +22,7 @@ data Vecᵇ (bot : Bound) (top : Bound) : ℕ → Set (a ⊔ r) where
 
 heapify : ∀ {n} → Vec A (1 + n) → Heap -∞ (1 + n)
 heapify (a ∷ []) = singleton a (-∞≤ ⟨ a ⟩) tt
-heapify (a ∷ b ∷ bs) = singleton a (-∞≤ ⟨ a ⟩) tt ∪ heapify (b ∷ bs)
+heapify (a ∷ b ∷ bs) = insert a (-∞≤ ⟨ a ⟩) tt (heapify (b ∷ bs))
 
 elems : ∀ {n} {bot} → Heap bot (1 + n) → Vecᵇ bot +∞ (1 + n)
 elems heap₁ with min-view heap₁

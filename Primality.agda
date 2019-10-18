@@ -221,3 +221,57 @@ composite? n with 1 <? n
 ¬prime⇒composite n 1<n ¬n-isPrime with primality n 1<n
 ... | Prime n-isPrime = ⊥-elim (¬n-isPrime n-isPrime)
 ... | Composite n-isComposite = n-isComposite
+
+open import Data.Nat using (_≤′_)
+open  _≤′_
+open import Data.Nat.Properties using (m≤m+n; *-monoʳ-≤; ≤-<-connex; +-comm; ≤⇒≤′)
+open import Data.Nat.Divisibility using (∣1⇒≡1; ∣m+n∣m⇒∣n; 1∣_; ∣-refl; m∣m*n; ∣n⇒∣m*n)
+open import Data.Product using (∃; _×_; _,_)
+
+_! : ℕ → ℕ
+zero ! = 1
+suc n ! = suc n * n !
+
+1≤n! : ∀ n → 1 ≤ n !
+1≤n! zero = ≤-refl
+1≤n! (suc n) = begin
+  1 ≤⟨ 1≤n! n ⟩
+  n ! ≤⟨ m≤m+n (n !) (n * n !) ⟩
+  n ! + n * n ! ≡⟨ refl ⟩
+  (1 + n) ! ∎
+
+n≤n! : ∀ n → n ≤ n !
+n≤n! zero = z≤n
+n≤n! (suc n) = begin
+  suc n ≡⟨ sym (*-identityʳ (suc n)) ⟩
+  suc n * 1 ≤⟨ *-monoʳ-≤ (suc n) (1≤n! n) ⟩
+  (1 + n) ! ∎
+
+∀m≤n∣n! : ∀ {n m} → 0 < m → m ≤ n → m ∣ n !
+∀m≤n∣n! (s≤s 0<m) m≤n = loop (≤⇒≤′ m≤n)
+  where
+  loop : ∀ {n m} → suc m ≤′ n → suc m ∣ n !
+  loop {suc n} ≤′-refl = m∣m*n (n !)
+  loop {n} (≤′-step m<n) = ∣n⇒∣m*n n (loop m<n)
+
+¬∣1+n! : ∀ {p₁ p₂} → 1 < p₂ → p₂ ≤ p₁ → p₂ ∤ 1 + p₁ !
+¬∣1+n! {p₁} {p₂} 1<p₂ p₂≤p₁ p₂∣1+p₁! = <-irrefl (sym p₂≡1) 1<p₂
+  where
+  0<p₂ : 0 < p₂
+  0<p₂ = <-trans 0<1+n 1<p₂
+  p₂≡1 : p₂ ≡ 1
+  p₂≡1 rewrite +-comm 1 (p₁ !) = ∣1⇒≡1 (∣m+n∣m⇒∣n p₂∣1+p₁! (∀m≤n∣n! 0<p₂ p₂≤p₁))
+
+record LargerPrime (n : ℕ) : Set where
+  constructor Larger
+  field
+    p : ℕ
+    P[n] : IsPrime p
+    n<p : n < p
+
+euclid : ∀ p → LargerPrime p
+euclid p₁ with primality (1 + p₁ !) (s≤s (1≤n! p₁))
+... | Prime P[1+p!] = Larger (1 + p₁ !) P[1+p!] (s≤s (n≤n! p₁))
+... | Composite (IsComposite✓ p₂ p₂<1+p₁! P[p₂]@(IsPrime✓ 1<p₂ _) p₂∣1+p₁!) with ≤-<-connex p₂ p₁
+...   | inj₂ p₂>p₁ = Larger p₂ P[p₂] p₂>p₁
+...   | inj₁ p₂≤p₁ = ⊥-elim (¬∣1+n! 1<p₂ p₂≤p₁ p₂∣1+p₁!)
