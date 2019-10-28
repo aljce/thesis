@@ -1,3 +1,4 @@
+{-# OPTIONS --with-K #-}
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.PropositionalEquality.WithK using (≡-erase)
 
