@@ -33,7 +33,7 @@ module _ {a} {f : ℕ → Set a} where
   index = {!!}
 
   tabulate : ∀ {m} {i} → (∀ n → (∀ x → m ≤ x → x < n → i ⊢ m ≤ x < n) → f n) → Sieve f m i
-  tabulate {m} gen = gen m {!!} ∷ λ where .force → tabulate λ n ix → gen n λ x m≤x x<n → ?
+  tabulate {m} gen = gen m {!!} ∷ λ where .force → tabulate λ n ix → gen n λ x m≤x x<n → {!!}
     -- where
     -- loop : ∀ {m} {i} → (∀ a) Sieve f m i
     -- loop {m} = {!!}

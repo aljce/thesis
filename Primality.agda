@@ -226,7 +226,6 @@ open import Data.Nat using (_≤′_)
 open  _≤′_
 open import Data.Nat.Properties using (m≤m+n; *-monoʳ-≤; ≤-<-connex; +-comm; ≤⇒≤′)
 open import Data.Nat.Divisibility using (∣1⇒≡1; ∣m+n∣m⇒∣n; 1∣_; ∣-refl; m∣m*n; ∣n⇒∣m*n)
-open import Data.Product using (∃; _×_; _,_)
 
 _! : ℕ → ℕ
 zero ! = 1
