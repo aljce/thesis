@@ -7,8 +7,9 @@ module Prelude.Exponentiation {c ℓ} (M : CommutativeMonoid c ℓ) where
 open import Prelude.Nat using (ℕ; _+_; _<_)
 open ℕ
 open import Prelude.Nat.WellFounded using (Acc; acc; <-well-founded)
-open import Prelude.Nat.Binary using (2*; 𝔹; ⟦_⇑⟧; ⟦_⇓⟧; ℕ→𝔹→ℕ)
+open import Prelude.Nat.Binary using (2*; 𝔹; 𝔹⁺; ⟦_⇑⟧; ⟦_⇓⟧⁺; ⟦_⇓⟧; ℕ→𝔹→ℕ)
 open 𝔹
+open 𝔹⁺
 open CommutativeMonoid M
   using (_≈_; isEquivalence; setoid; ε; _∙_; ∙-congˡ; identityˡ; identityʳ; assoc; comm)
   renaming (Carrier to C)
@@ -37,10 +38,14 @@ x ^ⁱ suc n = x ∙ x ^ⁱ n
   x ∙ (x ^ⁱ n ∙ (y ∙ y ^ⁱ n)) ≈⟨ sym (assoc _ _ _) ⟩
   x ∙ (x ^ⁱ n) ∙ (y ∙ (y ^ⁱ n)) ∎
 
+_^ᵇ⁺_ : C → 𝔹⁺ → C
+x ^ᵇ⁺ 𝕓1ᵇ = x
+x ^ᵇ⁺ (b 0ᵇ) = (x ∙ x) ^ᵇ⁺ b
+x ^ᵇ⁺ (b 1ᵇ) = x ∙ (x ∙ x) ^ᵇ⁺ b
+
 _^ᵇ_ : C → 𝔹 → C
-x ^ᵇ 𝕫 = ε
-x ^ᵇ (𝕖 b) = (x ∙ x) ^ᵇ b
-x ^ᵇ (𝕠 b) = x ∙ (x ∙ x) ^ᵇ b
+x ^ᵇ 𝕓0ᵇ = ε
+x ^ᵇ (+ b) = x ^ᵇ⁺ b
 
 _^_ : C → ℕ → C
 x ^ n = x ^ᵇ ⟦ n ⇑⟧
@@ -51,15 +56,19 @@ x^n≈x^ⁱn x n = begin
   x ^ⁱ ⟦ ⟦ n ⇑⟧ ⇓⟧ ≡⟨ ≡-cong (λ t → x ^ⁱ t) (ℕ→𝔹→ℕ n) ⟩
   x ^ⁱ n ∎
   where
-  even : ∀ x b → (x ∙ x) ^ᵇ b ≈ x ^ⁱ 2* ⟦ b ⇓⟧
-  loop : ∀ x b → x ^ᵇ b ≈ x ^ⁱ ⟦ b ⇓⟧
+  even : ∀ x b → (x ∙ x) ^ᵇ⁺ b ≈ x ^ⁱ 2* ⟦ b ⇓⟧⁺
+  loop⁺ : ∀ x b → x ^ᵇ⁺ b ≈ x ^ⁱ ⟦ b ⇓⟧⁺
 
   even x b = begin
-    (x ∙ x) ^ᵇ b ≈⟨ loop (x ∙ x) b ⟩
-    (x ∙ x) ^ⁱ ⟦ b ⇓⟧ ≈⟨ ∙-^ⁱ-dist x x ⟦ b ⇓⟧  ⟩
-    x ^ⁱ ⟦ b ⇓⟧ ∙ x ^ⁱ ⟦ b ⇓⟧ ≈⟨ sym (^ⁱ-homomorphism x ⟦ b ⇓⟧ ⟦ b ⇓⟧) ⟩
-    x ^ⁱ 2* ⟦ b ⇓⟧ ∎
+    (x ∙ x) ^ᵇ⁺ b ≈⟨ loop⁺ (x ∙ x) b ⟩
+    (x ∙ x) ^ⁱ ⟦ b ⇓⟧⁺ ≈⟨ ∙-^ⁱ-dist x x ⟦ b ⇓⟧⁺ ⟩
+    x ^ⁱ ⟦ b ⇓⟧⁺ ∙ x ^ⁱ ⟦ b ⇓⟧⁺ ≈⟨ sym (^ⁱ-homomorphism x ⟦ b ⇓⟧⁺ ⟦ b ⇓⟧⁺) ⟩
+    x ^ⁱ 2* ⟦ b ⇓⟧⁺ ∎
 
-  loop x 𝕫 = refl
-  loop x (𝕖 b) = even x b
-  loop x (𝕠 b) = ∙-congˡ (even x b)
+  loop⁺ x 𝕓1ᵇ = sym (identityʳ x)
+  loop⁺ x (b 0ᵇ) = even x b
+  loop⁺ x (b 1ᵇ) = ∙-congˡ (even x b)
+
+  loop : ∀ x b → x ^ᵇ b ≈ x ^ⁱ ⟦ b ⇓⟧
+  loop x 𝕓0ᵇ = refl
+  loop x (+ b) = loop⁺ x b
