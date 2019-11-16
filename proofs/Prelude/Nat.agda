@@ -1,17 +1,24 @@
-open import Function using (_$_)
+open import Function using (_$_; _∘_)
 open import Relation.Nullary using (¬_; Dec)
 open Dec
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Nullary.Decidable using (False)
-open import Relation.Binary using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; IsPreorder; _Preserves₂_⟶_⟶_)
+open import Relation.Binary
+  using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; IsPreorder; _Preserves₂_⟶_⟶_; Trichotomous; Tri)
+open Tri
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; trans; cong; resp₂; module ≡-Reasoning)
   renaming (isEquivalence to ≡-isEquivalence)
 open import Relation.Binary.PropositionalEquality.WithK using (≡-erase)
 
+open import Data.Bool using (T)
+open import Data.Bool.Properties using (T?)
+
 open import Data.Unit using (tt)
 open import Data.List using (List)
 open List
+open import Data.Sum using (_⊎_)
+open _⊎_
 open import Polynomial.Simple.AlmostCommutativeRing using (AlmostCommutativeRing)
 open import Polynomial.Simple.AlmostCommutativeRing.Instances using (module Nat)
 open import Polynomial.Simple.Reflection using (solveOver)
@@ -20,6 +27,7 @@ open Nat.Reflection using (∀⟨_⟩)
 module Prelude.Nat where
 
 open import Data.Nat using (ℕ; _+_; _∸_; _*_; _≟_) public
+open import Data.Nat using (_<ᵇ_)
 open ℕ public
 open import Data.Nat.DivMod using (_/_; _%_; m≡m%n+[m/n]*n )
 open import Data.Nat.Properties using (+-assoc; +-suc; +-comm; *-identityʳ; +-identityʳ; m+n≡0⇒m≡0; +-cancelʳ-≡; +-cancelˡ-≡; 1+n≢0)
@@ -31,6 +39,9 @@ record _≤_ (n : ℕ) (m : ℕ) : Set where
   field
     k : ℕ
     ≤-proof : n + k ≡ m
+
+_≥_ : ℕ → ℕ → Set
+n ≥ m = m ≤ n
 
 0≤n : ∀ {n} → 0 ≤ n
 0≤n {n} = lte n refl
@@ -80,6 +91,9 @@ n+m≡n⇒m≡0 {n} {m} n+m≡n = m≡0
 suc-mono-≤ : ∀ {n m} → n ≤ m → suc n ≤ suc m
 suc-mono-≤ (lte k₁ refl) = lte k₁ refl
 
+suc-injective : ∀ {n m} → suc n ≤ suc m → n ≤ m
+suc-injective (lte k refl) = lte k refl
+
 m≤m+n : ∀ {m n} → m ≤ m + n
 m≤m+n {m} {n} = lte n refl
 
@@ -90,8 +104,14 @@ infix 4 _<_ _≮_
 _<_ : ℕ → ℕ → Set
 n < m = suc n ≤ m
 
+_>_ : ℕ → ℕ → Set
+n > m = m < n
+
 _≮_ : ℕ → ℕ → Set
 n ≮ m = ¬ (n < m)
+
+_≯_ : ℕ → ℕ → Set
+n ≯ m = m ≮ n
 
 <-trans : Transitive _<_
 <-trans {x} (lte k₁ refl) (lte k₂ refl) = lte (suc (k₁ + k₂)) (≡-erase ∀⟨ x ∷ k₁ ∷ k₂ ∷ [] ⟩)
@@ -105,11 +125,15 @@ n ≮ m = ¬ (n < m)
 n≮n : ∀ {n} → n ≮ n
 n≮n {n} (lte k n+1+k≡n) rewrite sym (+-suc n k) = 1+n≢0 (n+m≡n⇒m≡0 n+1+k≡n)
 
+
 <-irrefl : Irreflexive _≡_ _<_
 <-irrefl refl x<x = n≮n x<x
 
 <-asym : Asymmetric _<_
 <-asym x<y y<x = n≮n (<-trans x<y y<x)
+
+<⇒≯ : ∀ {n m} → n < m → n ≯ m
+<⇒≯ n<m n>m = <-asym n<m n>m
 
 n<1+n : ∀ {n} → n < 1 + n
 n<1+n = ≤-refl
@@ -119,6 +143,9 @@ n<1+n = ≤-refl
 
 n≮0 : ∀ {n} → n ≮ 0
 n≮0 ()
+
+suc-mono-< : ∀ {n m} → n < m → suc n < suc m
+suc-mono-< (lte k₁ refl) = lte k₁ refl
 
 private
   a+b∸a≡b+[a∸a] : ∀ a b → a + b ∸ a ≡ b + (a ∸ a)
@@ -183,6 +210,35 @@ module ≤-Reasoning where
    open import Relation.Binary.Reasoning.Base.Triple
      ≤-isPreorder <-trans (resp₂ _<_) <⇒≤ <-≤-trans ≤-<-trans
      public hiding (_≈⟨_⟩_)
+
+
+n≤m⇒n<m⊎n≡m : ∀ {n m} → n ≤ m → n < m ⊎ n ≡ m
+n≤m⇒n<m⊎n≡m {n} (lte zero ≤-proof) rewrite ≡-erase (+-identityʳ n) = inj₂ ≤-proof
+n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = inj₁ (lte k ≤-proof)
+
+≤∧≢⇒< : ∀ {m n} → m ≤ n → m ≢ n → m < n
+≤∧≢⇒< m≤n m≢n with n≤m⇒n<m⊎n≡m m≤n
+... | inj₁ m<n = m<n
+... | inj₂ m≡n = contradiction m≡n m≢n
+
+≮⇒≥ : ∀ {m n} → m ≮ n → m ≥ n
+≮⇒≥ {_} {zero} m≮n = 0≤n
+≮⇒≥ {zero} {suc n} m≮n = contradiction 0<1+n m≮n
+≮⇒≥ {suc m} {suc n} m≮n = suc-mono-≤ (≮⇒≥ (m≮n ∘ suc-mono-<))
+
+<ᵇ⇒< : ∀ m n → T (m <ᵇ n) → m < n
+<ᵇ⇒< zero    (suc n) m<n = 0<1+n
+<ᵇ⇒< (suc m) (suc n) m<n = suc-mono-< (<ᵇ⇒< m n m<n)
+
+<⇒<ᵇ : ∀ m n → m < n → T (m <ᵇ n)
+<⇒<ᵇ zero (suc n) m<n = tt
+<⇒<ᵇ (suc m) (suc n) m<n = <⇒<ᵇ m n (suc-injective m<n)
+
+<-cmp : Trichotomous _≡_ _<_
+<-cmp m n with m ≟ n | T? (m <ᵇ n)
+... | yes m≡n | _       = tri≈ (<-irrefl m≡n) m≡n (<-irrefl (sym m≡n))
+... | no  m≢n | yes m<n = tri< (<ᵇ⇒< m n m<n) m≢n (<⇒≯ (<ᵇ⇒< m n m<n))
+... | no  m≢n | no  m≮n = tri> (m≮n ∘ <⇒<ᵇ m n) m≢n (≤∧≢⇒< (≮⇒≥ (m≮n ∘ <⇒<ᵇ m n)) (m≢n ∘ sym))
 
 record Euclidean (n : ℕ) (m : ℕ) : Set where
   constructor Euclidean✓

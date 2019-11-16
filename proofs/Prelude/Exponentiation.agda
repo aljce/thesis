@@ -7,7 +7,7 @@ module Prelude.Exponentiation {c ℓ} (M : CommutativeMonoid c ℓ) where
 open import Prelude.Nat using (ℕ; _+_; _<_)
 open ℕ
 open import Prelude.Nat.WellFounded using (Acc; acc; <-well-founded)
-open import Prelude.Nat.Binary using (2*; 𝔹; 𝔹⁺; ⟦_⇑⟧; ⟦_⇓⟧⁺; ⟦_⇓⟧; ℕ→𝔹→ℕ)
+open import Prelude.Nat.Binary using (2*; 𝔹; 𝔹⁺; ⟦_⇑⟧; ⟦_⇓⟧⁺; ⟦_⇓⟧; ℕ→𝔹→ℕ; ⌈log₂_⌉)
 open 𝔹
 open 𝔹⁺
 open CommutativeMonoid M
