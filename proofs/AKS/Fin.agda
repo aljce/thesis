@@ -1,8 +1,8 @@
 open import Relation.Nullary using (¬_)
 
-module Prelude.Fin where
+module AKS.Fin where
 
-open import Prelude.Nat using (ℕ; _+_; _<_)
+open import AKS.Nat using (ℕ; _+_; _<_)
 
 record Fin (n : ℕ) : Set where
   constructor Fin✓

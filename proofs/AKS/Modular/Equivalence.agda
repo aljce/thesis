@@ -2,7 +2,7 @@ open import Level using (_⊔_)
 open import Function using (_$_)
 open import Algebra using (CommutativeRing)
 
-module Prelude.Modular {c ℓ} (R : CommutativeRing c ℓ) where
+module AKS.Modular.Equivalence {c ℓ} (R : CommutativeRing c ℓ) where
 
 open CommutativeRing R using (0#; 1#; _+_; _*_; -_; _-_)
   renaming (Carrier to C)

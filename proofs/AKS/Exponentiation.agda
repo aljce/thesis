@@ -2,12 +2,12 @@ open import Algebra using (CommutativeMonoid)
 open import Relation.Binary.Structures using (IsEquivalence)
 open import Relation.Binary.PropositionalEquality using () renaming (cong to ≡-cong)
 
-module Prelude.Exponentiation {c ℓ} (M : CommutativeMonoid c ℓ) where
+module AKS.Exponentiation {c ℓ} (M : CommutativeMonoid c ℓ) where
 
-open import Prelude.Nat using (ℕ; _+_; _<_)
+open import AKS.Nat using (ℕ; _+_; _<_)
 open ℕ
-open import Prelude.Nat.WellFounded using (Acc; acc; <-well-founded)
-open import Prelude.Nat.Binary using (2*; 𝔹; 𝔹⁺; ⟦_⇑⟧; ⟦_⇓⟧⁺; ⟦_⇓⟧; ℕ→𝔹→ℕ; ⌈log₂_⌉)
+open import AKS.Nat using (Acc; acc; <-well-founded)
+open import AKS.Binary using (2*; 𝔹; 𝔹⁺; ⟦_⇑⟧; ⟦_⇓⟧⁺; ⟦_⇓⟧; ℕ→𝔹→ℕ; ⌈log₂_⌉)
 open 𝔹
 open 𝔹⁺
 open CommutativeMonoid M

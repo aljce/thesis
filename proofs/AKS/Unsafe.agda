@@ -4,7 +4,9 @@ open import Relation.Binary.PropositionalEquality.WithK using (≡-erase)
 
 -- acursed and unmentionable
 -- turn back traveller
-module Prelude.Unsafe where
+module AKS.Unsafe where
+
+open import Relation.Binary.PropositionalEquality.TrustMe using (trustMe) public
 
 postulate
   TODO : ∀ {a} {A : Set a} → A

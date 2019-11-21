@@ -1,15 +1,14 @@
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 
-open import Data.Nat.Properties using (+-identityʳ; +-suc; suc-injective)
-
-module Prelude.Nat.WellFounded where
+module AKS.Nat.WellFounded where
 
 open import Data.Nat.Induction using (Acc; acc) public
-open import Prelude.Nat using (ℕ; _+_; _∸_; _≤_; _<_; lte; ∸-mono-<ˡ; ∸-mono-<ʳ)
+open import AKS.Nat.Base using (ℕ; _+_; _∸_; _≤_; _<_; lte)
 open ℕ
+open import AKS.Nat.Properties using (+-identityʳ; +-suc; ∸-mono-<ˡ; ∸-mono-<ʳ; suc-injective)
 
 <-well-founded : ∀ {n} → Acc _<_ n
-<-well-founded {n} = wf-hack 1000 n
+<-well-founded {n} = wf₁ n -- wf-hack 1000 n
   where
   wf₁ : ∀ t → Acc _<_ t
   wf₂ : ∀ t b k → suc (b + k) ≡ t → Acc _<_ b

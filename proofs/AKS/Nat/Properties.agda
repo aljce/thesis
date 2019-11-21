@@ -1,7 +1,8 @@
 open import Function using (_$_; _∘_)
-open import Relation.Nullary using (¬_; Dec; yes; no)
-open import Relation.Nullary.Negation using (contradiction)
+
+open import Relation.Nullary using (yes; no)
 open import Relation.Nullary.Decidable using (False)
+open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary
   using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; IsPreorder; _Preserves₂_⟶_⟶_; Trichotomous; Tri; Irrelevant)
 open Tri
@@ -12,43 +13,33 @@ open import Relation.Binary.PropositionalEquality.WithK using (≡-erase)
 
 open import Data.Bool using (T)
 open import Data.Bool.Properties using (T?)
-
 open import Data.Unit using (tt)
+
 open import Data.List using (List)
 open List
 open import Data.Sum using (_⊎_)
 open _⊎_
+
+module AKS.Nat.Properties where
+
+open import Data.Nat.Properties using (+-assoc; +-suc; +-comm; *-identityʳ; +-identityʳ; m+n≡0⇒m≡0; +-cancelʳ-≡; +-cancelˡ-≡; 1+n≢0; suc-injective) public
+open import Data.Nat.Properties using (n∸n≡0; ∸-+-assoc) public
+open import Data.Nat.Properties using (*-comm; *-1-commutativeMonoid) public
+
 open import Polynomial.Simple.AlmostCommutativeRing using (AlmostCommutativeRing)
 open import Polynomial.Simple.AlmostCommutativeRing.Instances using (module Nat)
 open import Polynomial.Simple.Reflection using (solveOver)
 open Nat.Reflection using (∀⟨_⟩)
 
-module Prelude.Nat where
+open import AKS.Nat.Base using (ℕ; _+_; _*_; _∸_; lte; _≤_; _≥_; _<_; _≮_; _>_; _≯_; _<ᵇ_; _≟_)
+open ℕ
 
-open import Agda.Builtin.FromNat using (Number)
-open import Data.Nat using (ℕ; _+_; _∸_; _*_; _≟_) public
-open import Data.Nat.Literals using (number)
-open import Agda.Builtin.Nat using () renaming (mod-helper to modₕ)
-open import Data.Nat using (_<ᵇ_)
-open ℕ public
-open import Data.Nat.DivMod.Core using (a≤n⇒a[modₕ]n≡a)
-open import Data.Nat.DivMod using (_/_; _%_; m≡m%n+[m/n]*n)
-open import Data.Nat.Properties using (+-assoc; +-suc; +-comm; *-identityʳ; +-identityʳ; m+n≡0⇒m≡0; +-cancelʳ-≡; +-cancelˡ-≡; 1+n≢0)
-open import Data.Nat.Properties using (n∸n≡0; ∸-+-assoc; *-comm)
+≢⇒¬≟ : ∀ {n m} → n ≢ m → False (n ≟ m)
+≢⇒¬≟ {n} {m} n≢m with n ≟ m
+... | yes n≡m = contradiction n≡m n≢m
+... | no _ = tt
 
-instance
-  ℕ-number : Number ℕ
-  ℕ-number = number
-
-infix 4 _≤_
-record _≤_ (n : ℕ) (m : ℕ) : Set where
-  constructor lte
-  field
-    k : ℕ
-    ≤-proof : n + k ≡ m
-
-_≥_ : ℕ → ℕ → Set
-n ≥ m = m ≤ n
+------------ _≤_ --------------
 
 0≤n : ∀ {n} → 0 ≤ n
 0≤n {n} = lte n refl
@@ -98,8 +89,8 @@ n+m≡n⇒m≡0 {n} {m} n+m≡n = m≡0
 suc-mono-≤ : ∀ {n m} → n ≤ m → suc n ≤ suc m
 suc-mono-≤ (lte k₁ refl) = lte k₁ refl
 
-suc-injective : ∀ {n m} → suc n ≤ suc m → n ≤ m
-suc-injective (lte k refl) = lte k refl
+suc-injective-≤ : ∀ {n m} → suc n ≤ suc m → n ≤ m
+suc-injective-≤ (lte k refl) = lte k refl
 
 m≤m+n : ∀ {m n} → m ≤ m + n
 m≤m+n {m} {n} = lte n refl
@@ -107,18 +98,8 @@ m≤m+n {m} {n} = lte n refl
 ≤-erase : ∀ {n m} → n ≤ m → n ≤ m
 ≤-erase (lte k ≤-proof) = lte k (≡-erase ≤-proof)
 
-infix 4 _<_ _≮_
-_<_ : ℕ → ℕ → Set
-n < m = suc n ≤ m
 
-_>_ : ℕ → ℕ → Set
-n > m = m < n
-
-_≮_ : ℕ → ℕ → Set
-n ≮ m = ¬ (n < m)
-
-_≯_ : ℕ → ℕ → Set
-n ≯ m = m ≮ n
+------------ _≤_ --------------
 
 <-trans : Transitive _<_
 <-trans {x} (lte k₁ refl) (lte k₂ refl) = lte (suc (k₁ + k₂)) (≡-erase ∀⟨ x ∷ k₁ ∷ k₂ ∷ [] ⟩)
@@ -220,7 +201,6 @@ module ≤-Reasoning where
      ≤-isPreorder <-trans (resp₂ _<_) <⇒≤ <-≤-trans ≤-<-trans
      public hiding (_≈⟨_⟩_)
 
-
 n≤m⇒n<m⊎n≡m : ∀ {n m} → n ≤ m → n < m ⊎ n ≡ m
 n≤m⇒n<m⊎n≡m {n} (lte zero ≤-proof) rewrite ≡-erase (+-identityʳ n) = inj₂ ≤-proof
 n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = inj₁ (lte k ≤-proof)
@@ -241,102 +221,15 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 
 <⇒<ᵇ : ∀ m n → m < n → T (m <ᵇ n)
 <⇒<ᵇ zero (suc n) m<n = tt
-<⇒<ᵇ (suc m) (suc n) m<n = <⇒<ᵇ m n (suc-injective m<n)
+<⇒<ᵇ (suc m) (suc n) m<n = <⇒<ᵇ m n (suc-injective-≤ m<n)
 
+-- TODO change to does/proof
 <-cmp : Trichotomous _≡_ _<_
 <-cmp m n with m ≟ n | T? (m <ᵇ n)
 ... | yes m≡n | _       = tri≈ (<-irrefl m≡n) m≡n (<-irrefl (sym m≡n))
 ... | no  m≢n | yes m<n = tri< (<ᵇ⇒< m n m<n) m≢n (<⇒≯ (<ᵇ⇒< m n m<n))
 ... | no  m≢n | no  m≮n = tri> (m≮n ∘ <⇒<ᵇ m n) m≢n (≤∧≢⇒< (≮⇒≥ (m≮n ∘ <⇒<ᵇ m n)) (m≢n ∘ sym))
 
-open import Data.Nat.Properties using (+-cancelˡ-≡)
-
 <-irrelevant : Irrelevant _<_
 <-irrelevant {x} (lte k₁ 1+x+k₁≡y) (lte k₂ 1+x+k₂≡y) with +-cancelˡ-≡ (1 + x) (trans 1+x+k₁≡y (sym 1+x+k₂≡y))
 <-irrelevant {x} (lte k₁ refl) (lte .k₁ refl) | refl = refl
-
-record Euclidean (n : ℕ) (m : ℕ) : Set where
-  constructor Euclidean✓
-  field
-    q : ℕ
-    r : ℕ
-    division : n ≡ r + m * q
-    r<m : r < m
-
-a[modₕ]n≤n : ∀ acc d n → modₕ acc (acc + n) d n ≤ acc + n
-a[modₕ]n≤n acc zero n = m≤m+n
-a[modₕ]n≤n acc (suc d) zero = a[modₕ]n≤n zero d (acc + 0)
-a[modₕ]n≤n acc (suc d) (suc n) rewrite +-suc acc n = a[modₕ]n≤n (suc acc) d n
-
-n%m<m : ∀ n m {≢0 : False (m ≟ 0)} → (n % m) {≢0} < m
-n%m<m n (suc m) = suc-mono-≤ (a[modₕ]n≤n 0 n m)
-
-n<m⇒n%m≡n : ∀ {n m} {≢0 : False (m ≟ 0)} → n < m → (n % m) {≢0} ≡ n
-n<m⇒n%m≡n {n} {suc m} (lte k refl) = a≤n⇒a[modₕ]n≡a 0 (n + k) n k
-
-0%m≡0 : ∀ {m} {≢0 : False (m ≟ 0)} → (0 % m) {≢0} ≡ 0
-0%m≡0 {suc m} = refl
-
-_div_ : ∀ n m {≢0 : False (m ≟ 0)} → Euclidean n m
-n div suc m = Euclidean✓ (n / suc m) (n % suc m) (≡-erase div-proof) (n%m<m n (suc m))
-  where
-  div-proof : n ≡ n % suc m + suc m * (n / suc m)
-  div-proof rewrite *-comm (suc m) (n / suc m) = m≡m%n+[m/n]*n n m
-
-≢⇒¬≟ : ∀ {n m} → n ≢ m → False (n ≟ m)
-≢⇒¬≟ {n} {m} n≢m with n ≟ m
-... | yes n≡m = contradiction n≡m n≢m
-... | no _ = tt
-
-
--- _C_ : ℕ → ℕ → ℕ
--- n C zero = 1
--- zero C suc k = 0
--- suc n C suc k = n C k + n C (suc k)
-
--- _! : ℕ → ℕ
--- zero ! = 1
--- suc n ! = suc n * n !
-
--- 1≤n! : ∀ n → 1 ≤ n !
--- 1≤n! zero = ≤-refl
--- 1≤n! (suc n) = begin
---   1 ≤⟨ 1≤n! n ⟩
---   n ! ≤⟨ m≤m+n ⟩
---   n ! + n * n ! ≡⟨ refl ⟩
---   (1 + n) ! ∎
---   where
---   open ≤-Reasoning
-
--- n≤n! : ∀ n → n ≤ n !
--- n≤n! zero = 0≤n
--- n≤n! (suc n) = begin
---   suc n ≡⟨ sym (*-identityʳ (suc n)) ⟩
---   suc n * 1 ≤⟨ *-mono-≤ (≤-refl {suc n}) (1≤n! n) ⟩
---   (1 + n) ! ∎
---   where
---   open ≤-Reasoning
-
-
--- _C′_ : ℕ → ℕ → ℕ
--- n C′ k = (n ! / (k ! * (n ∸ k) !)) {≢⇒¬≟ den≢0}
---   where
---   den≢0 : k ! * (n ∸ k) ! ≢ 0
---   den≢0 den≡0 = <-irrefl (sym den≡0) (*-mono-< (1≤n! k) (1≤n! (n ∸ k)))
-
--- nC′0≡1 : ∀ {n} → n C′ 0 ≡ 1
--- nC′0≡1 {n} = lemma num≡dem
---   where
---   num≡dem : n ! ≡ (0 ! * (n ∸ 0) !)
---   num≡dem = sym (+-identityʳ (n !))
---   lemma : ∀ {num dem} .{dem≢0} → num ≡ dem → (num / dem) {dem≢0} ≡ 1
---   lemma {num} {_} {dem≢0} refl = n/n≡1 num {dem≢0}
-
--- -- 0C′n≡0 : ∀ {k} → 0 C′ k ≡ 0
--- -- 0C′n≡0 {k} = {!0/n≡0 (k ! * (0 ∸ k) !) {?}!}
-
--- -- lem : ∀ {n k} → n C k ≡ n C′ k
--- -- lem {n} {zero} = sym (nC′0≡1 {n})
--- -- lem {zero} {suc k} = {!refl!}
--- -- lem {suc n} {suc k} with lem {n} {k} | lem {n} {suc k}
--- -- ... | p₁ | p₂ = {!!}

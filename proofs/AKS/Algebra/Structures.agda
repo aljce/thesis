@@ -8,10 +8,10 @@ open import Data.Sum using (_⊎_)
 
 -- open import Function.Bijection using (_⤖_)
 
-module Prelude.Structures {a ℓ} (A : Set a) (_≈_ : Rel A ℓ) where
+module AKS.Algebra.Structures {a ℓ} (A : Set a) (_≈_ : Rel A ℓ) where
 
-open import Prelude.Nat using (ℕ; _<_)
-open import Prelude.Fin using (Fin)
+open import AKS.Nat using (ℕ; _<_)
+open import AKS.Fin using (Fin)
 
 open import Algebra.FunctionProperties using (Op₂; Op₁)
 open import Algebra.Structures _≈_ using (IsCommutativeRing)
