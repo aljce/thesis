@@ -1,10 +1,9 @@
 open import Function using (_$_; _∘_)
-open import Relation.Nullary using (¬_; Dec)
-open Dec
+open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Nullary.Decidable using (False)
 open import Relation.Binary
-  using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; IsPreorder; _Preserves₂_⟶_⟶_; Trichotomous; Tri)
+  using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; IsPreorder; _Preserves₂_⟶_⟶_; Trichotomous; Tri; Irrelevant)
 open Tri
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; trans; cong; resp₂; module ≡-Reasoning)
@@ -26,12 +25,20 @@ open Nat.Reflection using (∀⟨_⟩)
 
 module Prelude.Nat where
 
+open import Agda.Builtin.FromNat using (Number)
 open import Data.Nat using (ℕ; _+_; _∸_; _*_; _≟_) public
+open import Data.Nat.Literals using (number)
+open import Agda.Builtin.Nat using () renaming (mod-helper to modₕ)
 open import Data.Nat using (_<ᵇ_)
 open ℕ public
-open import Data.Nat.DivMod using (_/_; _%_; m≡m%n+[m/n]*n )
+open import Data.Nat.DivMod.Core using (a≤n⇒a[modₕ]n≡a)
+open import Data.Nat.DivMod using (_/_; _%_; m≡m%n+[m/n]*n)
 open import Data.Nat.Properties using (+-assoc; +-suc; +-comm; *-identityʳ; +-identityʳ; m+n≡0⇒m≡0; +-cancelʳ-≡; +-cancelˡ-≡; 1+n≢0)
 open import Data.Nat.Properties using (n∸n≡0; ∸-+-assoc; *-comm)
+
+instance
+  ℕ-number : Number ℕ
+  ℕ-number = number
 
 infix 4 _≤_
 record _≤_ (n : ℕ) (m : ℕ) : Set where
@@ -125,7 +132,6 @@ n ≯ m = m ≮ n
 n≮n : ∀ {n} → n ≮ n
 n≮n {n} (lte k n+1+k≡n) rewrite sym (+-suc n k) = 1+n≢0 (n+m≡n⇒m≡0 n+1+k≡n)
 
-
 <-irrefl : Irreflexive _≡_ _<_
 <-irrefl refl x<x = n≮n x<x
 
@@ -146,6 +152,9 @@ n≮0 ()
 
 suc-mono-< : ∀ {n m} → n < m → suc n < suc m
 suc-mono-< (lte k₁ refl) = lte k₁ refl
+
++-mono-< : _+_ Preserves₂ _<_ ⟶ _<_ ⟶ _<_
++-mono-< {x} {_} {u} (lte k refl) (lte m refl) = lte (suc (k + m)) (≡-erase (solveOver (x ∷ u ∷ k ∷ m ∷ []) Nat.ring))
 
 private
   a+b∸a≡b+[a∸a] : ∀ a b → a + b ∸ a ≡ b + (a ∸ a)
@@ -240,6 +249,12 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 ... | no  m≢n | yes m<n = tri< (<ᵇ⇒< m n m<n) m≢n (<⇒≯ (<ᵇ⇒< m n m<n))
 ... | no  m≢n | no  m≮n = tri> (m≮n ∘ <⇒<ᵇ m n) m≢n (≤∧≢⇒< (≮⇒≥ (m≮n ∘ <⇒<ᵇ m n)) (m≢n ∘ sym))
 
+open import Data.Nat.Properties using (+-cancelˡ-≡)
+
+<-irrelevant : Irrelevant _<_
+<-irrelevant {x} (lte k₁ 1+x+k₁≡y) (lte k₂ 1+x+k₂≡y) with +-cancelˡ-≡ (1 + x) (trans 1+x+k₁≡y (sym 1+x+k₂≡y))
+<-irrelevant {x} (lte k₁ refl) (lte .k₁ refl) | refl = refl
+
 record Euclidean (n : ℕ) (m : ℕ) : Set where
   constructor Euclidean✓
   field
@@ -248,15 +263,30 @@ record Euclidean (n : ℕ) (m : ℕ) : Set where
     division : n ≡ r + m * q
     r<m : r < m
 
-open import Prelude.Unsafe using (TODO)
+a[modₕ]n≤n : ∀ acc d n → modₕ acc (acc + n) d n ≤ acc + n
+a[modₕ]n≤n acc zero n = m≤m+n
+a[modₕ]n≤n acc (suc d) zero = a[modₕ]n≤n zero d (acc + 0)
+a[modₕ]n≤n acc (suc d) (suc n) rewrite +-suc acc n = a[modₕ]n≤n (suc acc) d n
+
+n%m<m : ∀ n m {≢0 : False (m ≟ 0)} → (n % m) {≢0} < m
+n%m<m n (suc m) = suc-mono-≤ (a[modₕ]n≤n 0 n m)
+
+n<m⇒n%m≡n : ∀ {n m} {≢0 : False (m ≟ 0)} → n < m → (n % m) {≢0} ≡ n
+n<m⇒n%m≡n {n} {suc m} (lte k refl) = a≤n⇒a[modₕ]n≡a 0 (n + k) n k
+
+0%m≡0 : ∀ {m} {≢0 : False (m ≟ 0)} → (0 % m) {≢0} ≡ 0
+0%m≡0 {suc m} = refl
 
 _div_ : ∀ n m {≢0 : False (m ≟ 0)} → Euclidean n m
-n div suc m = Euclidean✓ (n / suc m) (n % suc m) (≡-erase div-proof) (lte (suc m ∸ suc (n % suc m)) (rem-proof n m))
+n div suc m = Euclidean✓ (n / suc m) (n % suc m) (≡-erase div-proof) (n%m<m n (suc m))
   where
   div-proof : n ≡ n % suc m + suc m * (n / suc m)
   div-proof rewrite *-comm (suc m) (n / suc m) = m≡m%n+[m/n]*n n m
-  rem-proof : ∀ x y → suc (x % suc y) + (suc y ∸ suc (x % suc y)) ≡ suc y
-  rem-proof = TODO
+
+≢⇒¬≟ : ∀ {n m} → n ≢ m → False (n ≟ m)
+≢⇒¬≟ {n} {m} n≢m with n ≟ m
+... | yes n≡m = contradiction n≡m n≢m
+... | no _ = tt
 
 
 -- _C_ : ℕ → ℕ → ℕ
@@ -287,10 +317,6 @@ n div suc m = Euclidean✓ (n / suc m) (n % suc m) (≡-erase div-proof) (lte (s
 --   where
 --   open ≤-Reasoning
 
--- ≢⇒¬≟ : ∀ {n m} → n ≢ m → False (n ≟ m)
--- ≢⇒¬≟ {n} {m} n≢m with n ≟ m
--- ... | yes n≡m = contradiction n≡m n≢m
--- ... | no _ = tt
 
 -- _C′_ : ℕ → ℕ → ℕ
 -- n C′ k = (n ! / (k ! * (n ∸ k) !)) {≢⇒¬≟ den≢0}
