@@ -1,3 +1,4 @@
+open import Level using () renaming (_⊔_ to _⊔ˡ_)
 open import Algebra using (RawRing)
 
 module AKS.Polynomial.Base {c ℓ} (R : RawRing c ℓ) where
@@ -7,7 +8,7 @@ open import Data.Nat using (_⊔_)
 open import AKS.Nat using (ℕ)
 open ℕ
 
-open RawRing R using (0#; 1#; _+_; _*_; -_)
+open RawRing R using (0#; 1#; _+_; _*_; -_; _≈_)
   renaming (Carrier to C)
 
 _-_ : C → C → C
@@ -68,6 +69,28 @@ p *ᵖ 0ᵖ = 0ᵖ
 -ᵖ_ : Polynomial → Polynomial
 -ᵖ 0ᵖ = 0ᵖ
 -ᵖ (x +x∙ p) = (- x) +x∙ (-ᵖ p)
+
+infix 4 _≈ᵖ_
+record _≈ᵖ_ (p : Polynomial) (q : Polynomial) : Set (c ⊔ˡ ℓ) where
+  constructor ≈✓
+  field
+    ∀x[pₓ≈qₓ] : ∀ x → ⟦ p ⟧ x ≈ ⟦ q ⟧ x
+
+infix 4 _≈ⁱ_
+data _≈ⁱ_ : Polynomial → Polynomial → Set (c ⊔ˡ ℓ) where
+  0ᵖ≈ : 0ᵖ ≈ⁱ 0ᵖ
+  +ᵖ≈ : ∀ {k₁ k₂} {p q} → k₁ ≈ k₂ → p ≈ⁱ q → k₁ +x∙ p ≈ⁱ k₂ +x∙ q
+
++ᵖ-*ᵖ-rawRing : RawRing c (c ⊔ˡ ℓ)
++ᵖ-*ᵖ-rawRing = record
+  { Carrier = Polynomial
+  ; _≈_ = _≈ᵖ_
+  ; _+_ = _+ᵖ_
+  ; _*_ = _*ᵖ_
+  ; -_ = -ᵖ_
+  ; 0# = 0ᵖ
+  ; 1# = 1ᵖ
+  }
 
 -- 1 + x + x^2
 ex1 : Polynomial

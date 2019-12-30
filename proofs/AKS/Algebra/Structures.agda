@@ -56,8 +56,6 @@ record IsUniqueFactorizationDomain (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A
 
   open IsGCDDomain isGCDDomain public
 
-
-
 module _ (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) (∣_∣ : ∀ n {≉0 : n ≉ 0#} → ℕ) where
 
   record _<ᴬ_ (r : A) (m : A) {m≉0 : m ≉ 0#} : Set (a ⊔ ℓ) where
