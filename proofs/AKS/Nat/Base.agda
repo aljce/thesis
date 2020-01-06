@@ -1,5 +1,6 @@
 open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_)
+open import Relation.Nullary.Decidable using (False)
 
 module AKS.Nat.Base where
 
@@ -11,6 +12,28 @@ open import Data.Nat.Literals using (number)
 instance
   ℕ-number : Number ℕ
   ℕ-number = number
+
+data ℕ⁺ : Set where
+  ℕ+ : ℕ → ℕ⁺
+
+_+⁺_ : ℕ⁺ → ℕ⁺ → ℕ⁺
+ℕ+ n +⁺ ℕ+ m = ℕ+ (suc (n + m))
+
+_*⁺_ : ℕ⁺ → ℕ⁺ → ℕ⁺
+ℕ+ n *⁺ ℕ+ m = ℕ+ (n + m * (suc n))
+
+⟅_⇑⟆ : ∀ n {≢0 : False (n ≟ zero)} → ℕ⁺
+⟅ suc n ⇑⟆ = ℕ+ n
+
+⟅_⇓⟆ : ℕ⁺ → ℕ
+⟅ ℕ+ n ⇓⟆ = suc n
+
+instance
+  ℕ⁺-number : Number ℕ⁺
+  ℕ⁺-number = record
+    { Constraint = λ n → False (n ≟ zero)
+    ; fromNat = λ n {{≢0}} → ⟅ n ⇑⟆ {≢0}
+    }
 
 infix 4 _≤_
 record _≤_ (n : ℕ) (m : ℕ) : Set where

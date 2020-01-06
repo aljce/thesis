@@ -6,8 +6,9 @@ module AKS.Exponentiation {c ℓ} (M : CommutativeMonoid c ℓ) where
 
 open import AKS.Nat using (ℕ; _+_; _<_)
 open ℕ
+open import AKS.Nat using (ℕ⁺)
 open import AKS.Nat using (Acc; acc; <-well-founded)
-open import AKS.Binary using (2*; 𝔹; 𝔹⁺; ⟦_⇑⟧; ⟦_⇓⟧⁺; ⟦_⇓⟧; ℕ→𝔹→ℕ; ⌈log₂_⌉)
+open import AKS.Binary using (2*; 𝔹; 𝔹⁺; ⟦_⇑⟧; ⟦_⇓⟧; ⟦_⇑⟧⁺; ⟦_⇓⟧⁺; ℕ→𝔹→ℕ; ⌈log₂_⌉)
 open 𝔹
 open 𝔹⁺
 open CommutativeMonoid M
@@ -46,6 +47,9 @@ x ^ᵇ⁺ (b 1ᵇ) = x ∙ (x ∙ x) ^ᵇ⁺ b
 _^ᵇ_ : C → 𝔹 → C
 x ^ᵇ 𝕓0ᵇ = ε
 x ^ᵇ (+ b) = x ^ᵇ⁺ b
+
+_^⁺_ : C → ℕ⁺ → C
+x ^⁺ n = x ^ᵇ⁺ ⟦ n ⇑⟧⁺
 
 _^_ : C → ℕ → C
 x ^ n = x ^ᵇ ⟦ n ⇑⟧

@@ -1,10 +1,11 @@
+open import Level using (0ℓ)
 open import Function using (_$_; _∘_)
 
 open import Relation.Nullary using (yes; no)
 open import Relation.Nullary.Decidable using (False)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary
-  using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; IsPreorder; _Preserves₂_⟶_⟶_; Trichotomous; Tri; Irrelevant)
+  using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; Total; IsPreorder; IsPartialOrder; IsTotalOrder; TotalOrder; _Preserves₂_⟶_⟶_; Trichotomous; Tri; Irrelevant)
 open Tri
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; trans; cong; resp₂; module ≡-Reasoning)
@@ -50,13 +51,6 @@ open ℕ
 ≤-trans : Transitive _≤_
 ≤-trans {x} (lte k₁ refl) (lte k₂ refl) = lte (k₁ + k₂) (≡-erase ∀⟨ x ∷ k₁ ∷ k₂ ∷ [] ⟩)
 
-≤-isPreorder : IsPreorder _≡_ _≤_
-≤-isPreorder = record
- { isEquivalence = ≡-isEquivalence
- ; reflexive = λ { refl → ≤-refl }
- ; trans = ≤-trans
- }
-
 n+m≡n⇒m≡0 : ∀ {n m} → n + m ≡ n → m ≡ 0
 n+m≡n⇒m≡0 {n} {m} n+m≡n = m≡0
   where
@@ -98,8 +92,20 @@ m≤m+n {m} {n} = lte n refl
 ≤-erase : ∀ {n m} → n ≤ m → n ≤ m
 ≤-erase (lte k ≤-proof) = lte k (≡-erase ≤-proof)
 
+≤-isPreorder : IsPreorder _≡_ _≤_
+≤-isPreorder = record
+ { isEquivalence = ≡-isEquivalence
+ ; reflexive = λ { refl → ≤-refl }
+ ; trans = ≤-trans
+ }
 
------------- _≤_ --------------
+≤-isPartialOrder : IsPartialOrder _≡_ _≤_
+≤-isPartialOrder = record
+  { isPreorder = ≤-isPreorder
+  ; antisym    = ≤-antisym
+  }
+
+------------ _<_ --------------
 
 <-trans : Transitive _<_
 <-trans {x} (lte k₁ refl) (lte k₂ refl) = lte (suc (k₁ + k₂)) (≡-erase ∀⟨ x ∷ k₁ ∷ k₂ ∷ [] ⟩)
@@ -233,3 +239,20 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 <-irrelevant : Irrelevant _<_
 <-irrelevant {x} (lte k₁ 1+x+k₁≡y) (lte k₂ 1+x+k₂≡y) with +-cancelˡ-≡ (1 + x) (trans 1+x+k₁≡y (sym 1+x+k₂≡y))
 <-irrelevant {x} (lte k₁ refl) (lte .k₁ refl) | refl = refl
+
+≤-total : Total _≤_
+≤-total n m with <-cmp n m
+... | tri< n<m _ _  = inj₁ (<⇒≤ n<m)
+... | tri≈ _ refl _ = inj₁ ≤-refl
+... | tri> _ _ n>m  = inj₂ (<⇒≤ n>m)
+
+≤-isTotalOrder : IsTotalOrder _≡_ _≤_
+≤-isTotalOrder = record
+  { isPartialOrder = ≤-isPartialOrder
+  ; total          = ≤-total
+  }
+
+≤-totalOrder : TotalOrder 0ℓ 0ℓ 0ℓ
+≤-totalOrder = record { isTotalOrder = ≤-isTotalOrder }
+
+open import Algebra.Construct.NaturalChoice.Max ≤-totalOrder using (_⊔_) public

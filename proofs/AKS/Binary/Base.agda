@@ -12,6 +12,7 @@ open Nat.Reflection using (∀⟨_⟩)
 
 open import AKS.Nat using (ℕ; _+_; _*_; _≟_; _<_; lte; suc-mono-≤)
 open ℕ
+open import AKS.Nat using (ℕ⁺; ℕ+)
 open import AKS.Nat using (Euclidean; Euclidean✓; _div_)
 open import AKS.Nat using (Acc; acc; <-well-founded)
 
@@ -43,8 +44,8 @@ private
   lemma₂ : ∀ {q} → suc q < suc (suc (q + suc (q + zero)))
   lemma₂ {q} = lte (suc q) (∀⟨ q ∷ [] ⟩)
 
-⟦_⇑⟧⁺ : ∀ n {≢0 : False (n ≟ 0)} → 𝔹⁺
-⟦ n ⇑⟧⁺ {≢0} = ⟦ n ⇑ <-well-founded ⟧ʰ {≢0}
+⟦_⇑⟧⁺ : ℕ⁺ → 𝔹⁺
+⟦ ℕ+ n ⇑⟧⁺ = ⟦ suc n ⇑ <-well-founded ⟧ʰ
   where
   ⟦_⇑_⟧ʰ : ∀ n → Acc _<_ n → ∀ {≢0 : False (n ≟ 0)} → 𝔹⁺
   ⟦ suc n ⇑ acc downward ⟧ʰ with suc n div 2
@@ -54,7 +55,7 @@ private
 
 ⟦_⇑⟧ : ℕ → 𝔹
 ⟦ zero ⇑⟧ = 𝕓0ᵇ
-⟦ suc n ⇑⟧ = + ⟦ suc n ⇑⟧⁺
+⟦ suc n ⇑⟧ = + ⟦ ℕ+ n ⇑⟧⁺
 
 open import AKS.Nat.Properties using (+-identityʳ)
 open import Relation.Binary.PropositionalEquality using (cong₂; module ≡-Reasoning)

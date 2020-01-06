@@ -5,10 +5,10 @@ open import Relation.Binary.PropositionalEquality.WithK using (≡-erase)
 module AKS.Nat.Divisibility where
 
 open import Data.Nat.Divisibility using (_∣_) public
-open import Agda.Builtin.Nat using () renaming (mod-helper to modₕ)
+open import Agda.Builtin.Nat using () renaming (mod-helper to modₕ) public
 open import Data.Nat.DivMod using (_/_; _%_) public
 open import Data.Nat.DivMod.Core using (a≤n⇒a[modₕ]n≡a)
-open import Data.Nat.DivMod using (m≡m%n+[m/n]*n)
+open import Data.Nat.DivMod using () renaming (m≡m%n+[m/n]*n to div-lemma)
 
 open import AKS.Nat.Base using (ℕ; _+_; _*_; _≟_; lte; _≤_; _<_)
 open ℕ
@@ -38,12 +38,14 @@ record Euclidean (n : ℕ) (m : ℕ) : Set where
     division : n ≡ r + m * q
     r<m : r < m
 
+m≡m%n+[m/n]*n : ∀ m n {n≢0 : False (n ≟ 0)} → m ≡ (m % n) {n≢0} + (m / n) {n≢0} * n
+m≡m%n+[m/n]*n m (suc n) = div-lemma m n
+
 _div_ : ∀ n m {≢0 : False (m ≟ 0)} → Euclidean n m
 n div suc m = Euclidean✓ (n / suc m) (n % suc m) (≡-erase div-proof) (n%m<m n (suc m))
   where
   div-proof : n ≡ n % suc m + suc m * (n / suc m)
-  div-proof rewrite *-comm (suc m) (n / suc m) = m≡m%n+[m/n]*n n m
-
+  div-proof rewrite *-comm (suc m) (n / suc m) = m≡m%n+[m/n]*n n (suc m)
 
 
 

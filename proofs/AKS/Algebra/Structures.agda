@@ -1,37 +1,72 @@
-open import Level using (_⊔_; suc)
-open import Function using (_$_; _⤖_)
-open import Relation.Binary using (Rel; Setoid; IsEquivalence)
+open import Level using (_⊔_; suc; Lift; lift)
+open import Function using (_$_; _∘_; _⤖_)
+open import Relation.Nullary.Decidable using (False)
+open import Relation.Binary using (Rel; Decidable; Setoid; DecSetoid; IsEquivalence; IsDecEquivalence)
 
 open import Data.Empty using (⊥)
-open import Data.Product using (∃-syntax)
+open import Data.Product using (∃-syntax; _,_)
 open import Data.Sum using (_⊎_)
 
--- open import Function.Bijection using (_⤖_)
+module AKS.Algebra.Structures {c ℓ} (C : Set c) (_≈_ : Rel C ℓ) where
 
-module AKS.Algebra.Structures {a ℓ} (A : Set a) (_≈_ : Rel A ℓ) where
-
-open import AKS.Nat using (ℕ; _<_)
+open import Data.Unit using (⊤; tt)
+open import Agda.Builtin.FromNat using (Number)
+open import AKS.Nat using (ℕ; _<_; _≟_)
 open import AKS.Fin using (Fin)
 
 open import Algebra.FunctionProperties using (Op₂; Op₁)
-open import Algebra.Structures _≈_ using (IsCommutativeRing)
+open import Algebra.Structures _≈_ using (IsCommutativeRing; IsAbelianGroup)
 
-_≉_ : Rel A ℓ
+infix 4 _≉_
+_≉_ : Rel C ℓ
 x ≉ y = x ≈ y → ⊥
 
-record IsNonZeroCommutativeRing (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a ⊔ ℓ) where
+record IsNonZeroCommutativeRing (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) : Set (c ⊔ ℓ) where
   field
     0#≉1# : 0# ≉ 1#
     isCommutativeRing : IsCommutativeRing _+_ _*_ -_ 0# 1#
 
   open IsCommutativeRing isCommutativeRing public
+  open import Relation.Binary.Reasoning.Setoid setoid
+  open import Algebra.Properties.Ring (record { isRing = isRing }) using (-‿distribˡ-*; -‿involutive)
 
-record IsIntegralDomain (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a ⊔ ℓ) where
+  1#≉0# : 1# ≉ 0#
+  1#≉0# = 0#≉1# ∘ sym
+
+  0#≉-1# : 0# ≉ - 1#
+  0#≉-1# 0#≈-1# = 0#≉1# $ begin
+    0#              ≈⟨ sym (zeroʳ 0#) ⟩
+    0# * 0#         ≈⟨ *-cong 0#≈-1# 0#≈-1# ⟩
+    (- 1#) * (- 1#) ≈⟨ sym (-‿distribˡ-* 1# (- 1#)) ⟩
+    - (1# * (- 1#)) ≈⟨ -‿cong (*-identityˡ (- 1#)) ⟩
+    - (- 1#)        ≈⟨ -‿involutive 1# ⟩
+    1#              ∎
+
+  -1#≉0# : - 1# ≉ 0#
+  -1#≉0# = 0#≉-1# ∘ sym
+
+  C/0 : Set (c ⊔ ℓ)
+  C/0 = ∃[ x ] (x ≉ 0#)
+
+  fromNat : ℕ → C
+  fromNat ℕ.zero = 0#
+  fromNat (ℕ.suc ℕ.zero) = 1#
+  fromNat (ℕ.suc (ℕ.suc n)) = 1# + fromNat (ℕ.suc n)
+
+  instance
+    C-number : Number C
+    C-number = record
+      { Constraint = λ _ → Lift c ⊤
+      ; fromNat = λ n → fromNat n
+      }
+
+record IsIntegralDomain (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) : Set (c ⊔ ℓ) where
   field
     *-cancelˡ : ∀ x {y z} → x ≉ 0# → (x * y) ≈ (x * z) → y ≈ z
     isNonZeroCommutativeRing : IsNonZeroCommutativeRing _+_ _*_ -_ 0# 1#
 
   open IsNonZeroCommutativeRing isNonZeroCommutativeRing public
+  open import Relation.Binary.Reasoning.Setoid setoid
 
   *-cancelʳ : ∀ x {y z} → x ≉ 0# → (y * x) ≈ (z * x) → y ≈ z
   *-cancelʳ x {y} {z} x≉0 y*x≈z*x = *-cancelˡ x x≉0 $ begin
@@ -39,42 +74,52 @@ record IsIntegralDomain (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a 
     (y * x) ≈⟨ y*x≈z*x ⟩
     (z * x) ≈⟨ *-comm z x ⟩
     (x * z) ∎
-    where
-    open import Relation.Binary.Reasoning.Setoid setoid
 
-record IsGCDDomain (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a ⊔ ℓ) where
+  *≉0 : ∀ {c₁ c₂} → c₁ ≉ 0# → c₂ ≉ 0# → c₁ * c₂ ≉ 0#
+  *≉0 {c₁} {c₂} c₁≉0 c₂≉0 c₁*c₂≈0 = c₂≉0 $ *-cancelˡ c₁ c₁≉0 $ begin
+     (c₁ * c₂) ≈⟨ c₁*c₂≈0 ⟩
+     (0#)      ≈⟨ sym (zeroʳ c₁) ⟩
+     (c₁ * 0#) ∎
+
+  infixl 7 _*/0_
+  _*/0_ : C/0 → C/0 → C/0
+  (c₁ , c₁≉0) */0 (c₂ , c₂≉0) = c₁ * c₂ , *≉0 c₁≉0 c₂≉0
+
+module _ (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) where
+
+  record IsGCDDomain (gcd : Op₂ C) : Set (c ⊔ ℓ) where
+    field
+      isIntegralDomain : IsIntegralDomain _+_ _*_ -_ 0# 1#
+
+    open IsIntegralDomain isIntegralDomain public
+
+record IsUniqueFactorizationDomain (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) (gcd : Op₂ C) : Set (c ⊔ ℓ) where
   field
-    isIntegralDomain : IsIntegralDomain _+_ _*_ -_ 0# 1#
-    -- TODO define gcd
-
-  open IsIntegralDomain isIntegralDomain public
-
-record IsUniqueFactorizationDomain (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a ⊔ ℓ) where
-  field
-    isGCDDomain : IsGCDDomain _+_ _*_ -_ 0# 1#
+    isGCDDomain : IsGCDDomain _+_ _*_ -_ 0# 1# gcd
     -- TODO define factorization
 
   open IsGCDDomain isGCDDomain public
 
 module _
-  (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) (∣_∣ : ∀ n {n≉0 : n ≉ 0#} → ℕ)
-  (_div_ : ∀ (n m : A) {m≉0 : m ≉ 0#} → A) (_mod_ : ∀ (n m : A) {m≉0 : m ≉ 0#} → A)
+  (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) (∣_∣ : ∀ n {n≉0 : n ≉ 0#} → ℕ)
+  (_div_ : ∀ (n m : C) {m≉0 : m ≉ 0#} → C) (_mod_ : ∀ (n m : C) {m≉0 : m ≉ 0#} → C)
+  (gcd : Op₂ C)
   where
-  data Remainder (n : A) (m : A) {m≉0 : m ≉ 0#} : Set (a ⊔ ℓ) where
+  data Remainder (n : C) (m : C) {m≉0 : m ≉ 0#} : Set (c ⊔ ℓ) where
     0≈ : (r≈0 : (n mod m) {m≉0} ≈ 0#) → Remainder n m
     0≉ : (r≉0 : (n mod m) {m≉0} ≉ 0#) → ∣ n mod m ∣ {r≉0} < ∣ m ∣ {m≉0} → Remainder n m
 
-  record IsEuclideanDomain  : Set (a ⊔ ℓ) where
+  record IsEuclideanDomain : Set (c ⊔ ℓ) where
     field
       division : ∀ n m {m≉0 : m ≉ 0#} → n ≈ ((m * (n div m) {m≉0}) + (n mod m) {m≉0})
       modulus : ∀ n m {m≉0 : m ≉ 0#} → Remainder n m {m≉0}
-      isUniqueFactorizationDomain : IsUniqueFactorizationDomain _+_ _*_ -_ 0# 1#
+      isUniqueFactorizationDomain : IsUniqueFactorizationDomain _+_ _*_ -_ 0# 1# gcd
 
     open IsUniqueFactorizationDomain isUniqueFactorizationDomain public
 
-record IsField (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) (_/_ : ∀ (n m : A) {m≉0 : m ≉ 0#} → A) : Set (a ⊔ ℓ) where
+record IsField (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) (_/_ : ∀ (n m : C) {m≉0 : m ≉ 0#} → C) : Set (c ⊔ ℓ) where
   field
-    isEuclideanDomain : IsEuclideanDomain _+_ _*_ -_ 0# 1# (λ _ → 0) _/_ (λ _ _ → 0#)
+    isEuclideanDomain : IsEuclideanDomain _+_ _*_ -_ 0# 1# (λ _ → 0) _/_ (λ _ _ → 0#) (λ _ _ → 1#)
 
   open IsEuclideanDomain isEuclideanDomain public
   open import Relation.Binary.Reasoning.Setoid setoid
@@ -85,7 +130,15 @@ record IsField (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) (_/_ : ∀ (n m : 
     ((m * (n / m) {m≉0}) + 0#) ≈⟨ sym (division n m) ⟩
     n ∎
 
-  /-cong : ∀ {n₁ n₂} {m₁ m₂} {m₁≉0 : m₁ ≉ 0#} {m₂≉0 :  m₂ ≉ 0#} → n₁ ≈ n₂ → m₁ ≈ m₂ → (n₁ / m₁) {m₁≉0} ≈ (n₂ / m₂) {m₂≉0}
+  [n/m]*m≈n : ∀ n m {m≉0 : m ≉ 0#} → ((n / m) {m≉0} * m) ≈ n
+  [n/m]*m≈n n m {m≉0} = begin
+    ((n / m) * m) ≈⟨ *-comm (n / m) m ⟩
+    (m * (n / m)) ≈⟨ m*[n/m]≈n n m ⟩
+    n ∎
+
+  /-cong
+    : ∀ {n₁ n₂} {m₁ m₂} {m₁≉0 : m₁ ≉ 0#} {m₂≉0 :  m₂ ≉ 0#}
+    → n₁ ≈ n₂ → m₁ ≈ m₂ → (n₁ / m₁) {m₁≉0} ≈ (n₂ / m₂) {m₂≉0}
   /-cong {n₁} {n₂} {m₁} {m₂} {m₁≉0} {m₂≉0} n₁≈n₂ m₁≈m₂ = *-cancelˡ m₁ m₁≉0 $ begin
     (m₁ * (n₁ / m₁)) ≈⟨ m*[n/m]≈n n₁ m₁ ⟩
     n₁               ≈⟨ n₁≈n₂ ⟩
@@ -93,17 +146,15 @@ record IsField (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) (_/_ : ∀ (n m : 
     (m₂ * (n₂ / m₂)) ≈⟨ *-congʳ (sym m₁≈m₂) ⟩
     (m₁ * (n₂ / m₂)) ∎
 
-  _⁻¹ : ∀ x {x≉0 : x ≉ 0#} → A
+  infix 8 _⁻¹
+  _⁻¹ : ∀ x {x≉0 : x ≉ 0#} → C
   _⁻¹ x {x≉0} = (1# / x) {x≉0}
 
   ⁻¹-inverseʳ : ∀ x {x≉0 : x ≉ 0#} → (x * (x ⁻¹) {x≉0}) ≈ 1#
   ⁻¹-inverseʳ = m*[n/m]≈n 1#
 
   ⁻¹-inverseˡ : ∀ x {x≉0 : x ≉ 0#} → ((x ⁻¹) {x≉0} * x) ≈ 1#
-  ⁻¹-inverseˡ x {x≉0} = begin
-    ((x ⁻¹) {x≉0} * x) ≈⟨ *-comm (x ⁻¹) x ⟩
-    (x * (x ⁻¹) {x≉0}) ≈⟨ ⁻¹-inverseʳ x ⟩
-    1# ∎
+  ⁻¹-inverseˡ = [n/m]*m≈n 1#
 
   x⁻¹≉0 : ∀ x {x≉0 : x ≉ 0#} → (x ⁻¹) {x≉0} ≉ 0#
   x⁻¹≉0 x {x≉0} x⁻¹≈0 = 0#≉1# $ begin
@@ -119,16 +170,25 @@ record IsField (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) (_/_ : ∀ (n m : 
     (y * (y ⁻¹)) ≈⟨ *-congʳ (sym x≈y) ⟩
     (x * (y ⁻¹)) ∎
 
-record IsDecField (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) (_/_ : ∀ (n m : A) {m≉0 : m ≉ 0#} → A) : Set (a ⊔ ℓ) where
+record IsDecField
+  (_≈?_ : Decidable _≈_) (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C)
+  (_/_  : ∀ (n m : C) {m≉0 : m ≉ 0#} → C) : Set (c ⊔ ℓ) where
   field
     isField : IsField _+_ _*_ -_ 0# 1# _/_
 
   open IsField isField public
 
-record IsFiniteField (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) (_/_ : ∀ (n m : A) {m≉0 : m ≉ 0#} → A) : Set (suc a ⊔ ℓ) where
-  field
-    cardinality : ℕ
-    A↦Fin[cardinality] : A ⤖ Fin cardinality
-    isField : IsField _+_ _*_ -_ 0# 1# _/_
+  isDecEquivalence : IsDecEquivalence _≈_
+  isDecEquivalence = record
+    { isEquivalence = isEquivalence
+    ; _≟_ = _≈?_
+    }
 
-  open IsField isField public
+record IsFiniteField
+  (_≈?_ : Decidable _≈_) (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C)
+  (_/_  : ∀ (n m : C) {m≉0 : m ≉ 0#} → C) (cardinality : ℕ) : Set (suc c ⊔ ℓ) where
+  field
+    C↦Fin[cardinality] : C ⤖ Fin cardinality
+    isDecField : IsDecField _≈?_ _+_ _*_ -_ 0# 1# _/_
+
+  open IsDecField isDecField public
