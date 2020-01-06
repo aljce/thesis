@@ -1,9 +1,12 @@
+{-# OPTIONS --with-K #-}
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.PropositionalEquality.WithK using (≡-erase)
 
 -- acursed and unmentionable
 -- turn back traveller
-module Unsafe where
+module AKS.Unsafe where
+
+open import Relation.Binary.PropositionalEquality.TrustMe using (trustMe) public
 
 postulate
   TODO : ∀ {a} {A : Set a} → A
