@@ -40,6 +40,10 @@ open ℕ
 ... | yes n≡m = contradiction n≡m n≢m
 ... | no _ = tt
 
+¬≟⇒≢ : ∀ {n m} → False (n ≟ m) → n ≢ m
+¬≟⇒≢ {n} {m} ¬n≟m n≡m with n ≟ m
+... | no n≢m = contradiction n≡m n≢m
+
 ------------ _≤_ --------------
 
 0≤n : ∀ {n} → 0 ≤ n
@@ -256,3 +260,8 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 ≤-totalOrder = record { isTotalOrder = ≤-isTotalOrder }
 
 open import Algebra.Construct.NaturalChoice.Max ≤-totalOrder using (_⊔_) public
+
+n≢0∧m≢0⇒n*m≢0 : ∀ {n m} → n ≢ 0 → m ≢ 0 → n * m ≢ 0
+n≢0∧m≢0⇒n*m≢0 {zero} {m} n≢0 m≢0 = contradiction refl n≢0
+n≢0∧m≢0⇒n*m≢0 {suc n} {zero} n≢0 m≢0 = contradiction refl m≢0
+n≢0∧m≢0⇒n*m≢0 {suc n} {suc m} n≢0 m≢0 ()

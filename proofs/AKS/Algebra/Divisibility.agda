@@ -1,7 +1,9 @@
 open import Level using (_⊔_)
 open import Function using (_$_)
 
-open import Relation.Binary using (Reflexive; Transitive; Antisymmetric; _Respects₂_; _Respectsʳ_; _Respectsˡ_; Symmetric)
+open import Data.Empty using (⊥)
+
+open import Relation.Binary using (Rel; Reflexive; Transitive; Antisymmetric; _Respects₂_; _Respectsʳ_; _Respectsˡ_; Symmetric)
 
 open import Algebra.Bundles using (Semiring)
 
@@ -13,8 +15,9 @@ open import Relation.Binary.Reasoning.Setoid setoid
 open Semiring S using (+-congˡ; +-identityʳ)
 open Semiring S using (*-assoc; *-identityˡ; *-identityʳ; *-congˡ; zeroˡ; zeroʳ)
 open import Algebra.Core using (Op₂)
-open import Algebra.Definitions _≈_ using (Commutative)
+open import Algebra.Definitions _≈_ using (Commutative; Congruent₂; LeftCongruent; RightCongruent)
 
+infix 4 _∣_
 record _∣_ (d : C) (a : C) : Set (c ⊔ ℓ) where
   constructor divides
   field
@@ -62,6 +65,7 @@ n ∣0 = divides 0# (sym (zeroˡ n))
   q * 0# ≈⟨ zeroʳ q ⟩
   0#     ∎
 
+
 -- ∣-antisym : Antisymmetric _≈_ _∣_
 -- ∣-antisym {x} {y} (divides q₁ y≈q₁*x) (divides q₂ x≈q₂*y) = {!!}
 
@@ -74,9 +78,8 @@ record IsGCD (gcd : Op₂ C) : Set (c ⊔ ℓ) where
 module GCD {gcd : Op₂ C} (isGCD : IsGCD gcd) (∣-antisym : Antisymmetric _≈_ _∣_) where
   open IsGCD isGCD
 
-  infix 4 _⊥_
-  _⊥_ : C → C → Set ℓ
-  n ⊥ m = gcd n m ≈ 1#
+  ∣1⇒≈1 : ∀ {n} → n ∣ 1# → n ≈ 1#
+  ∣1⇒≈1 {n} n∣1 = ∣-antisym n∣1 (1∣ n)
 
   gcd[0,0]≈0 : gcd 0# 0# ≈ 0#
   gcd[0,0]≈0 = ∣-antisym (gcd 0# 0# ∣0) (gcd-greatest ∣-refl ∣-refl)
@@ -86,14 +89,86 @@ module GCD {gcd : Op₂ C} (isGCD : IsGCD gcd) (∣-antisym : Antisymmetric _≈
     (gcd-greatest (gcd[a,b]∣b a b) (gcd[a,b]∣a a b))
     (gcd-greatest (gcd[a,b]∣b b a) (gcd[a,b]∣a b a))
 
+  gcd[0,a]≈a : ∀ a → gcd 0# a ≈ a
+  gcd[0,a]≈a a = ∣-antisym (gcd[a,b]∣b 0# a) (gcd-greatest (a ∣0) ∣-refl)
+
+  gcd[a,0]≈a : ∀ a → gcd a 0# ≈ a
+  gcd[a,0]≈a a = ∣-antisym (gcd[a,b]∣a a 0#) (gcd-greatest ∣-refl (a ∣0))
+
+  gcd[0,a]≈1⇒a≈1 : ∀ a → gcd 0# a ≈ 1# → a ≈ 1#
+  gcd[0,a]≈1⇒a≈1 a gcd[0,a]≈1 = ∣1⇒≈1 (∣-respʳ gcd[0,a]≈1 (gcd-greatest (a ∣0) ∣-refl))
+
+  gcd[a,0]≈1⇒a≈1 : ∀ a → gcd a 0# ≈ 1# → a ≈ 1#
+  gcd[a,0]≈1⇒a≈1 a gcd[a,0]≈1 = ∣1⇒≈1 (∣-respʳ gcd[a,0]≈1 (gcd-greatest ∣-refl (a ∣0)))
+
   gcd[a,b]≈0⇒a≈0 : ∀ {a b} → gcd a b ≈ 0# → a ≈ 0#
   gcd[a,b]≈0⇒a≈0 {a} {b} gcd[a,b]≈0 = 0∣n⇒n≈0 (∣-respˡ gcd[a,b]≈0 (gcd[a,b]∣a a b))
 
   gcd[a,b]≈0⇒b≈0 : ∀ {a b} → gcd a b ≈ 0# → b ≈ 0#
   gcd[a,b]≈0⇒b≈0 {a} {b} gcd[a,b]≈0 = 0∣n⇒n≈0 (∣-respˡ gcd[a,b]≈0 (gcd[a,b]∣b a b))
 
-  -- gcd[a,b]≢0 : ∀ a b → a ≉ 0 ⊎ b ≉ 0 → gcd a b ≉ 0
-  -- gcd[a,b]≢0 a b e = ?
+  gcd[a,1]≈1 : ∀ a → gcd a 1# ≈ 1#
+  gcd[a,1]≈1 a = ∣-antisym (gcd[a,b]∣b a 1#) (gcd-greatest (1∣ a) ∣-refl)
+
+  gcd[1,a]≈1 : ∀ a → gcd 1# a ≈ 1#
+  gcd[1,a]≈1 a = ∣-antisym (gcd[a,b]∣a 1# a) (gcd-greatest ∣-refl (1∣ a))
+
+  -- ∣n⇒∣m*n : ∀ i n m → i ∣ n → i ∣ m * n
+  -- ∣n⇒∣m*n = {!!}
+
+  -- gcd[d*a,d*b]≈d*gcd[a,b] : ∀ a b d → gcd (d * a) (d * b) ≈ d * gcd a b
+  -- gcd[d*a,d*b]≈d*gcd[a,b] a b d = ∣-antisym
+  --   ({!!})
+  --   (gcd-greatest {!!} {!!})
+
+  infix 4 _≉_
+  _≉_ : Rel C ℓ
+  x ≉ y = x ≈ y → ⊥
+
+  a≉0⇒gcd[a,b]≉0 : ∀ a b → a ≉ 0# → gcd a b ≉ 0#
+  a≉0⇒gcd[a,b]≉0 a b a≉0 gcd[a,b]≈0 = a≉0 (gcd[a,b]≈0⇒a≈0 gcd[a,b]≈0)
+
+  b≉0⇒gcd[a,b]≉0 : ∀ a b → b ≉ 0# → gcd a b ≉ 0#
+  b≉0⇒gcd[a,b]≉0 a b b≉0 gcd[a,b]≈0 = b≉0 (gcd[a,b]≈0⇒b≈0 gcd[a,b]≈0)
+
+  gcd-cong : Congruent₂ gcd
+  gcd-cong {a} {b} {c} {d} a≈b c≈d = ∣-antisym
+    (gcd-greatest (∣-respʳ a≈b (gcd[a,b]∣a a c)) (∣-respʳ c≈d (gcd[a,b]∣b a c)))
+    (gcd-greatest (∣-respʳ (sym a≈b) (gcd[a,b]∣a b d)) (∣-respʳ (sym c≈d) (gcd[a,b]∣b b d)))
+
+  gcd-congˡ : LeftCongruent gcd
+  gcd-congˡ c≈d = gcd-cong refl c≈d
+
+  gcd-congʳ : RightCongruent gcd
+  gcd-congʳ a≈b = gcd-cong a≈b refl
+
+  infix 4 _⊥_
+  _⊥_ : C → C → Set ℓ
+  n ⊥ m = gcd n m ≈ 1#
+
+  -- ⊥-refl : Reflexive _⊥_
+  -- ⊥-refl = {!!}
+
+  ⊥-sym : Symmetric _⊥_
+  ⊥-sym {x} {y} gcd[x,y]≡1 = begin
+    gcd y x ≈⟨ gcd-comm y x ⟩
+    gcd x y ≈⟨ gcd[x,y]≡1 ⟩
+    1# ∎
+
+  ⊥-respʳ : _⊥_ Respectsʳ _≈_
+  ⊥-respʳ {y} {x₁} {x₂} x₁≈x₂ gcd[y,x₁]≈1 = begin
+    gcd y x₂ ≈⟨ gcd-congˡ (sym x₁≈x₂) ⟩
+    gcd y x₁ ≈⟨ gcd[y,x₁]≈1 ⟩
+    1# ∎
+
+  ⊥-respˡ : _⊥_ Respectsˡ _≈_
+  ⊥-respˡ {y} {x₁} {x₂} x₁≈x₂ gcd[x₁,y]≈1 = begin
+    gcd x₂ y ≈⟨ gcd-congʳ (sym x₁≈x₂) ⟩
+    gcd x₁ y ≈⟨ gcd[x₁,y]≈1 ⟩
+    1# ∎
+
+  ⊥-resp : _⊥_ Respects₂ _≈_
+  ⊥-resp = ⊥-respʳ , ⊥-respˡ
 
   data Identity (d : C) (a : C) (b : C) : Set (c ⊔ ℓ) where
     +ʳ : ∀ (x y : C) → d + x * a ≈ y * b → Identity d a b

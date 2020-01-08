@@ -11,11 +11,11 @@ open ≡-Reasoning
 
 module AKS.Nat.GCD where
 
-open import AKS.Nat.Base using (ℕ; _+_; _*_; zero; suc; _<_; _≟_; _∸_)
+open import AKS.Nat.Base using (ℕ; _+_; _*_; zero; suc; _<_; lte; _≟_; _∸_)
 open import AKS.Nat.Divisibility using (modₕ; _/_; _%_; n%m<m; m≡m%n+[m/n]*n)
 open import AKS.Nat.WellFounded using (Acc; acc; <-well-founded)
-open import AKS.Nat.Properties using (≢⇒¬≟; <-irrefl; 0<1+n)
-open import Data.Nat.Properties using (*-+-semiring; *-zeroʳ; *-distribʳ-+; *-distribˡ-+; +-assoc; *-assoc)
+open import AKS.Nat.Properties using (≢⇒¬≟; <-irrefl; 0<1+n; ≤-antisym)
+open import Data.Nat.Properties using (*-+-semiring; *-zeroʳ; *-zeroˡ; *-distribʳ-+; *-distribˡ-+; +-assoc; *-assoc)
 open import AKS.Algebra.Divisibility *-+-semiring using (_∣_; divides; ∣-refl; ∣-trans; _∣0; 0∣n⇒n≈0; IsGCD; module GCD)
 
 open import Polynomial.Simple.Reflection using (solve)
@@ -71,11 +71,25 @@ gcd-isGCD = record
   ; gcd-greatest = gcd-greatest
   }
 
-open import AKS.Unsafe using (TODO)
 ∣-antisym : Antisymmetric _≡_ _∣_
-∣-antisym = TODO
+∣-antisym {x} {y} (divides zero refl) (divides q₂ refl) = *-zeroʳ q₂
+∣-antisym {x} {y} (divides (suc q₁) refl) (divides zero refl) = sym (*-zeroʳ (suc q₁))
+∣-antisym {x} {y} (divides (suc q₁) pf₁) (divides (suc q₂) pf₂) = ≤-antisym (lte (q₁ * x) (sym pf₁)) (lte (q₂ * y) (sym pf₂))
 
-open GCD gcd-isGCD ∣-antisym using (Bézout; lemma; Identity; +ˡ; +ʳ; identity-base)
+open GCD gcd-isGCD ∣-antisym
+  using
+    ( Bézout; lemma; Identity; +ˡ; +ʳ; identity-base
+    ; _⊥_; ⊥-sym; ⊥-respˡ; ⊥-respʳ
+    ) public
+  renaming
+    ( gcd[a,1]≈1 to gcd[a,1]≡1
+    ; a≉0⇒gcd[a,b]≉0 to a≢0⇒gcd[a,b]≢0
+    ; b≉0⇒gcd[a,b]≉0 to b≢0⇒gcd[a,b]≢0
+    ; gcd[0,a]≈a to gcd[0,a]≡a
+    ; gcd[a,0]≈a to gcd[a,0]≡a
+    ; gcd[0,a]≈1⇒a≈1 to gcd[0,a]≡1⇒a≡1
+    ; gcd[a,0]≈1⇒a≈1 to gcd[a,0]≡1⇒a≡1
+    ) public
 
 data Bézoutₕ (a : ℕ) (b : ℕ) (rec : Acc _<_ b) : Set where
   lemmaₕ : ∀ d → gcdₕ a b rec ≡ d → Identity d a b → Bézoutₕ a b rec
