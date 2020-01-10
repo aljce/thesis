@@ -16,6 +16,7 @@ open import AKS.Fin using (Fin)
 
 open import Algebra.FunctionProperties using (Op₂; Op₁)
 open import Algebra.Structures _≈_ using (IsCommutativeRing; IsAbelianGroup)
+open import AKS.Algebra.Divisibility using (IsGCD)
 
 infix 4 _≉_
 _≉_ : Rel C ℓ
@@ -23,8 +24,8 @@ x ≉ y = x ≈ y → ⊥
 
 record IsNonZeroCommutativeRing (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) : Set (c ⊔ ℓ) where
   field
-    0#≉1# : 0# ≉ 1#
     isCommutativeRing : IsCommutativeRing _+_ _*_ -_ 0# 1#
+    0#≉1# : 0# ≉ 1#
 
   open IsCommutativeRing isCommutativeRing public
   open import Relation.Binary.Reasoning.Setoid setoid
@@ -62,8 +63,8 @@ record IsNonZeroCommutativeRing (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) :
 
 record IsIntegralDomain (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) : Set (c ⊔ ℓ) where
   field
-    *-cancelˡ : ∀ x {y z} → x ≉ 0# → (x * y) ≈ (x * z) → y ≈ z
     isNonZeroCommutativeRing : IsNonZeroCommutativeRing _+_ _*_ -_ 0# 1#
+    *-cancelˡ : ∀ x {y z} → x ≉ 0# → (x * y) ≈ (x * z) → y ≈ z
 
   open IsNonZeroCommutativeRing isNonZeroCommutativeRing public
   open import Relation.Binary.Reasoning.Setoid setoid
@@ -90,6 +91,7 @@ module _ (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) where
   record IsGCDDomain (gcd : Op₂ C) : Set (c ⊔ ℓ) where
     field
       isIntegralDomain : IsIntegralDomain _+_ _*_ -_ 0# 1#
+      -- gcd-isGCD : IsGCD {!!} gcd
 
     open IsIntegralDomain isIntegralDomain public
 
@@ -111,9 +113,9 @@ module _
 
   record IsEuclideanDomain : Set (c ⊔ ℓ) where
     field
+      isUniqueFactorizationDomain : IsUniqueFactorizationDomain _+_ _*_ -_ 0# 1# gcd
       division : ∀ n m {m≉0 : m ≉ 0#} → n ≈ ((m * (n div m) {m≉0}) + (n mod m) {m≉0})
       modulus : ∀ n m {m≉0 : m ≉ 0#} → Remainder n m {m≉0}
-      isUniqueFactorizationDomain : IsUniqueFactorizationDomain _+_ _*_ -_ 0# 1# gcd
 
     open IsUniqueFactorizationDomain isUniqueFactorizationDomain public
 
@@ -188,7 +190,7 @@ record IsFiniteField
   (_≈?_ : Decidable _≈_) (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C)
   (_/_  : ∀ (n m : C) {m≉0 : m ≉ 0#} → C) (cardinality : ℕ) : Set (suc c ⊔ ℓ) where
   field
-    C↦Fin[cardinality] : C ⤖ Fin cardinality
     isDecField : IsDecField _≈?_ _+_ _*_ -_ 0# 1# _/_
+    C↦Fin[cardinality] : C ⤖ Fin cardinality
 
   open IsDecField isDecField public

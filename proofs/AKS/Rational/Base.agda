@@ -105,10 +105,12 @@ _/_ p q {q≢0}= p * (q ⁻¹) {q≢0}
 
 _≟_ : Decidable {A = ℚ} _≡_
 (ℚ✓ num₁ (suc den₁) tt num₁⊥den₁) ≟ (ℚ✓ num₂ (suc den₂) tt num₂⊥den₂)
-  = map (FE.equivalence forward (λ { refl → refl , refl })) (num₁ ≟ℤ num₂ ×-dec den₁ ≟ℕ den₂)
+  = map (FE.equivalence forward backward) (num₁ ≟ℤ num₂ ×-dec den₁ ≟ℕ den₂)
   where
   forward : ∀ {num₁ num₂} {den₁ den₂} {num₁⊥den₁ num₂⊥den₂} → num₁ ≡ num₂ × den₁ ≡ den₂ → ℚ✓ num₁ (suc den₁) tt num₁⊥den₁ ≡ ℚ✓ num₂ (suc den₂) tt num₂⊥den₂
   forward {num₁} {num₂} {den₁} {den₂} {num₁⊥den₁} {num₂⊥den₂} (refl , refl) = cong (λ pf → ℚ✓ num₁ (suc den₁) tt pf) (≡-irrelevant num₁⊥den₁ num₂⊥den₂)
+  backward : ∀ {num₁ num₂} {den₁ den₂} {num₁⊥den₁ num₂⊥den₂} → ℚ✓ num₁ (suc den₁) tt num₁⊥den₁ ≡ ℚ✓ num₂ (suc den₂) tt num₂⊥den₂ → num₁ ≡ num₂ × den₁ ≡ den₂
+  backward refl = (refl , refl)
 
 ≢0 : ∀ {p : ℚ} {p≢0 : False (p ≟ 0)} → p ≢ 0
 ≢0 {p} with p ≟ 0
