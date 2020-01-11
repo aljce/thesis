@@ -1,4 +1,7 @@
+open import Level using (0ℓ)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; cong; cong₂; isEquivalence; setoid)
+open import Relation.Binary.PropositionalEquality.WithK using (≡-irrelevant)
+
 
 open import Data.Unit using (⊤; tt)
 open import Agda.Builtin.FromNat using (Number)
@@ -7,7 +10,7 @@ open import Data.Product using (_,_)
 
 module AKS.Rational.Properties where
 
-open import AKS.Rational.Base using (ℚ; _+_; _*_; -_; _/_)
+open import AKS.Rational.Base using (ℚ; _+_; _*_; -_; _/_; _≟_)
 
 open import Algebra.Structures {A = ℚ} _≡_ using
   ( IsCommutativeRing; IsRing; IsAbelianGroup
@@ -18,10 +21,11 @@ open import Algebra.Definitions {A = ℚ} _≡_ using
   ; RightIdentity; LeftIdentity; Identity; Associative; Commutative
   ; RightInverse; LeftInverse; Inverse
   )
-open import AKS.Algebra.Structures ℚ _≡_ using (IsNonZeroCommutativeRing; IsIntegralDomain; IsGCDDomain)
+open import AKS.Algebra.Structures ℚ _≡_ using (IsNonZeroCommutativeRing; IsIntegralDomain; IsGCDDomain; IsDecField)
 open import Algebra.Bundles using (Ring; CommutativeRing)
+open import AKS.Algebra.Bundles using (IntegralDomain; DecField)
 
-open import AKS.Unsafe using (BOTTOM)
+open import AKS.Unsafe using (BOTTOM; ≢-irrelevant)
 
 +-isMagma : IsMagma _+_
 +-isMagma = record
@@ -150,11 +154,20 @@ open import Algebra.FunctionProperties.Consequences.Propositional using (comm+id
   ; *-cancelˡ = *-cancelˡ
   }
 
-/-division : ∀ x y {y≢0} → (x / y) {y≢0} * y ≡ x
-/-division = BOTTOM
++-*-integralDomain : IntegralDomain 0ℓ 0ℓ
++-*-integralDomain = record { isIntegralDomain = +-*-isIntegralDomain }
 
-gcd : ℚ → ℚ → ℚ
-gcd = BOTTOM
+/-inverse : ∀ x y {y≢0} → x ≡ y * (x / y) {y≢0}
+/-inverse x y {y≢0} = BOTTOM
 
-+-*-isGCDDomain : IsGCDDomain _+_ _*_ -_ 0 1 gcd
-+-*-isGCDDomain = {!!}
+open import AKS.Algebra.Consequences +-*-integralDomain using (module Inverse⇒Field)
+
+open Inverse⇒Field _≟_ ≡-irrelevant ≢-irrelevant _/_ /-inverse
+  using (gcd)
+  renaming (isField to +-*-/-isField; [field] to +-*-/-field) public
+
++-*-/-isDecField : IsDecField _≟_ _+_ _*_ -_ 0 1 _/_ gcd
++-*-/-isDecField = record { isField = +-*-/-isField }
+
++-*-/-decField : DecField 0ℓ 0ℓ
++-*-/-decField = record { isDecField = +-*-/-isDecField }

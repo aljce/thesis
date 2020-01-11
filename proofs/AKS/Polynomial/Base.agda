@@ -111,8 +111,8 @@ _+ᵖ_ : Polynomial → Polynomial → Polynomial
 (x^ n₁ ∙ p) +ᵖ 0ᵖ = x^ n₁ ∙ p
 (x^ n₁ ∙ p) +ᵖ (x^ n₂ ∙ q) = +-spine n₁ p n₂ q
 
-𝑋 : Polynomial
-𝑋 = x^ 1 ∙ K (1# , 1#≉0#)
+𝑋^_ : ℕ → Polynomial
+𝑋^ n = x^ n ∙ K (1# , 1#≉0#)
 
 ∙ᵖ-spine : C/0 → Spine → Spine
 ∙ᵖ-spine c₁ (K c₂) = K (c₁ */0 c₂)
@@ -177,6 +177,15 @@ data _≈ⁱ_ : Polynomial → Polynomial → Set (c ⊔ˡ ℓ) where
   ; 1# = 1ᵖ
   }
 
--- 1 + x + x^2
-ex2 : Polynomial
-ex2 = 1ᵖ +ᵖ 𝑋 +ᵖ 𝑋 *ᵖ 𝑋
+open import Data.String using (String; _++_)
+open import Data.Nat.Show using () renaming (show to show-ℕ)
+
+show-Polynomial : (C → String) → Polynomial → String
+show-Polynomial show-c 0ᵖ = "0"
+show-Polynomial show-c (x^ n ∙ p) = loop n p
+  where
+  loop : ℕ → Spine → String
+  loop zero (K c) = show-c (proj₁ c)
+  loop zero (c +x^ n ∙ p) = show-c (proj₁ c) ++ " + " ++ loop ⟅ n ⇓⟆ p
+  loop (suc n) (K c) = show-c (proj₁ c) ++ " * X^" ++ show-ℕ (suc n)
+  loop (suc n) (c +x^ m ∙ p) = show-c (proj₁ c) ++ " * X^" ++ show-ℕ (suc n) ++ " + " ++ loop (suc n +ℕ ⟅ m ⇓⟆) p

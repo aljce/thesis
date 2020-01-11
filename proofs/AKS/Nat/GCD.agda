@@ -11,12 +11,10 @@ open import AKS.Nat.Base using (ℕ; _+_; _*_; zero; suc; _<_; lte; _≟_; _∸_
 open import AKS.Nat.Properties using (≢⇒¬≟; ≤-antisym)
 open import AKS.Nat.Divisibility using (modₕ; _/_; _%_; n%m<m; m≡m%n+[m/n]*n)
 open import Data.Nat.Properties using (*-+-commutativeSemiring; *-zeroʳ; +-comm; *-comm)
+open import AKS.Algebra.Structures ℕ _≡_ using (module Modulus)
 open import AKS.Algebra.Divisibility *-+-commutativeSemiring public
 
-open import AKS.Unsafe using (TODO; fun-ext)
-
-≢-irrelevant : Irrelevant {A = ℕ} _≢_
-≢-irrelevant {x} {y} [x≉y]₁ [x≉y]₂ = fun-ext (λ x≈y → contradiction x≈y [x≉y]₁)
+open import AKS.Unsafe using (TODO; ≢-irrelevant)
 
 ∣-antisym : Antisymmetric _≡_ _∣_
 ∣-antisym {x} {y} (divides zero refl) (divides q₂ refl) = *-zeroʳ q₂
@@ -40,7 +38,9 @@ division n m {m≢0} = begin
   (n / m) * m + (n % m)                 ≡⟨ cong (λ t → t + (n % m) {≢⇒¬≟ m≢0}) (*-comm (n / m) m) ⟩
   m * (n div m) {m≢0} + (n mod m) {m≢0} ∎
 
-modulus : ∀ n m {m≢0} → Remainder ∣_∣ _div_ _mod_ n m {m≢0}
+open Modulus 0 ∣_∣ _mod_
+
+modulus : ∀ n m {m≢0} → Remainder n m {m≢0}
 modulus n m {m≢0} with (n mod m) {m≢0} ≟ 0
 ... | yes r≡0 = 0≈ r≡0
 ... | no  r≢0 = 0≉ r≢0 (n%m<m n m)
@@ -51,11 +51,12 @@ mod-cong refl refl {y₁≢0} {y₂≢0} rewrite ≢-irrelevant y₁≢0 y₂≢
 mod-distribʳ-* : ∀ c a b {b≢0} {b*c≢0} → ((a * c) mod (b * c)) {b*c≢0} ≡ (a mod b) {b≢0} * c
 mod-distribʳ-* c a b {b≢0} {b*c≢0} = TODO
 
-open Euclidean (λ n → n) _div_ _mod_ _≟_ ≡-irrelevant ≢-irrelevant ∣-antisym division modulus mod-cong mod-distribʳ-*
+open Euclidean (λ n → n) _div_ _mod_ _≟_ ≡-irrelevant ≢-irrelevant division modulus mod-cong mod-distribʳ-*
+  using (gcd; gcd-isGCD; Identity; +ʳ; +ˡ; Bézout; lemma; bézout) public
+
+open GCD gcd-isGCD ∣-antisym
   using
     ( _⊥_; ⊥-sym; ⊥-respˡ; ⊥-respʳ
-    ; gcd; gcd-isGCD
-    ; Identity; +ʳ; +ˡ; Bézout; lemma; bézout
     ) public
   renaming
     ( gcd[a,1]≈1 to gcd[a,1]≡1

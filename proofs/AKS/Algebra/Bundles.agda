@@ -207,7 +207,8 @@ record EuclideanDomain a ℓ : Set (suc (a ⊔ ℓ)) where
     gcd   : Op₂ Carrier
     isEuclideanDomain : IsEuclideanDomain Carrier _≈_ _+_ _*_ -_ 0# 1# ∣_∣ _div_ _mod_ gcd
 
-  open import AKS.Algebra.Structures Carrier _≈_ using (Remainder; 0≈; 0≉)
+  open import AKS.Algebra.Structures Carrier _≈_ using (module Modulus)
+  open Modulus 0# ∣_∣ _mod_ using (Remainder; 0≈; 0≉)
   open IsEuclideanDomain isEuclideanDomain using
     ( isUniqueFactorizationDomain
     ; division; modulus
@@ -252,7 +253,8 @@ record Field a ℓ : Set (suc (a ⊔ ℓ)) where
     0#      : Carrier
     1#      : Carrier
     _/_     : ∀ (n m : Carrier) {m≉0 : m ≉ 0#} → Carrier
-    isField : IsField Carrier _≈_ _+_ _*_ -_ 0# 1# _/_
+    gcd     : Op₂ Carrier
+    isField : IsField Carrier _≈_ _+_ _*_ -_ 0# 1# _/_ gcd
 
   open IsField isField using
     ( isEuclideanDomain
@@ -302,7 +304,8 @@ record DecField a ℓ : Set (suc (a ⊔ ℓ)) where
     0#      : Carrier
     1#      : Carrier
     _/_     : ∀ (n m : Carrier) {m≉0 : m ≉ 0#} → Carrier
-    isDecField : IsDecField Carrier _≈_ _≈?_ _+_ _*_ -_ 0# 1# _/_
+    gcd     : Op₂ Carrier
+    isDecField : IsDecField Carrier _≈_ _≈?_ _+_ _*_ -_ 0# 1# _/_ gcd
 
   open IsDecField isDecField using (isField; isDecEquivalence) public
 
@@ -353,8 +356,9 @@ record FiniteField a ℓ : Set (suc (a ⊔ ℓ)) where
     0#   : Carrier
     1#   : Carrier
     _/_  : ∀ (n m : Carrier) {m≉0 : m ≉ 0#} → Carrier
+    gcd  : Op₂ Carrier
     cardinality   : ℕ
-    isFiniteField : IsFiniteField Carrier _≈_ _≈?_ _+_ _*_ -_ 0# 1# _/_ cardinality
+    isFiniteField : IsFiniteField Carrier _≈_ _≈?_ _+_ _*_ -_ 0# 1# _/_ gcd cardinality
 
   open IsFiniteField isFiniteField using (isDecField) public
 

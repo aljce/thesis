@@ -25,16 +25,12 @@ open CommutativeSemiring S using (*-assoc; *-identityˡ; *-identityʳ; *-congˡ;
 open import Algebra.Core using (Op₂)
 open import Algebra.Definitions _≈_ using (Commutative; Congruent₂; LeftCongruent; RightCongruent)
 
+open import AKS.Algebra.Structures C _≈_ using (module Divisibility; module Modulus)
+open Divisibility _*_ using (_∣_; divides; IsGCD) public
+
 infix 4 _≉_
 _≉_ : Rel C ℓ
 x ≉ y = x ≈ y → ⊥
-
-infix 4 _∣_
-record _∣_ (d : C) (a : C) : Set (c ⊔ ℓ) where
-  constructor divides
-  field
-    quotient : C
-    equality : a ≈ (quotient * d)
 
 ∣-refl : Reflexive _∣_
 ∣-refl {x} = divides 1# (sym (*-identityˡ x))
@@ -83,12 +79,6 @@ n ∣0 = divides 0# (sym (zeroˡ n))
 
 ∣n⇒∣n*m : ∀ i n m → i ∣ n → i ∣ n * m
 ∣n⇒∣n*m i n m i∣n = ∣-respʳ (*-comm m n) (∣n⇒∣m*n i n m i∣n)
-
-record IsGCD (gcd : Op₂ C) : Set (c ⊔ ℓ) where
-  field
-    gcd[a,b]∣a : ∀ a b → gcd a b ∣ a
-    gcd[a,b]∣b : ∀ a b → gcd a b ∣ b
-    gcd-greatest : ∀ {c a b} → c ∣ a → c ∣ b → c ∣ gcd a b
 
 module GCD {gcd : Op₂ C} (isGCD : IsGCD gcd) (∣-antisym : Antisymmetric _≈_ _∣_) where
   open IsGCD isGCD
@@ -176,33 +166,20 @@ module GCD {gcd : Op₂ C} (isGCD : IsGCD gcd) (∣-antisym : Antisymmetric _≈
 
 module _
   (∣_∣ : ∀ n {n≉0 : n ≉ 0#} → ℕ)
-  (_div_ : ∀ (n m : C) {m≉0 : m ≉ 0#} → C) (_mod_ : ∀ (n m : C) {m≉0 : m ≉ 0#} → C)
+  (_div_ : ∀ (n m : C) {m≉0 : m ≉ 0#} → C)
+  (_mod_ : ∀ (n m : C) {m≉0 : m ≉ 0#} → C)
   where
-
-  data Remainder (n : C) (m : C) {m≉0 : m ≉ 0#} : Set (c ⊔ ℓ) where
-    0≈ : (r≈0 : (n mod m) {m≉0} ≈ 0#) → Remainder n m
-    0≉ : (r≉0 : (n mod m) {m≉0} ≉ 0#) → ∣ n mod m ∣ {r≉0} < ∣ m ∣ {m≉0} → Remainder n m
+  open Modulus 0# ∣_∣ _mod_
 
   module Euclidean
     (_≈?_ : Decidable _≈_)
     (≈-irrelevant : Irrelevant _≈_)
     (≉-irrelevant : Irrelevant _≉_)
-    (∣-antisym : Antisymmetric _≈_ _∣_)
     (division : ∀ n m {m≉0 : m ≉ 0#} → n ≈ m * (n div m) {m≉0} + (n mod m) {m≉0})
     (modulus : ∀ n m {m≉0 : m ≉ 0#} → Remainder n m {m≉0})
     (mod-cong : ∀ {x₁ x₂} {y₁ y₂} → x₁ ≈ x₂ → y₁ ≈ y₂ → ∀ {y₁≉0 y₂≉0} → (x₁ mod y₁) {y₁≉0} ≈ (x₂ mod y₂) {y₂≉0})
     (mod-distribʳ-* : ∀ c a b {b≉0} {b*c≉0} → ((a * c) mod (b * c)) {b*c≉0} ≈ (a mod b) {b≉0} * c)
     where
-
-    -- ∣-antisym : Antisymmetric _≈_ _∣_
-    -- ∣-antisym {x} {y} (divides q₁ y≈q₁*x) (divides q₂ x≈q₂*y) with q₁ ≈? 0#
-    -- ... | yes q₁≈0 = ?
-    -- ... | no  q₁≉0 with q₂ ≈? 0#
-    -- ...   | yes q₂≈0 = ?
-    -- ...   | no  q₂≉0 = q₁≉0∧q₂≉0⇒x≈y q₁≉0 q₂≉0
-    --   where
-    --   q₁≉0∧q₂≉0⇒x≈y : q₁ ≉ 0# → q₂ ≉ 0# → x ≈ y
-    --   q₁≉0∧q₂≉0⇒x≈y q₁≉0 q₂≉0 = ?
 
     gcdₕ : ∀ (n m : C) {m≉0 : m ≉ 0#} → Acc _<_ (∣ m ∣ {m≉0}) → C
     gcdₕ n m {m≉0} (acc downward) with modulus n m {m≉0}
@@ -269,7 +246,7 @@ module _
       ; gcd-greatest = gcd-greatest
       }
 
-    open GCD gcd-isGCD ∣-antisym public
+    -- open GCD gcd-isGCD ∣-antisym public
 
     data Identity (d : C) (a : C) (b : C) : Set (c ⊔ ℓ) where
       +ʳ : ∀ (x y : C) → d + x * a ≈ y * b → Identity d a b

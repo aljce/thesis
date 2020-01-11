@@ -117,3 +117,14 @@ _≟_ : Decidable {A = ℚ} _≡_
 ≢0 {p} | no p≢0 = p≢0
 
 test = ((1 / 2) {≢0} + (3 / 4) {≢0}) ⁻¹
+
+open import Data.String using (String; _++_)
+open import Data.Nat.Show using () renaming (show to show-ℕ)
+
+show-ℤ : ℤ → String
+show-ℤ (+ n) = show-ℕ n
+show-ℤ (-[1+ n ]) = "-" ++ show-ℕ (suc n)
+
+show-ℚ : ℚ → String
+show-ℚ (ℚ✓ num 1 _ _) = show-ℤ num
+show-ℚ (ℚ✓ num den _ _) = show-ℤ num ++ "/" ++ show-ℕ den
