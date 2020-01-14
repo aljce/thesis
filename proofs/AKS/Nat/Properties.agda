@@ -5,7 +5,7 @@ open import Relation.Nullary using (yes; no)
 open import Relation.Nullary.Decidable using (False)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary
-  using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; Total; IsPreorder; IsPartialOrder; IsTotalOrder; TotalOrder; _Preserves₂_⟶_⟶_; Trichotomous; Tri; Irrelevant)
+  using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; Total; IsPreorder; IsPartialOrder; IsTotalOrder; TotalOrder; _Preserves₂_⟶_⟶_; Trichotomous; Tri; Irrelevant; Connex)
 open Tri
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; trans; cong; resp₂; module ≡-Reasoning)
@@ -32,7 +32,7 @@ open import Polynomial.Simple.AlmostCommutativeRing.Instances using (module Nat)
 open import Polynomial.Simple.Reflection using (solveOver)
 open Nat.Reflection using (∀⟨_⟩)
 
-open import AKS.Nat.Base using (ℕ; _+_; _*_; _∸_; lte; _≤_; _≥_; _<_; _≮_; _>_; _≯_; _<ᵇ_; _≟_)
+open import AKS.Nat.Base using (ℕ; _+_; _*_; _∸_; lte; _≤_; _≥_; _<_; _≮_; _>_; _≯_; _<ᵇ_; _≟_; ℕ⁺; ⟅_⇓⟆; ⟅_⇑⟆)
 open ℕ
 
 ≢⇒¬≟ : ∀ {n m} → n ≢ m → False (n ≟ m)
@@ -43,6 +43,9 @@ open ℕ
 ¬≟⇒≢ : ∀ {n m} → False (n ≟ m) → n ≢ m
 ¬≟⇒≢ {n} {m} ¬n≟m n≡m with n ≟ m
 ... | no n≢m = contradiction n≡m n≢m
+
+ℕ→ℕ⁺→ℕ : ∀ n {n≢0} → ⟅ ⟅ n ⇑⟆ {n≢0} ⇓⟆ ≡ n
+ℕ→ℕ⁺→ℕ (suc n) {n≢0} = refl
 
 ------------ _≤_ --------------
 
@@ -152,6 +155,19 @@ private
   a+b∸a≡b+[a∸a] zero b = sym (+-identityʳ b)
   a+b∸a≡b+[a∸a] (suc a) b = a+b∸a≡b+[a∸a] a b
 
+m+[n∸m]≡n : ∀ {m n} → m ≤ n → m + (n ∸ m) ≡ n
+m+[n∸m]≡n {m} {n} (lte k refl) = begin
+  m + (m + k ∸ m)   ≡⟨ cong (λ x → m + x) (a+b∸a≡b+[a∸a] m k) ⟩
+  m + (k + (m ∸ m)) ≡⟨ cong (λ x → m + (k + x)) (n∸n≡0 m) ⟩
+  m + (k + 0)       ≡⟨ cong (λ x → m + x) (+-identityʳ k) ⟩
+  m + k ∎
+  where
+  open ≡-Reasoning
+
+m<n⇒n∸m≢0 : ∀ {m n} → m < n → n ∸ m ≢ 0
+m<n⇒n∸m≢0 {zero} {n} m<n n∸m≡0 = <-irrefl (sym n∸m≡0) m<n
+m<n⇒n∸m≢0 {suc m} {suc n} m<n n∸m≡0 = m<n⇒n∸m≢0 (suc-injective-≤ m<n) n∸m≡0
+
 ∸-mono-<ˡ : ∀ {x b t} → x ≤ b → b < t → b ∸ x < t ∸ x
 ∸-mono-<ˡ {x} (lte k₁ refl) (lte k₂ refl) = lte k₂ (≡-erase ≤-proof)
   where
@@ -239,6 +255,12 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 ... | yes m≡n | _       = tri≈ (<-irrefl m≡n) m≡n (<-irrefl (sym m≡n))
 ... | no  m≢n | yes m<n = tri< (<ᵇ⇒< m n m<n) m≢n (<⇒≯ (<ᵇ⇒< m n m<n))
 ... | no  m≢n | no  m≮n = tri> (m≮n ∘ <⇒<ᵇ m n) m≢n (≤∧≢⇒< (≮⇒≥ (m≮n ∘ <⇒<ᵇ m n)) (m≢n ∘ sym))
+
+<-≤-connex : Connex _<_ _≤_
+<-≤-connex m n with <-cmp m n
+... | tri< n<m _ _  = inj₁ n<m
+... | tri≈ _ refl _ = inj₂ ≤-refl
+... | tri> _ _ n>m  = inj₂ (<⇒≤ n>m)
 
 <-irrelevant : Irrelevant _<_
 <-irrelevant {x} (lte k₁ 1+x+k₁≡y) (lte k₂ 1+x+k₂≡y) with +-cancelˡ-≡ (1 + x) (trans 1+x+k₁≡y (sym 1+x+k₂≡y))

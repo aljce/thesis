@@ -37,8 +37,7 @@ record NonZeroCommutativeRing a ℓ : Set (suc (a ⊔ ℓ)) where
     1#      : Carrier
     isNonZeroCommutativeRing : IsNonZeroCommutativeRing Carrier _≈_ _+_ _*_ -_ 0# 1#
 
-  open IsNonZeroCommutativeRing isNonZeroCommutativeRing using (isCommutativeRing; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#; C/0) public
-
+  open IsNonZeroCommutativeRing isNonZeroCommutativeRing using (isCommutativeRing; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#; C/0; 1#-nonzero; -1#-nonzero) public
 
   commutativeRing : CommutativeRing a ℓ
   commutativeRing = record { isCommutativeRing = isCommutativeRing }
@@ -76,7 +75,7 @@ record IntegralDomain a ℓ : Set (suc (a ⊔ ℓ)) where
     1#      : Carrier
     isIntegralDomain : IsIntegralDomain Carrier _≈_ _+_ _*_ -_ 0# 1#
 
-  open IsIntegralDomain isIntegralDomain using (isNonZeroCommutativeRing; *-cancelˡ; *-cancelʳ; *≉0; _*/0_) public
+  open IsIntegralDomain isIntegralDomain using (isNonZeroCommutativeRing; *-cancelˡ; *-cancelʳ; *≉0; _*-nonzero_) public
 
   nonZeroCommutativeRing : NonZeroCommutativeRing a ℓ
   nonZeroCommutativeRing = record { isNonZeroCommutativeRing = isNonZeroCommutativeRing }
@@ -91,7 +90,7 @@ record IntegralDomain a ℓ : Set (suc (a ⊔ ℓ)) where
     ; semiringWithoutAnnihilatingZero; semiring
     ; commutativeSemiringWithoutOne; commutativeSemiring
     ; ring; commutativeRing
-    ; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#; C/0
+    ; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#; C/0; 1#-nonzero; -1#-nonzero
     ; setoid; isEquivalence
     ) public
 
@@ -134,7 +133,7 @@ record GCDDomain a ℓ : Set (suc (a ⊔ ℓ)) where
     ; commutativeSemiringWithoutOne; commutativeSemiring
     ; ring; commutativeRing; nonZeroCommutativeRing
     ; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#
-    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*/0_
+    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*-nonzero_; 1#-nonzero; -1#-nonzero
     ; setoid; isEquivalence
     ) public
 
@@ -176,7 +175,7 @@ record UniqueFactorizationDomain a ℓ : Set (suc (a ⊔ ℓ)) where
     ; commutativeSemiringWithoutOne; commutativeSemiring
     ; ring; commutativeRing; nonZeroCommutativeRing
     ; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#
-    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*/0_
+    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*-nonzero_; 1#-nonzero; -1#-nonzero
     ; setoid; isEquivalence
     ) public
 
@@ -228,7 +227,7 @@ record EuclideanDomain a ℓ : Set (suc (a ⊔ ℓ)) where
     ; commutativeSemiringWithoutOne; commutativeSemiring
     ; ring; commutativeRing; nonZeroCommutativeRing
     ; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#
-    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*/0_
+    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*-nonzero_; 1#-nonzero; -1#-nonzero
     ; setoid; isEquivalence
     ) public
 
@@ -258,7 +257,7 @@ record Field a ℓ : Set (suc (a ⊔ ℓ)) where
 
   open IsField isField using
     ( isEuclideanDomain
-    ; m*[n/m]≈n; [n/m]*m≈n; /-cong
+    ; m*[n/m]≈n; [n/m]*m≈n; /-cong; _/-nonzero_
     ; _⁻¹; ⁻¹-inverseʳ; ⁻¹-inverseˡ
     ; x⁻¹≉0; ⁻¹-cong
     )public
@@ -277,7 +276,7 @@ record Field a ℓ : Set (suc (a ⊔ ℓ)) where
     ; commutativeSemiringWithoutOne; commutativeSemiring
     ; ring; commutativeRing; nonZeroCommutativeRing
     ; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#
-    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*/0_
+    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*-nonzero_; 1#-nonzero; -1#-nonzero
     ; setoid; isEquivalence
     ) public
 
@@ -326,7 +325,7 @@ record DecField a ℓ : Set (suc (a ⊔ ℓ)) where
     ; commutativeSemiringWithoutOne; commutativeSemiring
     ; ring; commutativeRing; nonZeroCommutativeRing
     ; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#
-    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*/0_
+    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*-nonzero_; _/-nonzero_; 1#-nonzero; -1#-nonzero
     ; m*[n/m]≈n; [n/m]*m≈n; /-cong
     ; _⁻¹; ⁻¹-inverseʳ; ⁻¹-inverseˡ
     ; x⁻¹≉0; ⁻¹-cong
@@ -376,7 +375,7 @@ record FiniteField a ℓ : Set (suc (a ⊔ ℓ)) where
     ; commutativeSemiringWithoutOne; commutativeSemiring
     ; ring; commutativeRing; nonZeroCommutativeRing
     ; 0#≉1#; 1#≉0#; 0#≉-1#; -1#≉0#
-    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*/0_
+    ; C/0; *-cancelˡ; *-cancelʳ; *≉0; _*-nonzero_; _/-nonzero_; 1#-nonzero; -1#-nonzero
     ; m*[n/m]≈n; [n/m]*m≈n; /-cong
     ; _⁻¹; ⁻¹-inverseʳ; ⁻¹-inverseˡ
     ; x⁻¹≉0; ⁻¹-cong

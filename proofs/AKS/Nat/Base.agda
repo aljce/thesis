@@ -1,6 +1,8 @@
 open import Relation.Nullary using (¬_; Dec; yes; no)
-open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Relation.Nullary.Decidable using (False)
+open import Relation.Binary using (Decidable)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Nullary.Decidable using (False; map)
+open import Function.Equivalence as FE using ()
 
 module AKS.Nat.Base where
 
@@ -21,6 +23,9 @@ _+⁺_ : ℕ⁺ → ℕ⁺ → ℕ⁺
 
 _*⁺_ : ℕ⁺ → ℕ⁺ → ℕ⁺
 ℕ+ n *⁺ ℕ+ m = ℕ+ (n + m * (suc n))
+
+_≟⁺_ : Decidable {A = ℕ⁺} _≡_
+ℕ+ n ≟⁺ ℕ+ m = map (FE.equivalence (λ { refl → refl }) (λ { refl → refl })) (n ≟ m)
 
 ⟅_⇑⟆ : ∀ n {≢0 : False (n ≟ zero)} → ℕ⁺
 ⟅ suc n ⇑⟆ = ℕ+ n

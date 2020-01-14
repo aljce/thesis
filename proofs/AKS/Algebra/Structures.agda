@@ -48,6 +48,12 @@ record IsNonZeroCommutativeRing (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) :
   C/0 : Set (c ⊔ ℓ)
   C/0 = ∃[ x ] (x ≉ 0#)
 
+  1#-nonzero : C/0
+  1#-nonzero = 1# , 1#≉0#
+
+  -1#-nonzero : C/0
+  -1#-nonzero = - 1# , -1#≉0#
+
   fromNat : ℕ → C
   fromNat ℕ.zero = 0#
   fromNat (ℕ.suc ℕ.zero) = 1#
@@ -81,9 +87,9 @@ record IsIntegralDomain (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) : Set (c 
      (0#)      ≈⟨ sym (zeroʳ c₁) ⟩
      (c₁ * 0#) ∎
 
-  infixl 7 _*/0_
-  _*/0_ : C/0 → C/0 → C/0
-  (c₁ , c₁≉0) */0 (c₂ , c₂≉0) = c₁ * c₂ , *≉0 c₁≉0 c₂≉0
+  infixl 7 _*-nonzero_
+  _*-nonzero_ : C/0 → C/0 → C/0
+  (c₁ , c₁≉0) *-nonzero (c₂ , c₂≉0) = c₁ * c₂ , *≉0 c₁≉0 c₂≉0
 
 module Divisibility (_*_ : Op₂ C) where
   infix 4 _∣_
@@ -157,6 +163,20 @@ record IsField (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) (_/_ : ∀ (n m : 
     (m * (n / m)) ≈⟨ m*[n/m]≈n n m ⟩
     n ∎
 
+  /≉0 : ∀ {c₁ c₂} → c₁ ≉ 0# → (c₂≉0 : c₂ ≉ 0#) → (c₁ / c₂) {c₂≉0} ≉ 0#
+  /≉0 {c₁} {c₂} c₁≉0 c₂≉0 c₁/c₂≈0 = 0#≉1# $ *-cancelˡ c₂ c₂≉0 $ begin
+    c₂ * 0#                      ≈⟨ *-congˡ (sym (zeroˡ ((c₂ / c₁) {c₁≉0}))) ⟩
+    c₂ * (0# * (c₂ / c₁))        ≈⟨ *-congˡ (*-congʳ (sym (c₁/c₂≈0))) ⟩
+    c₂ * ((c₁ / c₂) * (c₂ / c₁)) ≈⟨ sym (*-assoc c₂  (c₁ / c₂) (c₂ / c₁)) ⟩
+    (c₂ * (c₁ / c₂)) * (c₂ / c₁) ≈⟨ *-congʳ (m*[n/m]≈n c₁ c₂) ⟩
+    c₁ * (c₂ / c₁)               ≈⟨ m*[n/m]≈n c₂ c₁ ⟩
+    c₂                           ≈⟨ sym (*-identityʳ c₂) ⟩
+    c₂ * 1#                      ∎
+
+  infixl 7 _/-nonzero_
+  _/-nonzero_ : C/0 → C/0 → C/0
+  (c₁ , c₁≉0) /-nonzero (c₂ , c₂≉0) = (c₁ / c₂) {c₂≉0} , /≉0 c₁≉0 c₂≉0
+
   infix 8 _⁻¹
   _⁻¹ : ∀ x {x≉0 : x ≉ 0#} → C
   _⁻¹ x {x≉0} = (1# / x) {x≉0}
@@ -168,11 +188,12 @@ record IsField (_+_ _*_ : Op₂ C) (-_ : Op₁ C) (0# 1# : C) (_/_ : ∀ (n m : 
   ⁻¹-inverseˡ = [n/m]*m≈n 1#
 
   x⁻¹≉0 : ∀ x {x≉0 : x ≉ 0#} → (x ⁻¹) {x≉0} ≉ 0#
-  x⁻¹≉0 x {x≉0} x⁻¹≈0 = 0#≉1# $ begin
-    0# ≈⟨ sym (zeroʳ x) ⟩
-    x * 0# ≈⟨ *-congˡ (sym x⁻¹≈0) ⟩
-    x * (x ⁻¹) {x≉0} ≈⟨ ⁻¹-inverseʳ x ⟩
-    1# ∎
+  x⁻¹≉0 x {x≉0} = /≉0 1#≉0# x≉0
+  -- 0#≉1# $ begin
+  --   0# ≈⟨ sym (zeroʳ x) ⟩
+  --   x * 0# ≈⟨ *-congˡ (sym x⁻¹≈0) ⟩
+  --   x * (x ⁻¹) {x≉0} ≈⟨ ⁻¹-inverseʳ x ⟩
+  --   1# ∎
 
   ⁻¹-cong : ∀ {x y} {x≉0 : x ≉ 0#} {y≉0 : y ≉ 0#} → x ≈ y → (x ⁻¹) {x≉0} ≈ (y ⁻¹) {y≉0}
   ⁻¹-cong {x} {y} {x≉0} {y≉0} x≈y = *-cancelˡ x x≉0 $ begin
