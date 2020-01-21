@@ -7,7 +7,7 @@ open import Function.Equivalence as FE using ()
 module AKS.Nat.Base where
 
 open import Agda.Builtin.FromNat using (Number)
-open import Data.Nat using (ℕ; _+_; _∸_; _*_; _≟_; _<ᵇ_) public
+open import Data.Nat using (ℕ; _+_; _∸_; _*_; _≟_; _<ᵇ_; pred) public
 open ℕ public
 open import Data.Nat.Literals using (number)
 

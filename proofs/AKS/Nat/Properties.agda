@@ -32,7 +32,7 @@ open import Polynomial.Simple.AlmostCommutativeRing.Instances using (module Nat)
 open import Polynomial.Simple.Reflection using (solveOver)
 open Nat.Reflection using (∀⟨_⟩)
 
-open import AKS.Nat.Base using (ℕ; _+_; _*_; _∸_; lte; _≤_; _≥_; _<_; _≮_; _>_; _≯_; _<ᵇ_; _≟_; ℕ⁺; ⟅_⇓⟆; ⟅_⇑⟆)
+open import AKS.Nat.Base using (ℕ; _+_; _*_; _∸_; lte; _≤_; _≥_; _<_; _≮_; _>_; _≯_; _<ᵇ_; _≟_; ℕ⁺; ℕ+; ⟅_⇓⟆; ⟅_⇑⟆; pred)
 open ℕ
 
 ≢⇒¬≟ : ∀ {n m} → n ≢ m → False (n ≟ m)
@@ -46,6 +46,9 @@ open ℕ
 
 ℕ→ℕ⁺→ℕ : ∀ n {n≢0} → ⟅ ⟅ n ⇑⟆ {n≢0} ⇓⟆ ≡ n
 ℕ→ℕ⁺→ℕ (suc n) {n≢0} = refl
+
+⟅⇓⟆-injective : ∀ {n m} → pred ⟅ n ⇓⟆ ≡ pred ⟅ m ⇓⟆ → n ≡ m
+⟅⇓⟆-injective {ℕ+ n} {ℕ+ m} refl = refl
 
 ------------ _≤_ --------------
 

@@ -15,9 +15,9 @@ module AKS.Polynomial.Base {c ℓ} (F : DecField c ℓ)  where
 
 open import Data.Unit using (⊤; tt)
 open import Agda.Builtin.FromNat using (Number)
-open import AKS.Nat using (ℕ; _∸_; _<_; lte) renaming (_+_ to _+ℕ_; _⊔_ to _⊔ℕ_)
+open import AKS.Nat using (ℕ; _∸_; _≤_; _<_; lte; pred) renaming (_+_ to _+ℕ_; _⊔_ to _⊔ℕ_)
 open ℕ
-open import AKS.Nat using (≢⇒¬≟; <-cmp; m<n⇒n∸m≢0)
+open import AKS.Nat using (≢⇒¬≟; <-cmp; ≤-totalOrder; m<n⇒n∸m≢0)
 open import AKS.Nat using (ℕ⁺; ⟅_⇓⟆; ⟅_⇑⟆)
 open import AKS.Nat.WellFounded using (Acc; acc; <-well-founded)
 
@@ -92,11 +92,19 @@ _+ᵖ_ : Polynomial → Polynomial → Polynomial
 (x^ n₁ ∙ p) +ᵖ 0ᵖ = x^ n₁ ∙ p
 (x^ n₁ ∙ p) +ᵖ (x^ n₂ ∙ q) = +ᵖ-spine n₁ p n₂ q
 
-𝑋^_ : ℕ → Polynomial
-𝑋^ n = x^ n ∙ K 1#-nonzero
-
 _∙𝑋^_ : C/0 → ℕ → Polynomial
 c ∙𝑋^ n = x^ n ∙ K c
+
+𝑋^_ : ℕ → Polynomial
+𝑋^ n = 1#-nonzero ∙𝑋^ n
+
+𝑋 : Polynomial
+𝑋 = 𝑋^ 1
+
+𝐾 : C → Polynomial
+𝐾 c with c ≈? 0#
+... | yes _  = 0ᵖ
+... | no c≉0 = (c , c≉0) ∙𝑋^ 0
 
 ∙ᵖ-spine : C/0 → Spine → Spine
 ∙ᵖ-spine c₁ (K c₂) = K (c₁ *-nonzero c₂)
@@ -123,6 +131,7 @@ _*ᵖ_ : Polynomial → Polynomial → Polynomial
 (x^ n₁ ∙ p) *ᵖ 0ᵖ = 0ᵖ
 (x^ n₁ ∙ p) *ᵖ (x^ n₂ ∙ q) = *ᵖ-spine n₁ p n₂ q
 
+infix 6 -ᵖ_
 -ᵖ_ : Polynomial → Polynomial
 -ᵖ p = -1#-nonzero ∙ᵖ p
 
@@ -130,65 +139,141 @@ infixl 6 _-ᵖ_
 _-ᵖ_ : Polynomial → Polynomial → Polynomial
 p -ᵖ q = p +ᵖ (-ᵖ q)
 
+data Polynomialⁱ : Set c where
+  0ⁱ    : Polynomialⁱ
+  _+x∙_ : C → Polynomialⁱ → Polynomialⁱ
+
+1ⁱ : Polynomialⁱ
+1ⁱ = 1# +x∙ 0ⁱ
+
+infixl 6 _+ⁱ_
+_+ⁱ_ : Polynomialⁱ → Polynomialⁱ → Polynomialⁱ
+0ⁱ +ⁱ q = q
+(c₁ +x∙ p) +ⁱ 0ⁱ = c₁ +x∙ p
+(c₁ +x∙ p) +ⁱ (c₂ +x∙ q) = (c₁ + c₂) +x∙ (p +ⁱ q)
+
+infixl 7 _∙ⁱ_
+_∙ⁱ_ : C → Polynomialⁱ → Polynomialⁱ
+a ∙ⁱ 0ⁱ = 0ⁱ
+a ∙ⁱ (c +x∙ p) = (a * c) +x∙ (a ∙ⁱ p)
+
+infix 8 x∙_
+x∙_ : Polynomialⁱ → Polynomialⁱ
+x∙ p = 0# +x∙ p
+
+infixl 7 _*ⁱ_
+_*ⁱ_ : Polynomialⁱ → Polynomialⁱ → Polynomialⁱ
+0ⁱ *ⁱ q = 0ⁱ
+(c₁ +x∙ p) *ⁱ 0ⁱ = 0ⁱ
+(c₁ +x∙ p) *ⁱ (c₂ +x∙ q) = (c₁ * c₂) +x∙ (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q))
+
+-ⁱ_ : Polynomialⁱ → Polynomialⁱ
+-ⁱ p = (- 1#) ∙ⁱ p
+
+infixl 6 _-ⁱ_
+_-ⁱ_ : Polynomialⁱ → Polynomialⁱ → Polynomialⁱ
+p -ⁱ q = p +ⁱ (-ⁱ q)
+
+expandˢ : ℕ → Spine → Polynomialⁱ
+expandˢ zero (K c) = proj₁ c +x∙ 0ⁱ
+expandˢ zero (c +x^ n ∙ s) = proj₁ c +x∙ expandˢ (pred ⟅ n ⇓⟆) s
+expandˢ (suc n) s = 0# +x∙ expandˢ n s
+
+expand : Polynomial → Polynomialⁱ
+expand 0ᵖ = 0ⁱ
+expand (x^ n ∙ p) = expandˢ n p
+
+constant : C → Polynomial
+constant c with c ≈? 0#
+... | yes _   = 0ᵖ
+... | no  c≉0 = (c , c≉0) ∙𝑋^ 0
+
+simplify : Polynomialⁱ → Polynomial
+simplify 0ⁱ = 0ᵖ
+simplify (c₁ +x∙ p) with c₁ ≈? 0# | simplify p
+... | yes _   | 0ᵖ       = 0ᵖ
+... | yes _   | x^ n ∙ q = x^ suc n ∙ q
+... | no c₁≉0 | 0ᵖ       = x^ 0 ∙ (K (c₁ , c₁≉0))
+... | no c₁≉0 | x^ n ∙ q = x^ 0 ∙ ((c₁ , c₁≉0) +x^ ⟅ suc n ⇑⟆ ∙ q)
+
+data _≈ˢ_ : Spine → Spine → Set (c ⊔ˡ ℓ) where
+  K≈ : ∀ {c₁ c₂} → proj₁ c₁ ≈ proj₁ c₂ → K c₁ ≈ˢ K c₂
+  +≈ : ∀ {c₁ c₂} {n₁ n₂} {p q} → proj₁ c₁ ≈ proj₁ c₂ → n₁ ≡ n₂ → p ≈ˢ q → (c₁ +x^ n₁ ∙ p) ≈ˢ (c₂ +x^ n₂ ∙ q)
+
 infix 4 _≈ᵖ_
-record _≈ᵖ_ (p : Polynomial) (q : Polynomial) : Set (c ⊔ˡ ℓ) where
-  constructor ≈✓
-  field
-    ∀x[pₓ≈qₓ] : ∀ x → ⟦ p ⟧ x ≈ ⟦ q ⟧ x
+data _≈ᵖ_ : Polynomial → Polynomial → Set (c ⊔ˡ ℓ) where
+  0ᵖ≈ : 0ᵖ ≈ᵖ 0ᵖ
+  0ᵖ≉ : ∀ {o₁ o₂} {p q} → o₁ ≡ o₂ → p ≈ˢ q → x^ o₁ ∙ p ≈ᵖ x^ o₂ ∙ q
 
 infix 4 _≉ᵖ_
 _≉ᵖ_ : Polynomial → Polynomial → Set (c ⊔ˡ ℓ)
 p ≉ᵖ q = ¬ (p ≈ᵖ q)
 
 ≈ᵖ-refl : Reflexive _≈ᵖ_
-≈ᵖ-refl = ≈✓ λ x → refl
-
-≈ᵖ-sym : Symmetric _≈ᵖ_
-≈ᵖ-sym (≈✓ ∀x[pₓ≈qₓ]) = ≈✓ (λ x → sym (∀x[pₓ≈qₓ] x))
-
-≈ᵖ-trans : Transitive _≈ᵖ_
-≈ᵖ-trans (≈✓ ∀x[pₓ≈qₓ]) (≈✓ ∀x[qₓ≈rₓ]) = ≈✓ (λ x → trans (∀x[pₓ≈qₓ] x) (∀x[qₓ≈rₓ] x))
-
-data _≈ˢ_ : Spine → Spine → Set (c ⊔ˡ ℓ) where
-  K≈ : ∀ {c₁ c₂} → proj₁ c₁ ≈ proj₁ c₂ → K c₁ ≈ˢ K c₂
-  +≈ : ∀ {c₁ c₂} {n₁ n₂} {p q} → proj₁ c₁ ≈ proj₁ c₂ → n₁ ≡ n₂ → p ≈ˢ q → (c₁ +x^ n₁ ∙ p) ≈ˢ (c₂ +x^ n₂ ∙ q)
-
-infix 4 _≈ⁱ_
-data _≈ⁱ_ : Polynomial → Polynomial → Set (c ⊔ˡ ℓ) where
-  0ᵖ≈ : 0ᵖ ≈ⁱ 0ᵖ
-  0ᵖ≉ : ∀ {o₁ o₂} {p q} → o₁ ≡ o₂ → p ≈ˢ q → x^ o₁ ∙ p ≈ⁱ x^ o₂ ∙ q
-
-infix 4 _≉ⁱ_
-_≉ⁱ_ : Polynomial → Polynomial → Set (c ⊔ˡ ℓ)
-p ≉ⁱ q = ¬ (p ≈ⁱ q)
-
-≈ⁱ-refl : Reflexive _≈ⁱ_
-≈ⁱ-refl {0ᵖ} = 0ᵖ≈
-≈ⁱ-refl {x^ n ∙ p} = 0ᵖ≉ ≡-refl ≈ˢ-refl
+≈ᵖ-refl {0ᵖ} = 0ᵖ≈
+≈ᵖ-refl {x^ n ∙ p} = 0ᵖ≉ ≡-refl ≈ˢ-refl
   where
   ≈ˢ-refl : Reflexive _≈ˢ_
   ≈ˢ-refl {K c} = K≈ refl
   ≈ˢ-refl {c +x^ n ∙ p} = +≈ refl ≡-refl ≈ˢ-refl
 
-≈ⁱ-sym : Symmetric _≈ⁱ_
-≈ⁱ-sym {0ᵖ} {0ᵖ} 0ᵖ≈ = 0ᵖ≈
-≈ⁱ-sym {x^ n ∙ p} {x^ n ∙ q} (0ᵖ≉ ≡-refl p≈ˢq) = 0ᵖ≉ ≡-refl (≈ˢ-sym p≈ˢq)
+≈ᵖ-sym : Symmetric _≈ᵖ_
+≈ᵖ-sym {0ᵖ} {0ᵖ} 0ᵖ≈ = 0ᵖ≈
+≈ᵖ-sym {x^ n ∙ p} {x^ n ∙ q} (0ᵖ≉ ≡-refl p≈ˢq) = 0ᵖ≉ ≡-refl (≈ˢ-sym p≈ˢq)
   where
   ≈ˢ-sym : Symmetric _≈ˢ_
   ≈ˢ-sym {K c₁} {K c₂} (K≈ c₁≈c₂) = K≈ (sym c₁≈c₂)
   ≈ˢ-sym {c₁ +x^ n ∙ p} {c₂ +x^ n ∙ q} (+≈ c₁≈c₂ ≡-refl p≈ˢq) = +≈ (sym c₁≈c₂) ≡-refl (≈ˢ-sym p≈ˢq)
 
-≈ⁱ-trans : Transitive _≈ⁱ_
-≈ⁱ-trans {0ᵖ} {0ᵖ} {0ᵖ} 0ᵖ≈ 0ᵖ≈ = 0ᵖ≈
-≈ⁱ-trans {_}  {_}  {_} (0ᵖ≉ ≡-refl p≈ˢq) (0ᵖ≉ ≡-refl q≈ˢr) = 0ᵖ≉ ≡-refl (≈ˢ-trans p≈ˢq q≈ˢr)
+≈ᵖ-trans : Transitive _≈ᵖ_
+≈ᵖ-trans {0ᵖ} {0ᵖ} {0ᵖ} 0ᵖ≈ 0ᵖ≈ = 0ᵖ≈
+≈ᵖ-trans {_}  {_}  {_} (0ᵖ≉ ≡-refl p≈ˢq) (0ᵖ≉ ≡-refl q≈ˢr) = 0ᵖ≉ ≡-refl (≈ˢ-trans p≈ˢq q≈ˢr)
   where
   ≈ˢ-trans : Transitive _≈ˢ_
   ≈ˢ-trans (K≈ c₁≈c₂) (K≈ c₂≈c₃) = K≈ (trans c₁≈c₂ c₂≈c₃)
   ≈ˢ-trans (+≈ c₁≈c₂ ≡-refl p≈ˢq) (+≈ c₂≈c₃ ≡-refl q≈ˢr) = +≈ (trans c₁≈c₂ c₂≈c₃) ≡-refl (≈ˢ-trans p≈ˢq q≈ˢr)
 
-data Degree : Set where
-  -∞ : Degree
-  ⟨_⟩ : ℕ → Degree
+infix 4 _≈ⁱ_
+data _≈ⁱ_ : Polynomialⁱ → Polynomialⁱ → Set (c ⊔ˡ ℓ) where
+  0≈0 : 0ⁱ ≈ⁱ 0ⁱ
+  0≈+ : ∀ {c} {p} → c ≈ 0# → 0ⁱ ≈ⁱ p → 0ⁱ ≈ⁱ c +x∙ p
+  +≈0 : ∀ {c} {p} → c ≈ 0# → 0ⁱ ≈ⁱ p → c +x∙ p ≈ⁱ 0ⁱ
+  +≈+ : ∀ {c₁ c₂} {p q} → c₁ ≈ c₂ → p ≈ⁱ q → c₁ +x∙ p ≈ⁱ c₂ +x∙ q
+
+infix 4 _≉ⁱ_
+_≉ⁱ_ : Polynomialⁱ → Polynomialⁱ → Set (c ⊔ˡ ℓ)
+p ≉ⁱ q = ¬ (p ≈ⁱ q)
+
+≈ⁱ-refl : Reflexive _≈ⁱ_
+≈ⁱ-refl {0ⁱ} = 0≈0
+≈ⁱ-refl {c +x∙ p} = +≈+ refl ≈ⁱ-refl
+
+≈ⁱ-sym : Symmetric _≈ⁱ_
+≈ⁱ-sym 0≈0 = 0≈0
+≈ⁱ-sym (0≈+ c≈0 0≈p) = +≈0 c≈0 0≈p
+≈ⁱ-sym (+≈0 c≈0 0≈p) = 0≈+ c≈0 0≈p
+≈ⁱ-sym (+≈+ c₁≈c₂ p≈q) = +≈+ (sym c₁≈c₂) (≈ⁱ-sym p≈q)
+
+≈ⁱ-trans : Transitive _≈ⁱ_
+≈ⁱ-trans 0≈0 q = q
+≈ⁱ-trans (0≈+ c₁≈0 0≈p) (+≈0 c₂≈0 0≈q) = 0≈0
+≈ⁱ-trans (0≈+ c₁≈0 0≈p) (+≈+ c₁≈c₂ p≈q) = 0≈+ (trans (sym c₁≈c₂) c₁≈0) (≈ⁱ-trans 0≈p p≈q)
+≈ⁱ-trans (+≈0 c₁≈0 0≈p) 0≈0 = +≈0 c₁≈0 0≈p
+≈ⁱ-trans (+≈0 c₁≈0 0≈p) (0≈+ c₂≈0 0≈q) = +≈+ (trans c₁≈0 (sym c₂≈0)) (≈ⁱ-trans (≈ⁱ-sym 0≈p) 0≈q)
+≈ⁱ-trans (+≈+ c₁≈c₂ p≈q) (+≈0 c₂≈0 0≈q) = +≈0 (trans c₁≈c₂ c₂≈0) (≈ⁱ-trans 0≈q (≈ⁱ-sym p≈q))
+≈ⁱ-trans (+≈+ c₁≈c₂ p≈q) (+≈+ c₂≈c₃ q≈r) = +≈+ (trans c₁≈c₂ c₂≈c₃) (≈ⁱ-trans p≈q q≈r)
+
+open import AKS.Extended ≤-totalOrder
+  using ()
+  renaming
+  ( Extended to Degree
+  ; _≤ᵉ_ to _≤ᵈ_
+  ; ≤ᵉ-refl to ≤ᵈ-refl
+  ; ≤ᵉ-trans to ≤ᵈ-trans
+  )
+  public
+open Degree public
+open _≤ᵈ_ public
 
 instance
   Degree-number : Number Degree
@@ -197,10 +282,15 @@ instance
     ; fromNat = λ n → ⟨ n ⟩
     }
 
-_⊔_ : Degree → Degree → Degree
--∞ ⊔ d₂ = d₂
-⟨ d₁ ⟩ ⊔ -∞ = ⟨ d₁ ⟩
-⟨ d₁ ⟩ ⊔ ⟨ d₂ ⟩ = ⟨ d₁ ⊔ℕ d₂ ⟩
+_⊔ᵈ_ : Degree → Degree → Degree
+-∞ ⊔ᵈ d₂ = d₂
+⟨ d₁ ⟩ ⊔ᵈ -∞ = ⟨ d₁ ⟩
+⟨ d₁ ⟩ ⊔ᵈ ⟨ d₂ ⟩ = ⟨ d₁ ⊔ℕ d₂ ⟩
+
+_+ᵈ_ : Degree → Degree → Degree
+-∞ +ᵈ d₂ = -∞
+⟨ d₁ ⟩ +ᵈ -∞ = -∞
+⟨ d₁ ⟩ +ᵈ ⟨ d₂ ⟩ = ⟨ d₁ +ℕ d₂ ⟩
 
 degreeˢ : Spine → ℕ
 degreeˢ (K c) = 0
