@@ -51,6 +51,14 @@ infix 4 _≥_
 _≥_ : ℕ → ℕ → Set
 n ≥ m = m ≤ n
 
+infix 4 _≰_
+_≰_ : ℕ → ℕ → Set
+n ≰ m = ¬ (n ≤ m)
+
+infix 4 _≱_
+_≱_ : ℕ → ℕ → Set
+n ≱ m = ¬ (m ≤ n)
+
 infix 4 _<_
 _<_ : ℕ → ℕ → Set
 n < m = suc n ≤ m

@@ -11,6 +11,7 @@ data Extended : Set c where
   -∞  : Extended
   ⟨_⟩ : C → Extended
 
+infixl 4 _≤ᵉ_
 data _≤ᵉ_ : Extended → Extended → Set (c ⊔ˡ ℓ₂) where
   -∞≤_ : ∀ t → -∞ ≤ᵉ t
   ⟨_⟩  : ∀ {b t} → b ≤ t → ⟨ b ⟩ ≤ᵉ ⟨ t ⟩

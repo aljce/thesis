@@ -1,4 +1,5 @@
 open import Relation.Nullary using (yes; no)
+open import Relation.Nullary.Decidable using (False)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary using (Antisymmetric; Irrelevant)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; cong; module ≡-Reasoning)
@@ -7,14 +8,15 @@ open ≡-Reasoning
 
 module AKS.Nat.GCD where
 
-open import AKS.Nat.Base using (ℕ; _+_; _*_; zero; suc; _<_; lte; _≟_; _∸_)
+open import AKS.Nat.Base using (ℕ; _+_; _*_; zero; suc; _<_; _≤_; lte; _≟_; _∸_)
 open import AKS.Nat.Properties using (≢⇒¬≟; ≤-antisym)
-open import AKS.Nat.Divisibility using (modₕ; _/_; _%_; n%m<m; m≡m%n+[m/n]*n)
-open import Data.Nat.Properties using (*-+-commutativeSemiring; *-zeroʳ; +-comm; *-comm)
+open import Data.Nat.Properties using (*-distribʳ-∸)
+open import AKS.Nat.Divisibility using (modₕ; _/_; _%_; n%m<m; m≡m%n+[m/n]*n; m%n≡m∸m/n*n; /-cancelʳ)
+open import Data.Nat.Properties using (*-+-commutativeSemiring; *-zeroʳ; +-comm; *-comm; *-assoc)
 open import AKS.Algebra.Structures ℕ _≡_ using (module Modulus)
 open import AKS.Algebra.Divisibility *-+-commutativeSemiring public
 
-open import AKS.Unsafe using (TODO; ≢-irrelevant)
+open import AKS.Unsafe using (≢-irrelevant)
 
 ∣-antisym : Antisymmetric _≡_ _∣_
 ∣-antisym {x} {y} (divides zero refl) (divides q₂ refl) = *-zeroʳ q₂
@@ -49,10 +51,18 @@ mod-cong : ∀ {x₁ x₂} {y₁ y₂} → x₁ ≡ x₂ → y₁ ≡ y₂ → �
 mod-cong refl refl {y₁≢0} {y₂≢0} rewrite ≢-irrelevant y₁≢0 y₂≢0 = refl
 
 mod-distribʳ-* : ∀ c a b {b≢0} {b*c≢0} → ((a * c) mod (b * c)) {b*c≢0} ≡ (a mod b) {b≢0} * c
-mod-distribʳ-* c a b {b≢0} {b*c≢0} = TODO
+mod-distribʳ-* c a b {b≢0} {b*c≢0} = begin
+  (a * c) mod (b * c)                     ≡⟨ m%n≡m∸m/n*n (a * c) (b * c) ⟩
+  (a * c) ∸ ((a * c) / (b * c)) * (b * c) ≡⟨ cong (λ x → a * c ∸ x) (sym (*-assoc ((a * c) / (b * c)) b c)) ⟩
+  (a * c) ∸ (((a * c) / (b * c)) * b) * c ≡⟨ sym (*-distribʳ-∸ c a (((a * c) / (b * c)) * b)) ⟩
+  (a ∸ ((a * c) / (b * c)) * b) * c       ≡⟨ cong (λ x → (a ∸ x * b) * c) (/-cancelʳ c a b) ⟩
+  (a ∸ (a / b) * b) * c                   ≡⟨ cong (λ x → x * c) (sym (m%n≡m∸m/n*n a b)) ⟩
+  a mod b * c                             ∎
 
 open Euclidean (λ n → n) _div_ _mod_ _≟_ ≡-irrelevant ≢-irrelevant division modulus mod-cong mod-distribʳ-*
-  using (gcd; gcd-isGCD; Identity; +ʳ; +ˡ; Bézout; lemma; bézout) public
+  using (gcdₕ; gcd; gcd-isGCD; Identity; +ʳ; +ˡ; Bézout; lemma; bézout) public
+
+open IsGCD gcd-isGCD public
 
 open GCD gcd-isGCD ∣-antisym
   using
@@ -60,6 +70,7 @@ open GCD gcd-isGCD ∣-antisym
     ) public
   renaming
     ( gcd[a,1]≈1 to gcd[a,1]≡1
+    ; gcd[1,a]≈1 to gcd[1,a]≡1
     ; a≉0⇒gcd[a,b]≉0 to a≢0⇒gcd[a,b]≢0
     ; b≉0⇒gcd[a,b]≉0 to b≢0⇒gcd[a,b]≢0
     ; gcd[0,a]≈a to gcd[0,a]≡a
@@ -67,3 +78,6 @@ open GCD gcd-isGCD ∣-antisym
     ; gcd[0,a]≈1⇒a≈1 to gcd[0,a]≡1⇒a≡1
     ; gcd[a,0]≈1⇒a≈1 to gcd[a,0]≡1⇒a≡1
     ) public
+
+∣⇒≤ : ∀ {m n} {n≢0 : False (n ≟ 0)} → m ∣ n → m ≤ n
+∣⇒≤ {m} {suc n} (divides (suc q) 1+n≡m+q*m) = lte (q * m) (sym 1+n≡m+q*m)

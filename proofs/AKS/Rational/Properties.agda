@@ -2,7 +2,6 @@ open import Level using (0ℓ)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; cong; cong₂; isEquivalence; setoid)
 open import Relation.Binary.PropositionalEquality.WithK using (≡-irrelevant)
 
-
 open import Data.Unit using (⊤; tt)
 open import Agda.Builtin.FromNat using (Number)
 
@@ -23,7 +22,7 @@ open import Algebra.Definitions {A = ℚ} _≡_ using
   )
 open import AKS.Algebra.Structures ℚ _≡_ using (IsNonZeroCommutativeRing; IsIntegralDomain; IsGCDDomain; IsDecField)
 open import Algebra.Bundles using (Ring; CommutativeRing)
-open import AKS.Algebra.Bundles using (IntegralDomain; DecField)
+open import AKS.Algebra.Bundles using (NonZeroCommutativeRing; DecField)
 
 open import AKS.Unsafe using (BOTTOM; ≢-irrelevant)
 
@@ -145,22 +144,13 @@ open import Algebra.FunctionProperties.Consequences.Propositional using (comm+id
   ; 0#≉1# = λ ()
   }
 
-*-cancelˡ : ∀ x {y z} → x ≢ 0 → x * y ≡ x * z → y ≡ z
-*-cancelˡ = BOTTOM
-
-+-*-isIntegralDomain : IsIntegralDomain _+_ _*_ -_ 0 1
-+-*-isIntegralDomain = record
-  { isNonZeroCommutativeRing = +-*-isNonZeroCommutativeRing
-  ; *-cancelˡ = *-cancelˡ
-  }
-
-+-*-integralDomain : IntegralDomain 0ℓ 0ℓ
-+-*-integralDomain = record { isIntegralDomain = +-*-isIntegralDomain }
++-*-nonZeroCommutativeRing : NonZeroCommutativeRing 0ℓ 0ℓ
++-*-nonZeroCommutativeRing = record { isNonZeroCommutativeRing = +-*-isNonZeroCommutativeRing }
 
 /-inverse : ∀ x y {y≢0} → x ≡ y * (x / y) {y≢0}
 /-inverse x y {y≢0} = BOTTOM
 
-open import AKS.Algebra.Consequences +-*-integralDomain using (module Inverse⇒Field)
+open import AKS.Algebra.Consequences +-*-nonZeroCommutativeRing using (module Inverse⇒Field)
 
 open Inverse⇒Field _≟_ ≡-irrelevant ≢-irrelevant _/_ /-inverse
   using (gcd)

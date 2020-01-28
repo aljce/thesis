@@ -32,7 +32,7 @@ open import Polynomial.Simple.AlmostCommutativeRing.Instances using (module Nat)
 open import Polynomial.Simple.Reflection using (solveOver)
 open Nat.Reflection using (∀⟨_⟩)
 
-open import AKS.Nat.Base using (ℕ; _+_; _*_; _∸_; lte; _≤_; _≥_; _<_; _≮_; _>_; _≯_; _<ᵇ_; _≟_; ℕ⁺; ℕ+; ⟅_⇓⟆; ⟅_⇑⟆; pred)
+open import AKS.Nat.Base using (ℕ; _+_; _*_; _∸_; lte; _≤_; _≥_; _≰_; _≱_; _<_; _≮_; _>_; _≯_; _<ᵇ_; _≟_; ℕ⁺; ℕ+; ⟅_⇓⟆; ⟅_⇑⟆; pred)
 open ℕ
 
 ≢⇒¬≟ : ∀ {n m} → n ≢ m → False (n ≟ m)
@@ -98,6 +98,9 @@ suc-injective-≤ (lte k refl) = lte k refl
 
 m≤m+n : ∀ {m n} → m ≤ m + n
 m≤m+n {m} {n} = lte n refl
+
+m≤n+m : ∀ {m n} → m ≤ n + m
+m≤n+m {m} {n} = lte n (+-comm m n)
 
 ≤-erase : ∀ {n m} → n ≤ m → n ≤ m
 ≤-erase (lte k ≤-proof) = lte k (≡-erase ≤-proof)
@@ -167,6 +170,9 @@ m+[n∸m]≡n {m} {n} (lte k refl) = begin
   where
   open ≡-Reasoning
 
+[n∸m]+m≡n : ∀ {m n} → m ≤ n → (n ∸ m) + m ≡ n
+[n∸m]+m≡n {m} {n} rewrite +-comm (n ∸ m) m = m+[n∸m]≡n
+
 m<n⇒n∸m≢0 : ∀ {m n} → m < n → n ∸ m ≢ 0
 m<n⇒n∸m≢0 {zero} {n} m<n n∸m≡0 = <-irrefl (sym n∸m≡0) m<n
 m<n⇒n∸m≢0 {suc m} {suc n} m<n n∸m≡0 = m<n⇒n∸m≢0 (suc-injective-≤ m<n) n∸m≡0
@@ -215,12 +221,29 @@ m<n⇒n∸m≢0 {suc m} {suc n} m<n n∸m≡0 = m<n⇒n∸m≢0 (suc-injective-�
   ≤-proof : suc (suc b + k₂ + k₁ ∸ (suc b + k₂) + k₂) ≡ suc (b + k₂ + k₁) ∸ b
   ≤-proof = trans LHS (sym RHS)
 
+∸-mono-≤ˡ : ∀ {x b t} → x ≤ b → b ≤ t → b ∸ x ≤ t ∸ x
+∸-mono-≤ˡ {x} {b} {t} (lte k₁ refl) (lte k₂ refl) = lte k₂ ≤-proof
+  where
+  open ≡-Reasoning
+  lemma₁ : ∀ a → k₁ + a + k₂ ≡ k₁ + k₂ + a
+  lemma₁ a = ∀⟨ a ∷ k₁ ∷ k₂ ∷ [] ⟩
+  ≤-proof : x + k₁ ∸ x + k₂ ≡ x + k₁ + k₂ ∸ x
+  ≤-proof = begin
+    x + k₁ ∸ x + k₂   ≡⟨ cong (λ t → t + k₂) (a+b∸a≡b+[a∸a] x k₁) ⟩
+    k₁ + (x ∸ x) + k₂ ≡⟨ lemma₁ (x ∸ x) ⟩
+    k₁ + k₂ + (x ∸ x) ≡⟨ sym (a+b∸a≡b+[a∸a] x (k₁ + k₂)) ⟩
+    x + (k₁ + k₂) ∸ x ≡⟨ cong (λ t → t ∸ x) (sym (+-assoc x k₁ k₂)) ⟩
+    x + k₁ + k₂ ∸ x   ∎
+
 *-mono-< : _*_ Preserves₂ _<_ ⟶ _<_ ⟶ _<_
 *-mono-< {x} {_} {u} (lte k refl) (lte m refl) =
   lte (k * m + k * u + k + m * x + m + u + x) (≡-erase ∀⟨ x ∷ u ∷ k ∷ m ∷ [] ⟩)
 
 *-mono-≤ : _*_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
 *-mono-≤ {x} {_} {u} (lte k refl) (lte m refl) = lte (k * m + k * u + m * x) (≡-erase ∀⟨ x ∷ u ∷ k ∷ m ∷ [] ⟩)
+
++-lower-≤ : ∀ x {n m} → n + x ≤ m → n ≤ m
++-lower-≤ x {n} {m} (lte q refl) = lte (x + q) (sym (+-assoc n x q))
 
 <⇒≤ : ∀ {n m} → n < m → n ≤ m
 <⇒≤ {n} (lte k refl) = lte (suc k) (≡-erase (+-suc n k))
@@ -244,6 +267,11 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 ≮⇒≥ {zero} {suc n} m≮n = contradiction 0<1+n m≮n
 ≮⇒≥ {suc m} {suc n} m≮n = suc-mono-≤ (≮⇒≥ (m≮n ∘ suc-mono-<))
 
+<⇒≱ : ∀ {m n} → m < n → m ≱ n
+<⇒≱ {m} {n} m<n m≥n with n≤m⇒n<m⊎n≡m m≥n
+... | inj₁ m>n = <-asym m<n m>n
+... | inj₂ m≡n = <-irrefl (sym m≡n) m<n
+
 <ᵇ⇒< : ∀ m n → T (m <ᵇ n) → m < n
 <ᵇ⇒< zero    (suc n) m<n = 0<1+n
 <ᵇ⇒< (suc m) (suc n) m<n = suc-mono-< (<ᵇ⇒< m n m<n)
@@ -251,6 +279,10 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 <⇒<ᵇ : ∀ m n → m < n → T (m <ᵇ n)
 <⇒<ᵇ zero (suc n) m<n = tt
 <⇒<ᵇ (suc m) (suc n) m<n = <⇒<ᵇ m n (suc-injective-≤ m<n)
+
+0≢⇒0< : ∀ {n} → 0 ≢ n → 0 < n
+0≢⇒0< {zero} 0≢n = contradiction refl 0≢n
+0≢⇒0< {suc n} 0≢n = 0<1+n
 
 -- TODO change to does/proof
 <-cmp : Trichotomous _≡_ _<_

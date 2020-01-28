@@ -139,6 +139,7 @@ infixl 6 _-ᵖ_
 _-ᵖ_ : Polynomial → Polynomial → Polynomial
 p -ᵖ q = p +ᵖ (-ᵖ q)
 
+
 data Polynomialⁱ : Set c where
   0ⁱ    : Polynomialⁱ
   _+x∙_ : C → Polynomialⁱ → Polynomialⁱ
@@ -263,6 +264,28 @@ p ≉ⁱ q = ¬ (p ≈ⁱ q)
 ≈ⁱ-trans (+≈+ c₁≈c₂ p≈q) (+≈0 c₂≈0 0≈q) = +≈0 (trans c₁≈c₂ c₂≈0) (≈ⁱ-trans 0≈q (≈ⁱ-sym p≈q))
 ≈ⁱ-trans (+≈+ c₁≈c₂ p≈q) (+≈+ c₂≈c₃ q≈r) = +≈+ (trans c₁≈c₂ c₂≈c₃) (≈ⁱ-trans p≈q q≈r)
 
++ᵖ-*ᵖ-rawRing : RawRing (c ⊔ˡ ℓ) (c ⊔ˡ ℓ)
++ᵖ-*ᵖ-rawRing = record
+  { Carrier = Polynomial
+  ; _≈_ = _≈ᵖ_
+  ; _+_ = _+ᵖ_
+  ; _*_ = _*ᵖ_
+  ; -_ = -ᵖ_
+  ; 0# = 0ᵖ
+  ; 1# = 1ᵖ
+  }
+
++ⁱ-*ⁱ-rawRing : RawRing c (c ⊔ˡ ℓ)
++ⁱ-*ⁱ-rawRing = record
+  { Carrier = Polynomialⁱ
+  ; _≈_ = _≈ⁱ_
+  ; _+_ = _+ⁱ_
+  ; _*_ = _*ⁱ_
+  ; -_ = -ⁱ_
+  ; 0# = 0ⁱ
+  ; 1# = 1ⁱ
+  }
+
 open import AKS.Extended ≤-totalOrder
   using ()
   renaming
@@ -282,11 +305,13 @@ instance
     ; fromNat = λ n → ⟨ n ⟩
     }
 
+infixl 5 _⊔ᵈ_
 _⊔ᵈ_ : Degree → Degree → Degree
 -∞ ⊔ᵈ d₂ = d₂
 ⟨ d₁ ⟩ ⊔ᵈ -∞ = ⟨ d₁ ⟩
 ⟨ d₁ ⟩ ⊔ᵈ ⟨ d₂ ⟩ = ⟨ d₁ ⊔ℕ d₂ ⟩
 
+infixl 5 _+ᵈ_
 _+ᵈ_ : Degree → Degree → Degree
 -∞ +ᵈ d₂ = -∞
 ⟨ d₁ ⟩ +ᵈ -∞ = -∞
@@ -304,16 +329,13 @@ deg : ∀ p {p≉0 : p ≉ᵖ 0ᵖ} → ℕ
 deg 0ᵖ {p≉0} = contradiction ≈ᵖ-refl p≉0
 deg (x^ n ∙ p) {p≉0} = n +ℕ degreeˢ p
 
-+ᵖ-*ᵖ-rawRing : RawRing (c ⊔ˡ ℓ) (c ⊔ˡ ℓ)
-+ᵖ-*ᵖ-rawRing = record
-  { Carrier = Polynomial
-  ; _≈_ = _≈ᵖ_
-  ; _+_ = _+ᵖ_
-  ; _*_ = _*ᵖ_
-  ; -_ = -ᵖ_
-  ; 0# = 0ᵖ
-  ; 1# = 1ᵖ
-  }
+degreeⁱ : Polynomialⁱ → Degree
+degreeⁱ 0ⁱ = -∞
+degreeⁱ (c +x∙ p) with degreeⁱ p
+... | ⟨ n ⟩ = ⟨ suc n ⟩
+... | -∞ with c ≈? 0#
+...   | yes _ = -∞
+...   | no  _ = 0
 
 open import Data.String using (String; _++_)
 open import Data.Nat.Show using () renaming (show to show-ℕ)

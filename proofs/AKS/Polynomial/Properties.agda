@@ -16,7 +16,7 @@ open import Data.List using ([]; _∷_)
 open import Data.Product using (_,_; proj₁; proj₂)
 open import Data.Sum using (inj₁; inj₂)
 
-open import Algebra.Bundles using (CommutativeRing; RawMonoid)
+open import Algebra.Bundles using (CommutativeRing)
 open import AKS.Algebra.Bundles using (DecField; IntegralDomain)
 
 module AKS.Polynomial.Properties {c ℓ} (F : DecField c ℓ) where
@@ -47,14 +47,13 @@ open import Algebra.Properties.Ring ring using (-‿distribˡ-*)
 open import AKS.Exponentiation *-commutativeMonoid using (_^_; _^⁺_; ^-homo; ^-^⁺-homo; x^n≈x^⁺n)
 
 open import AKS.Polynomial.Base F using
-  ( Polynomialⁱ; 0ⁱ; 1ⁱ; _+x∙_; _+ⁱ_; -ⁱ_; _∙ⁱ_; _*ⁱ_; x∙_; expand; expandˢ; simplify
+  ( Polynomialⁱ; 0ⁱ; 1ⁱ; _+x∙_; _+ⁱ_; -ⁱ_; _∙ⁱ_; _*ⁱ_; x∙_; expand; expandˢ; simplify; +ⁱ-*ⁱ-rawRing
   ; _≈ⁱ_; _≉ⁱ_; 0≈0; 0≈+; +≈0; +≈+; ≈ⁱ-refl; ≈ⁱ-sym; ≈ⁱ-trans
   ; Spine; K; _+x^_∙_; Polynomial; 0ᵖ; x^_∙_; ⟦_⟧; ⟦_⟧ˢ; _+?_; 𝐾; 𝑋; _∙𝑋^_
-  ; 1ᵖ; _+ᵖ_; +ᵖ-spine; +ᵖ-spine-≡-K; +ᵖ-spine-≡; +ᵖ-spine-<; -ᵖ_; _-ᵖ_; _*ᵖ_; *ᵖ-spine; _∙ᵖ_; ∙ᵖ-spine
+  ; 1ᵖ; _+ᵖ_; +ᵖ-spine; +ᵖ-spine-≡-K; +ᵖ-spine-≡; +ᵖ-spine-<; -ᵖ_; _-ᵖ_; _*ᵖ_; *ᵖ-spine; _∙ᵖ_; ∙ᵖ-spine; +ᵖ-*ᵖ-rawRing
   ; _≈ᵖ_; _≉ᵖ_; 0ᵖ≈; 0ᵖ≉; _≈ˢ_; K≈; +≈; ≈ᵖ-refl; ≈ᵖ-sym; ≈ᵖ-trans
-  ; Degree; deg; degree; degreeˢ; _⊔ᵈ_; _+ᵈ_; _≤ᵈ_; ⟨_⟩
+  ; Degree; deg; degree; degreeˢ; _⊔ᵈ_; _+ᵈ_; _≤ᵈ_; ≤ᵈ-refl; -∞; ⟨_⟩; degreeⁱ
   )
-open import Algebra.Morphism.Structures using (IsMonoidMonomorphism; IsMagmaMonomorphism)
 open import Algebra.Structures {A = Polynomialⁱ} _≈ⁱ_ using (IsCommutativeRing; IsRing; IsAbelianGroup; IsGroup; IsMonoid; IsSemigroup; IsMagma)
 open import Algebra.Definitions {A = Polynomialⁱ} _≈ⁱ_ using
   ( _DistributesOver_; _DistributesOverʳ_; _DistributesOverˡ_
@@ -62,24 +61,13 @@ open import Algebra.Definitions {A = Polynomialⁱ} _≈ⁱ_ using
   ; RightInverse; LeftInverse; Inverse
   ; LeftCongruent; RightCongruent; Congruent₂; Congruent₁
   )
-open import AKS.Algebra.Structures Polynomialⁱ _≈ⁱ_ using (IsNonZeroCommutativeRing; IsIntegralDomain)
+open import AKS.Algebra.Structures using (IsNonZeroCommutativeRing; IsIntegralDomain)
+open import Relation.Binary.Morphism.Structures using (IsRelHomomorphism)
+open import AKS.Algebra.Morphism.Structures using (IsRingHomomorphism; IsRingMonomorphism)
+open import AKS.Algebra.Morphism.Consequences using (module RingConsequences)
 
-ACR : AlmostCommutativeRing c ℓ
-ACR = fromCommutativeRing commutativeRing (λ _ → nothing)
-
--- simplify-cong : ∀ {p} {q} → p ≈ⁱ q → simplify p ≈ᵖ simplify q
--- simplify-cong {0ⁱ} {0ⁱ} 0ⁱ≈ = ≈ᵖ-refl
--- simplify-cong {c₁ +x∙ p} {c₂ +x∙ q} (0ⁱ≉ c₁≈c₂ p≈q) with c₁ ≈? 0# | c₂ ≈? 0# | simplify p | simplify q | simplify-cong p≈q
--- ... | yes c₁≈0 | yes c₂≈0 | 0ᵖ         | 0ᵖ         | r₁≈r₂ = ≈ᵖ-refl
--- ... | yes c₁≈0 | yes c₂≈0 | 0ᵖ         | x^ n₂ ∙ r₂ | ()
--- ... | yes c₁≈0 | yes c₂≈0 | x^ n₁ ∙ r₁ | 0ᵖ         | ()
--- ... | yes c₁≈0 | yes c₂≈0 | x^ n₁ ∙ r₁ | x^ n₂ ∙ r₂ | 0ᵖ≉ ≡-refl r₁≈r₂ = 0ᵖ≉ ≡-refl r₁≈r₂
--- ... | yes c₁≈0 | no  c₂≉0 | r₁ | r₂ | r₁≈r₂ = contradiction (begin⟨ setoid ⟩ c₂ ≈⟨ sym c₁≈c₂ ⟩ c₁ ≈⟨ c₁≈0 ⟩ 0# ∎) c₂≉0
--- ... | no  c₁≉0 | yes c₂≈0 | r₁ | r₂ | r₁≈r₂ = contradiction (begin⟨ setoid ⟩ c₁ ≈⟨     c₁≈c₂ ⟩ c₂ ≈⟨ c₂≈0 ⟩ 0# ∎) c₁≉0
--- ... | no  c₁≉0 | no  c₂≉0 | 0ᵖ         | 0ᵖ         | r₁≈r₂ = 0ᵖ≉ ≡-refl (K≈ c₁≈c₂)
--- ... | no  c₁≉0 | no  c₂≉0 | 0ᵖ         | x^ n₂ ∙ r₂ | ()
--- ... | no  c₁≉0 | no  c₂≉0 | x^ n₁ ∙ r₁ | 0ᵖ         | ()
--- ... | no  c₁≉0 | no  c₂≉0 | x^ n₁ ∙ r₁ | x^ n₂ ∙ r₂ | 0ᵖ≉ ≡-refl r₁≈r₂ = 0ᵖ≉ ≡-refl (+≈ c₁≈c₂ ≡-refl r₁≈r₂)
++-*-almostCommutativeRing : AlmostCommutativeRing c ℓ
++-*-almostCommutativeRing = fromCommutativeRing commutativeRing (λ _ → nothing)
 
 expand-cong : ∀ {p} {q} → p ≈ᵖ q → expand p ≈ⁱ expand q
 expand-cong 0ᵖ≈ = ≈ⁱ-refl
@@ -435,13 +423,33 @@ x∙-distrib-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) = +≈+ (sym (+-identityʳ 0#)) 
 *ⁱ-distrib-+ⁱ : _*ⁱ_ DistributesOver _+ⁱ_
 *ⁱ-distrib-+ⁱ = *ⁱ-distribˡ-+ⁱ , *ⁱ-distribʳ-+ⁱ
 
+open import AKS.Unsafe using (TODO)
+
++x∙-distribʳ-*ⁱ : ∀ c p q → (c +x∙ p) *ⁱ q ≈ⁱ c ∙ⁱ q +ⁱ x∙ (p *ⁱ q)
++x∙-distribʳ-*ⁱ c₁ p 0ⁱ = 0≈+ refl (≈ⁱ-sym (*ⁱ-zeroʳ p))
++x∙-distribʳ-*ⁱ c₁ p (c₂ +x∙ q) = +≈+ (sym (+-identityʳ (c₁ * c₂))) $ begin⟨ ≈ⁱ-setoid ⟩
+  (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p) +ⁱ x∙ (p *ⁱ q) ≈⟨ +ⁱ-congˡ (+≈+ refl (*ⁱ-comm p q)) ⟩
+  (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p) +ⁱ x∙ (q *ⁱ p) ≈⟨ +ⁱ-assoc (c₁ ∙ⁱ q) (c₂ ∙ⁱ p) (x∙ (q *ⁱ p)) ⟩
+  c₁ ∙ⁱ q +ⁱ (c₂ ∙ⁱ p +ⁱ x∙ (q *ⁱ p)) ≈⟨ +ⁱ-congˡ (≈ⁱ-sym (+x∙-distribʳ-*ⁱ c₂ q p)) ⟩
+  c₁ ∙ⁱ q +ⁱ (c₂ +x∙ q) *ⁱ p          ≈⟨ +ⁱ-congˡ (*ⁱ-comm (c₂ +x∙ q) p) ⟩
+  c₁ ∙ⁱ q +ⁱ p *ⁱ (c₂ +x∙ q)          ∎
+
++x∙-distribˡ-*ⁱ : ∀ c p q → p *ⁱ (c +x∙ q) ≈ⁱ c ∙ⁱ p +ⁱ x∙ (p *ⁱ q)
++x∙-distribˡ-*ⁱ c p q = begin⟨ ≈ⁱ-setoid ⟩
+  p *ⁱ (c +x∙ q)        ≈⟨ *ⁱ-comm p (c +x∙ q) ⟩
+  (c +x∙ q) *ⁱ p        ≈⟨ +x∙-distribʳ-*ⁱ c q p ⟩
+  c ∙ⁱ p +ⁱ x∙ (q *ⁱ p) ≈⟨ +ⁱ-congˡ (+≈+ refl (*ⁱ-comm q p)) ⟩
+  c ∙ⁱ p +ⁱ x∙ (p *ⁱ q) ∎
+
 x∙-distrib-*ⁱ : ∀ p q → x∙ (p *ⁱ q) ≈ⁱ p *ⁱ (x∙ q)
 x∙-distrib-*ⁱ 0ⁱ q = +≈0 refl ≈ⁱ-refl
 x∙-distrib-*ⁱ (c₁ +x∙ p) 0ⁱ = +≈+ (sym (zeroʳ c₁)) $ begin⟨ ≈ⁱ-setoid ⟩
   0ⁱ +ⁱ 0ⁱ                ≈⟨ +ⁱ-cong (0≈0∙p p) (0≈+ refl (≈ⁱ-sym (*ⁱ-zeroʳ p))) ⟩
   0# ∙ⁱ p +ⁱ x∙ (p *ⁱ 0ⁱ) ∎
 x∙-distrib-*ⁱ (c₁ +x∙ p) (c₂ +x∙ q) = +≈+ (sym (zeroʳ c₁)) $ begin⟨ ≈ⁱ-setoid ⟩
-  (c₁ * c₂) +x∙ (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q))            ≈⟨ ? ⟩
+  (c₁ * c₂) +x∙ (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q))            ≈⟨ TODO ⟩
+  (c₁ * c₂) +x∙ (c₁ ∙ⁱ q +ⁱ (c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q)))          ≈⟨ +≈+ refl (+ⁱ-congˡ (≈ⁱ-sym (+x∙-distribˡ-*ⁱ c₂ p q))) ⟩
+  (c₁ * c₂) +x∙ (c₁ ∙ⁱ q +ⁱ p *ⁱ (c₂ +x∙ q))                   ≈⟨ TODO ⟩
   ((c₁ * c₂) +x∙ (c₁ ∙ⁱ q)) +ⁱ 0# ∙ⁱ p +ⁱ x∙ (p *ⁱ (c₂ +x∙ q)) ∎
 
 
@@ -451,11 +459,10 @@ x∙-distrib-*ⁱ (c₁ +x∙ p) (c₂ +x∙ q) = +≈+ (sym (zeroʳ c₁)) $ be
 *ⁱ-assoc (c₁ +x∙ p) (c₂ +x∙ q) 0ⁱ = ≈ⁱ-refl
 *ⁱ-assoc (c₁ +x∙ p) (c₂ +x∙ q) (c₃ +x∙ r) = +≈+ (*-assoc c₁ c₂ c₃) $ begin⟨ ≈ⁱ-setoid ⟩
   (c₁ * c₂) ∙ⁱ r +ⁱ  c₃ ∙ⁱ (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q)) +ⁱ x∙ ((c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q)) *ⁱ r)
-  ≈⟨ {!!} ⟩
+  ≈⟨ TODO ⟩
   c₁ ∙ⁱ (c₂ ∙ⁱ r) +ⁱ (c₃ ∙ⁱ (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p) +ⁱ c₃ ∙ⁱ (x∙ (p *ⁱ q))) +ⁱ x∙ ((c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q)) *ⁱ r)
-  ≈⟨ {!!} ⟩
+  ≈⟨ TODO ⟩
   c₁ ∙ⁱ (c₂ ∙ⁱ r +ⁱ c₃ ∙ⁱ q +ⁱ x∙ (q *ⁱ r)) +ⁱ c₂ * c₃ ∙ⁱ p +ⁱ x∙ (p *ⁱ (c₂ ∙ⁱ r +ⁱ c₃ ∙ⁱ q +ⁱ x∙ (q *ⁱ r))) ∎
-
 
 *ⁱ-isSemigroup : IsSemigroup _*ⁱ_
 *ⁱ-isSemigroup = record
@@ -516,27 +523,11 @@ open CommutativeRing +ⁱ-*ⁱ-commutativeRing using () renaming (+-rawMonoid to
 0ⁱ≉1ⁱ : 0ⁱ ≉ⁱ 1ⁱ
 0ⁱ≉1ⁱ (0≈+ 1#≈0# _) = contradiction 1#≈0# 1#≉0#
 
-+ⁱ-*ⁱ-isNonZeroCommutativeRing : IsNonZeroCommutativeRing _+ⁱ_ _*ⁱ_ -ⁱ_ 0ⁱ 1ⁱ
++ⁱ-*ⁱ-isNonZeroCommutativeRing : IsNonZeroCommutativeRing Polynomialⁱ _≈ⁱ_ _+ⁱ_ _*ⁱ_ -ⁱ_ 0ⁱ 1ⁱ
 +ⁱ-*ⁱ-isNonZeroCommutativeRing = record
   { isCommutativeRing = +ⁱ-*ⁱ-isCommutativeRing
   ; 0#≉1# = 0ⁱ≉1ⁱ
   }
-
-+x∙-distribʳ-*ⁱ : ∀ c p q → (c +x∙ p) *ⁱ q ≈ⁱ c ∙ⁱ q +ⁱ x∙ (p *ⁱ q)
-+x∙-distribʳ-*ⁱ c₁ p 0ⁱ = 0≈+ refl (≈ⁱ-sym (*ⁱ-zeroʳ p))
-+x∙-distribʳ-*ⁱ c₁ p (c₂ +x∙ q) = +≈+ (sym (+-identityʳ (c₁ * c₂))) $ begin⟨ ≈ⁱ-setoid ⟩
-  (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p) +ⁱ x∙ (p *ⁱ q) ≈⟨ +ⁱ-congˡ (+≈+ refl (*ⁱ-comm p q)) ⟩
-  (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p) +ⁱ x∙ (q *ⁱ p) ≈⟨ +ⁱ-assoc (c₁ ∙ⁱ q) (c₂ ∙ⁱ p) (x∙ (q *ⁱ p)) ⟩
-  c₁ ∙ⁱ q +ⁱ (c₂ ∙ⁱ p +ⁱ x∙ (q *ⁱ p)) ≈⟨ +ⁱ-congˡ (≈ⁱ-sym (+x∙-distribʳ-*ⁱ c₂ q p)) ⟩
-  c₁ ∙ⁱ q +ⁱ (c₂ +x∙ q) *ⁱ p          ≈⟨ +ⁱ-congˡ (*ⁱ-comm (c₂ +x∙ q) p) ⟩
-  c₁ ∙ⁱ q +ⁱ p *ⁱ (c₂ +x∙ q)          ∎
-
-+x∙-distribˡ-*ⁱ : ∀ c p q → p *ⁱ (c +x∙ q) ≈ⁱ c ∙ⁱ p +ⁱ x∙ (p *ⁱ q)
-+x∙-distribˡ-*ⁱ c p q = begin⟨ ≈ⁱ-setoid ⟩
-  p *ⁱ (c +x∙ q)        ≈⟨ *ⁱ-comm p (c +x∙ q) ⟩
-  (c +x∙ q) *ⁱ p        ≈⟨ +x∙-distribʳ-*ⁱ c q p ⟩
-  c ∙ⁱ p +ⁱ x∙ (q *ⁱ p) ≈⟨ +ⁱ-congˡ (+≈+ refl (*ⁱ-comm q p)) ⟩
-  c ∙ⁱ p +ⁱ x∙ (p *ⁱ q) ∎
 
 +≉0 : ∀ {c} {p} → c ≈ 0# → c +x∙ p ≉ⁱ 0ⁱ → p ≉ⁱ 0ⁱ
 +≉0 c≈0 c+x∙p≉0ⁱ p≈0 = contradiction (+≈0 c≈0 (≈ⁱ-sym p≈0)) c+x∙p≉0ⁱ
@@ -595,7 +586,7 @@ open CommutativeRing +ⁱ-*ⁱ-commutativeRing using () renaming (+-rawMonoid to
   lemma : ∀ a b c d → (a +ⁱ b) +ⁱ (c +ⁱ d) ≈ⁱ a +ⁱ ((c +ⁱ b) +ⁱ d)
   lemma = solve +ⁱ-*ⁱ-almostCommutativeRing
 
-+ⁱ-*ⁱ-isIntegralDomain : IsIntegralDomain _+ⁱ_ _*ⁱ_ -ⁱ_ 0ⁱ 1ⁱ
++ⁱ-*ⁱ-isIntegralDomain : IsIntegralDomain Polynomialⁱ _≈ⁱ_ _+ⁱ_ _*ⁱ_ -ⁱ_ 0ⁱ 1ⁱ
 +ⁱ-*ⁱ-isIntegralDomain = record
   { isNonZeroCommutativeRing = +ⁱ-*ⁱ-isNonZeroCommutativeRing
   ; *-cancelˡ = *ⁱ-cancelˡ
@@ -604,13 +595,14 @@ open CommutativeRing +ⁱ-*ⁱ-commutativeRing using () renaming (+-rawMonoid to
 +ⁱ-*ⁱ-integralDomain : IntegralDomain c (c ⊔ˡ ℓ)
 +ⁱ-*ⁱ-integralDomain = record { isIntegralDomain = +ⁱ-*ⁱ-isIntegralDomain }
 
-+ᵖ-rawMonoid : RawMonoid (c ⊔ˡ ℓ) (c ⊔ˡ ℓ)
-+ᵖ-rawMonoid = record
-  { Carrier = Polynomial
-  ; _≈_ = _≈ᵖ_
-  ; _∙_ = _+ᵖ_
-  ; ε = 0ᵖ
-  }
+lemma 
+
+degreeⁱ-+ⁱ : ∀ p q → degreeⁱ (p +ⁱ q) ≤ᵈ degreeⁱ p ⊔ᵈ degreeⁱ q
+degreeⁱ-+ⁱ 0ⁱ q = ≤ᵈ-refl
+degreeⁱ-+ⁱ (c₁ +x∙ p) 0ⁱ with degreeⁱ (c₁ +x∙ p)
+... | -∞ = ≤ᵈ-refl
+... | ⟨ _ ⟩ = ≤ᵈ-refl
+degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) = {!!}
 
 expandˢ-+x^-lemma : ∀ o n c p → expandˢ o (c +x^ n ∙ p) ≈ⁱ expandˢ o (K c) +ⁱ expandˢ (o +ℕ ⟅ n ⇓⟆) p
 expandˢ-+x^-lemma zero (ℕ+ n) c₁ p = begin⟨ ≈ⁱ-setoid ⟩
@@ -745,20 +737,6 @@ expand-+ᵖ-homo 0ᵖ q = ≈ⁱ-refl
 expand-+ᵖ-homo (x^ o₁ ∙ p) 0ᵖ = ≈ⁱ-sym (+ⁱ-identityʳ (expand (x^ o₁ ∙ p)))
 expand-+ᵖ-homo (x^ o₁ ∙ p) (x^ o₂ ∙ q) = expand-+ᵖ-spine-homo o₁ p o₂ q
 
-+ᵖ-+ⁱ-isMonoidMonomorphism : IsMonoidMonomorphism +ᵖ-rawMonoid +ⁱ-rawMonoid expand
-+ᵖ-+ⁱ-isMonoidMonomorphism = record
-  { isMonoidHomomorphism = record
-    { isMagmaHomomorphism = record
-      { isRelHomomorphism = record
-        { cong = expand-cong
-        }
-      ; homo = expand-+ᵖ-homo
-      }
-    ; ε-homo = ≈ⁱ-refl
-    }
-  ; injective = expand-injective
-  }
-
 expandˢ-*ᵖ-K-lemma : ∀ o₁ o₂ c₁ c₂ → expandˢ (o₁ +ℕ o₂) (K (c₁ *-nonzero c₂)) ≈ⁱ expandˢ o₁ (K c₁) *ⁱ expandˢ o₂ (K c₂)
 expandˢ-*ᵖ-K-lemma zero zero c₁ c₂ = +≈+ refl (0≈+ refl 0≈0)
 expandˢ-*ᵖ-K-lemma zero (suc o₂) c₁ c₂ = +≈+ (sym (zeroʳ (proj₁ c₁))) $ begin⟨ ≈ⁱ-setoid ⟩
@@ -857,6 +835,67 @@ expand-*ᵖ-homo : ∀ p q → expand (p *ᵖ q) ≈ⁱ expand p *ⁱ expand q
 expand-*ᵖ-homo 0ᵖ q = *ⁱ-zeroˡ (expand q)
 expand-*ᵖ-homo (x^ o₁ ∙ p) 0ᵖ = ≈ⁱ-sym (*ⁱ-zeroʳ (expand (x^ o₁ ∙ p)))
 expand-*ᵖ-homo (x^ o₁ ∙ p) (x^ o₂ ∙ q) = expand-*ᵖ-spine-homo o₁ p o₂ q
+
+expand-∙ᵖ-homo : ∀ c p → expand (c ∙ᵖ p) ≈ⁱ proj₁ c ∙ⁱ expand p
+expand-∙ᵖ-homo c₁ 0ᵖ = ≈ⁱ-refl
+expand-∙ᵖ-homo c₁ (x^ n ∙ p) = loop c₁ n p
+  where
+  loop : ∀ c n p → expandˢ n (∙ᵖ-spine c p) ≈ⁱ proj₁ c ∙ⁱ expandˢ n p
+  loop c₁ zero (K c₂) = ≈ⁱ-refl
+  loop c₁ zero (c₂ +x^ n₂ ∙ p) = +≈+ refl (loop c₁ (pred ⟅ n₂ ⇓⟆) p)
+  loop c₁ (suc n) p = +≈+ (sym (zeroʳ (proj₁ c₁))) (loop c₁ n p)
+
+expand‿-ᵖ‿homo : ∀ p → expand (-ᵖ p) ≈ⁱ -ⁱ (expand p)
+expand‿-ᵖ‿homo = expand-∙ᵖ-homo -1#-nonzero
+
+---- Witness me ----
+
+expand-isRelHomomorphism : IsRelHomomorphism _≈ᵖ_ _≈ⁱ_ expand
+expand-isRelHomomorphism = record { cong = expand-cong }
+
+expand-isRingHomomorphism : IsRingHomomorphism +ᵖ-*ᵖ-rawRing +ⁱ-*ⁱ-rawRing expand
+expand-isRingHomomorphism = record
+  { isRelHomomorphism = expand-isRelHomomorphism
+  ; +-homo = expand-+ᵖ-homo
+  ; *-homo = expand-*ᵖ-homo
+  ; -‿homo = expand‿-ᵖ‿homo
+  ; 0#-homo = ≈ⁱ-refl
+  ; 1#-homo = ≈ⁱ-refl
+  }
+
+expand-isRingMonomorphism : IsRingMonomorphism +ᵖ-*ᵖ-rawRing +ⁱ-*ⁱ-rawRing expand
+expand-isRingMonomorphism = record
+  { isRingHomomorphism = expand-isRingHomomorphism
+  ; injective = expand-injective
+  }
+
+open RingConsequences expand-isRingMonomorphism using (R₂-isIntegralDomain→R₁-isIntegralDomain)
+
++ᵖ-*ᵖ-isIntegralDomain : IsIntegralDomain Polynomial _≈ᵖ_ _+ᵖ_ _*ᵖ_ -ᵖ_ 0ᵖ 1ᵖ
++ᵖ-*ᵖ-isIntegralDomain = R₂-isIntegralDomain→R₁-isIntegralDomain +ⁱ-*ⁱ-isIntegralDomain
+
++ᵖ-*ᵖ-integralDomain : IntegralDomain (c ⊔ˡ ℓ) (c ⊔ˡ ℓ)
++ᵖ-*ᵖ-integralDomain = record { isIntegralDomain = +ᵖ-*ᵖ-isIntegralDomain }
+
+-- degreeⁱ≡degreeˢ : ∀ n p → degreeⁱ (expandˢ n p) ≡ ⟨ n +ℕ degreeˢ p ⟩
+-- degreeⁱ≡degreeˢ zero (K c) with proj₁ c ≈? 0#
+-- ... | yes c≈0 = contradiction c≈0 (proj₂ c)
+-- ... | no  _   = ≡-refl
+-- degreeⁱ≡degreeˢ zero (c +x^ (ℕ+ i) ∙ p) rewrite degreeⁱ≡degreeˢ i p = ≡-refl
+-- degreeⁱ≡degreeˢ (suc n) p rewrite degreeⁱ≡degreeˢ n p = ≡-refl
+
+-- degreeⁱ≡degree : ∀ p → degreeⁱ (expand p) ≡ degree p
+-- degreeⁱ≡degree 0ᵖ = ≡-refl
+-- degreeⁱ≡degree (x^ n ∙ p) = degreeⁱ≡degreeˢ n p
+
+-- degreeˢ-cong : ∀ {p q} → p ≈ˢ q → degreeˢ p ≡ degreeˢ q
+-- degreeˢ-cong {K c₁} {K c₂} (K≈ c₁≈c₂) = ≡-refl
+-- degreeˢ-cong {c₁ +x^ n ∙ p} {c₂ +x^ n ∙ q} (+≈ c₁≈c₂ ≡-refl p≈q) rewrite degreeˢ-cong p≈q = ≡-refl
+
+-- degree-cong : ∀ {p q} → p ≈ᵖ q → degree p ≡ degree q
+-- degree-cong {0ᵖ} {0ᵖ} 0ᵖ≈ = ≡-refl
+-- degree-cong {x^ n ∙ p} {x^ n ∙ q} (0ᵖ≉ ≡-refl p≈q) rewrite degreeˢ-cong p≈q = ≡-refl
+
 
 -- ∙ᵖ-spine-degreeˢ : ∀ a p → degreeˢ (∙ᵖ-spine a p) ≡ degreeˢ p
 -- ∙ᵖ-spine-degreeˢ a (K c) = ≡-refl

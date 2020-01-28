@@ -2,22 +2,22 @@ open import Function using (_$_)
 
 open import Relation.Nullary using (yes; no)
 open import Relation.Binary using (Decidable; Irrelevant; Antisymmetric; Setoid)
-open import AKS.Algebra.Bundles using (IntegralDomain; Field)
+open import AKS.Algebra.Bundles using (NonZeroCommutativeRing; Field)
 
-module AKS.Algebra.Consequences {c ℓ} (I : IntegralDomain c ℓ) where
+module AKS.Algebra.Consequences {c ℓ} (R : NonZeroCommutativeRing c ℓ) where
 
 open import AKS.Nat using (ℕ)
 
 open import Algebra.Bundles using (CommutativeRing)
 
-open IntegralDomain I using (_+_; _*_; -_; _-_; 0#; 1#) renaming (Carrier to C)
-open IntegralDomain I using (_≈_; _≉_; setoid)
+open NonZeroCommutativeRing R using (_+_; _*_; -_; _-_; 0#; 1#) renaming (Carrier to C)
+open NonZeroCommutativeRing R using (_≈_; _≉_; setoid)
 open Setoid setoid using (refl; sym)
 open import Relation.Binary.Reasoning.Setoid setoid
-open IntegralDomain I using (commutativeRing; isIntegralDomain; *-cancelˡ)
+open NonZeroCommutativeRing R using (isNonZeroCommutativeRing; commutativeRing)
 open CommutativeRing commutativeRing using (+-identityʳ; +-assoc; +-comm; +-congʳ; +-congˡ; +-cong; -‿cong; -‿inverseʳ)
-open CommutativeRing commutativeRing using (*-cong; *-congʳ; *-congˡ; zeroʳ; zeroˡ; commutativeSemiring)
-open import AKS.Algebra.Structures C _≈_ using (IsField; IsEuclideanDomain; module Modulus; module Divisibility; IsGCDDomain; IsUniqueFactorizationDomain)
+open CommutativeRing commutativeRing using (*-identityˡ; *-cong; *-congʳ; *-congˡ; *-assoc; *-comm; zeroʳ; zeroˡ; commutativeSemiring)
+open import AKS.Algebra.Structures C _≈_ using (IsField; IsEuclideanDomain; module Modulus; module Divisibility; IsIntegralDomain; IsGCDDomain; IsUniqueFactorizationDomain)
 open import AKS.Algebra.Divisibility commutativeSemiring using (module Euclidean)
 open Modulus using (Remainder; 0≈)
 open Divisibility _*_ using (_∣_; divides)
@@ -33,6 +33,7 @@ module Division⇒EuclideanDomain
   (modulus : ∀ n m {m≉0 : m ≉ 0#} → Remainder 0# ∣_∣ _mod_ n m {m≉0})
   (div-cong : ∀ {x₁ x₂} {y₁ y₂} → x₁ ≈ x₂ → y₁ ≈ y₂ → ∀ {y₁≉0 y₂≉0} → (x₁ div y₁) {y₁≉0} ≈ (x₂ div y₂) {y₂≉0})
   (mod-distribʳ-* : ∀ c a b {b≉0} {b*c≉0} → ((a * c) mod (b * c)) {b*c≉0} ≈ (a mod b) {b≉0} * c)
+  (*-cancelˡ : ∀ x {y z} → x ≉ 0# → x * y ≈ x * z → y ≈ z)
   where
 
   private
@@ -53,6 +54,9 @@ module Division⇒EuclideanDomain
       x₂ mod y₂           ∎
 
   open Euclidean ∣_∣ _div_ _mod_ _≈?_ ≈-irrelevant ≉-irrelevant division modulus mod-cong mod-distribʳ-* using (gcd; gcd-isGCD) public
+
+  isIntegralDomain : IsIntegralDomain _+_ _*_ -_ 0# 1#
+  isIntegralDomain = record { isNonZeroCommutativeRing = isNonZeroCommutativeRing; *-cancelˡ = *-cancelˡ }
 
   isGCDDomain : IsGCDDomain _+_ _*_ -_ 0# 1# gcd
   isGCDDomain = record { isIntegralDomain = isIntegralDomain; gcd-isGCD = gcd-isGCD }
@@ -93,6 +97,19 @@ module Inverse⇒Field
     modulus : ∀ n m {m≉0 : m ≉ 0#} → Remainder 0# ∣_∣ _mod_ n m {m≉0}
     modulus _ _ = 0≈ refl
 
+    *-cancelˡ : ∀ x {y z} → x ≉ 0# → x * y ≈ x * z → y ≈ z
+    *-cancelˡ x {y} {z} x≢0 x*y≡x*z = begin
+      y                  ≈⟨ sym (*-identityˡ y) ⟩
+      1# * y             ≈⟨ *-congʳ (inverse 1# x {x≢0}) ⟩
+      (x * (1# / x)) * y ≈⟨ *-congʳ (*-comm x (1# / x)) ⟩
+      ((1# / x) * x) * y ≈⟨ *-assoc _ _ _ ⟩
+      (1# / x) * (x * y) ≈⟨ *-congˡ x*y≡x*z ⟩
+      (1# / x) * (x * z) ≈⟨ sym (*-assoc _ _ _) ⟩
+      ((1# / x) * x) * z ≈⟨ *-congʳ (*-comm (1# / x) x) ⟩
+      (x * (1# / x)) * z ≈⟨ *-congʳ (sym (inverse 1# x {x≢0})) ⟩
+      1# * z             ≈⟨ *-identityˡ z ⟩
+      z ∎
+
     div-cong : ∀ {x₁ x₂} {y₁ y₂} → x₁ ≈ x₂ → y₁ ≈ y₂ → ∀ {y₁≉0 y₂≉0} → (x₁ / y₁) {y₁≉0} ≈ (x₂ / y₂) {y₂≉0}
     div-cong {x₁} {x₂} {y₁} {y₂} x₁≈x₂ y₁≈y₂ {y₁≉0} {y₂≉0} = *-cancelˡ y₁ y₁≉0 $ begin
       y₁ * (x₁ / y₁) ≈⟨ sym (inverse x₁ y₁) ⟩
@@ -104,7 +121,7 @@ module Inverse⇒Field
     mod-distribʳ-* : ∀ c a b {b≉0} {b*c≉0} → ((a * c) mod (b * c)) {b*c≉0} ≈ (a mod b) {b≉0} * c
     mod-distribʳ-* c a b = sym (zeroˡ c)
 
-  open Division⇒EuclideanDomain _≈?_ ≈-irrelevant ≉-irrelevant ∣_∣ _/_ _mod_ division modulus div-cong mod-distribʳ-* using (gcd; isEuclideanDomain) public
+  open Division⇒EuclideanDomain _≈?_ ≈-irrelevant ≉-irrelevant ∣_∣ _/_ _mod_ division modulus div-cong mod-distribʳ-* *-cancelˡ using (gcd; isEuclideanDomain) public
 
   isField : IsField _+_ _*_ -_ 0# 1# _/_ gcd
   isField = record { isEuclideanDomain = isEuclideanDomain }
