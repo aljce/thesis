@@ -34,6 +34,7 @@ open Nat.Reflection using (∀⟨_⟩)
 
 open import AKS.Nat.Base using (ℕ; _+_; _*_; _∸_; lte; _≤_; _≥_; _≰_; _≱_; _<_; _≮_; _>_; _≯_; _<ᵇ_; _≟_; ℕ⁺; ℕ+; ⟅_⇓⟆; ⟅_⇑⟆; pred)
 open ℕ
+open import Algebra.Definitions {A = ℕ} _≡_ using (_DistributesOverˡ_)
 
 ≢⇒¬≟ : ∀ {n m} → n ≢ m → False (n ≟ m)
 ≢⇒¬≟ {n} {m} n≢m with n ≟ m
@@ -50,6 +51,11 @@ open ℕ
 ⟅⇓⟆-injective : ∀ {n m} → pred ⟅ n ⇓⟆ ≡ pred ⟅ m ⇓⟆ → n ≡ m
 ⟅⇓⟆-injective {ℕ+ n} {ℕ+ m} refl = refl
 
+n≢0∧m≢0⇒n*m≢0 : ∀ {n m} → n ≢ 0 → m ≢ 0 → n * m ≢ 0
+n≢0∧m≢0⇒n*m≢0 {zero} {m} n≢0 m≢0 = contradiction refl n≢0
+n≢0∧m≢0⇒n*m≢0 {suc n} {zero} n≢0 m≢0 = contradiction refl m≢0
+n≢0∧m≢0⇒n*m≢0 {suc n} {suc m} n≢0 m≢0 ()
+
 ------------ _≤_ --------------
 
 0≤n : ∀ {n} → 0 ≤ n
@@ -57,6 +63,9 @@ open ℕ
 
 ≤-refl : Reflexive _≤_
 ≤-refl {x} = lte 0 (≡-erase ∀⟨ x ∷ [] ⟩)
+
+≤-reflexive : ∀ {n m} → n ≡ m → n ≤ m
+≤-reflexive refl = ≤-refl
 
 ≤-trans : Transitive _≤_
 ≤-trans {x} (lte k₁ refl) (lte k₂ refl) = lte (k₁ + k₂) (≡-erase ∀⟨ x ∷ k₁ ∷ k₂ ∷ [] ⟩)
@@ -108,7 +117,7 @@ m≤n+m {m} {n} = lte n (+-comm m n)
 ≤-isPreorder : IsPreorder _≡_ _≤_
 ≤-isPreorder = record
  { isEquivalence = ≡-isEquivalence
- ; reflexive = λ { refl → ≤-refl }
+ ; reflexive = ≤-reflexive
  ; trans = ≤-trans
  }
 
@@ -152,6 +161,9 @@ n≮0 ()
 
 suc-mono-< : ∀ {n m} → n < m → suc n < suc m
 suc-mono-< (lte k₁ refl) = lte k₁ refl
+
++-mono-≤ : _+_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
++-mono-≤ {x} {_} {u} (lte k refl) (lte m refl) = lte (k + m) (≡-erase (solveOver (x ∷ u ∷ k ∷ m ∷ []) Nat.ring))
 
 +-mono-< : _+_ Preserves₂ _<_ ⟶ _<_ ⟶ _<_
 +-mono-< {x} {_} {u} (lte k refl) (lte m refl) = lte (suc (k + m)) (≡-erase (solveOver (x ∷ u ∷ k ∷ m ∷ []) Nat.ring))
@@ -316,9 +328,30 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 ≤-totalOrder : TotalOrder 0ℓ 0ℓ 0ℓ
 ≤-totalOrder = record { isTotalOrder = ≤-isTotalOrder }
 
-open import Algebra.Construct.NaturalChoice.Max ≤-totalOrder using (_⊔_) public
+open import Algebra.Construct.NaturalChoice.Max ≤-totalOrder public
 
-n≢0∧m≢0⇒n*m≢0 : ∀ {n m} → n ≢ 0 → m ≢ 0 → n * m ≢ 0
-n≢0∧m≢0⇒n*m≢0 {zero} {m} n≢0 m≢0 = contradiction refl n≢0
-n≢0∧m≢0⇒n*m≢0 {suc n} {zero} n≢0 m≢0 = contradiction refl m≢0
-n≢0∧m≢0⇒n*m≢0 {suc n} {suc m} n≢0 m≢0 ()
++-distribˡ-⊔ : _+_ DistributesOverˡ _⊔_
++-distribˡ-⊔ x y z with ≤-total z y
++-distribˡ-⊔ x y z | inj₁ z≤y with ≤-total (x + z) (x + y)
++-distribˡ-⊔ x y z | inj₁ z≤y | inj₁ x+z≤x+y = refl
++-distribˡ-⊔ x y z | inj₁ z≤y | inj₂ x+y≤x+z = ≤-antisym x+y≤x+z (+-mono-≤ ≤-refl z≤y)
++-distribˡ-⊔ x y z | inj₂ y≤z with ≤-total (x + z) (x + y)
++-distribˡ-⊔ x y z | inj₂ y≤z | inj₁ x+z≤x+y = ≤-antisym x+z≤x+y (+-mono-≤ ≤-refl y≤z)
++-distribˡ-⊔ x y z | inj₂ y≤z | inj₂ x+y≤x+z = refl
+
+⊔-least-≤ : ∀ n m o → n ≤ o → m ≤ o → n ⊔ m ≤ o
+⊔-least-≤ n m o n≤o m≤o with ≤-total m n
+... | inj₁ _ = n≤o
+... | inj₂ _ = m≤o
+
+⊔-least-< : ∀ n m o → n < o → m < o → n ⊔ m < o
+⊔-least-< n m o n<o m<o with ≤-total m n
+... | inj₁ _ = n<o
+... | inj₂ _ = m<o
+
+m≤n⇒m⊔n≡n : ∀ {m n} → m ≤ n → m ⊔ n ≡ n
+m≤n⇒m⊔n≡n {m} {n} m≤n with ≤-total n m
+... | inj₁ n≤m = ≤-antisym m≤n n≤m
+... | inj₂ _   = refl
+
+

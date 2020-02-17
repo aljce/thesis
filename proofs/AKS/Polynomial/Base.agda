@@ -287,7 +287,7 @@ p ≉ⁱ q = ¬ (p ≈ⁱ q)
   }
 
 open import AKS.Extended ≤-totalOrder
-  using ()
+  using (module ≤ᵉ-Reasoning)
   renaming
   ( Extended to Degree
   ; _≤ᵉ_ to _≤ᵈ_
@@ -297,6 +297,9 @@ open import AKS.Extended ≤-totalOrder
   public
 open Degree public
 open _≤ᵈ_ public
+
+module ≤ᵈ-Reasoning where
+  open ≤ᵉ-Reasoning renaming (_∼⟨_⟩_ to _≤ᵈ⟨_⟩_; _∎ to _∎ᵈ; _≡⟨_⟩_ to _≡ᵈ⟨_⟩_) public
 
 instance
   Degree-number : Number Degree

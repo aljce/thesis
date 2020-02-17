@@ -1,5 +1,5 @@
 open import Level using () renaming (_⊔_ to _⊔ˡ_)
-open import Function using (_$_)
+open import Function using (_$_; flip)
 
 open import Function.Equivalence as FE using ()
 open import Relation.Nullary using (yes; no)
@@ -7,7 +7,7 @@ open import Relation.Nullary.Decidable using (map)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary using (Setoid; IsEquivalence; Decidable; DecSetoid; IsDecEquivalence; Tri)
 open import Relation.Binary.Definitions using (Recomputable)
-open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong; setoid to ≡-setoid)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_) renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong; cong₂ to ≡-cong₂; setoid to ≡-setoid)
 open Tri
 
 open import Data.Empty.Irrelevant using (⊥-elim)
@@ -21,8 +21,10 @@ open import AKS.Algebra.Bundles using (DecField; IntegralDomain)
 
 module AKS.Polynomial.Properties {c ℓ} (F : DecField c ℓ) where
 
-open import AKS.Nat using (ℕ; zero; suc; _<_; _≟_; _≟⁺_; _∸_; ℕ⁺; ℕ+; ⟅_⇓⟆; ⟅_⇑⟆; pred) renaming (_+_ to _+ℕ_)
+open import AKS.Nat using (ℕ; zero; suc; _<_; _≤_; lte; _≟_; _≟⁺_; _∸_; ℕ⁺; ℕ+; ⟅_⇓⟆; ⟅_⇑⟆; pred) renaming (_+_ to _+ℕ_)
 open import AKS.Nat using (<-cmp; <-≤-connex; m+[n∸m]≡n; ℕ→ℕ⁺→ℕ; ⟅⇓⟆-injective; m<n⇒n∸m≢0; ≢⇒¬≟; <⇒≤; +-suc)
+open import AKS.Nat using (0≤n; suc-mono-≤; ≤-reflexive; +-mono-<; module ≤-Reasoning)
+open import AKS.Nat using (_⊔_; ⊔-identityʳ; ⊔-identityˡ; +-distribˡ-⊔; ⊔-least-<; m≤n⇒m⊔n≡n)
 open import AKS.Nat using (Acc; acc; <-well-founded)
 import Data.Nat.Properties as Nat
 
@@ -52,7 +54,7 @@ open import AKS.Polynomial.Base F using
   ; Spine; K; _+x^_∙_; Polynomial; 0ᵖ; x^_∙_; ⟦_⟧; ⟦_⟧ˢ; _+?_; 𝐾; 𝑋; _∙𝑋^_
   ; 1ᵖ; _+ᵖ_; +ᵖ-spine; +ᵖ-spine-≡-K; +ᵖ-spine-≡; +ᵖ-spine-<; -ᵖ_; _-ᵖ_; _*ᵖ_; *ᵖ-spine; _∙ᵖ_; ∙ᵖ-spine; +ᵖ-*ᵖ-rawRing
   ; _≈ᵖ_; _≉ᵖ_; 0ᵖ≈; 0ᵖ≉; _≈ˢ_; K≈; +≈; ≈ᵖ-refl; ≈ᵖ-sym; ≈ᵖ-trans
-  ; Degree; deg; degree; degreeˢ; _⊔ᵈ_; _+ᵈ_; _≤ᵈ_; ≤ᵈ-refl; -∞; ⟨_⟩; degreeⁱ
+  ; Degree; deg; degree; degreeˢ; _⊔ᵈ_; _+ᵈ_; _≤ᵈ_; -∞≤_; ≤ᵈ-refl; module ≤ᵈ-Reasoning; -∞; ⟨_⟩; degreeⁱ
   )
 open import Algebra.Structures {A = Polynomialⁱ} _≈ⁱ_ using (IsCommutativeRing; IsRing; IsAbelianGroup; IsGroup; IsMonoid; IsSemigroup; IsMagma)
 open import Algebra.Definitions {A = Polynomialⁱ} _≈ⁱ_ using
@@ -107,6 +109,7 @@ expand-injective {x^ o₁ ∙ p} {x^ o₂ ∙ q} pf = expandˢ-injective o₁ o�
   expandˢ-injective (suc o₁) (suc o₂) p q (+≈+ _ pf) with expandˢ-injective o₁ o₂ p q pf
   ... | 0ᵖ≉ ≡-refl p≈ˢq = 0ᵖ≉ ≡-refl p≈ˢq
 
+infix 4 _≈ˢ?_
 _≈ˢ?_ : Decidable _≈ˢ_
 (K c₁) ≈ˢ? (K c₂) with proj₁ c₁ ≈? proj₁ c₂
 ... | no ¬c₁≈c₂ = no λ { (K≈ c₁≈c₂) → contradiction c₁≈c₂ ¬c₁≈c₂ }
@@ -121,6 +124,7 @@ _≈ˢ?_ : Decidable _≈ˢ_
 ...     | no ¬p≈ˢq = no λ { (+≈ _ _ p≈ˢq) → contradiction p≈ˢq ¬p≈ˢq }
 ...     | yes p≈ˢq = yes (+≈ c₁≈c₂ n≡m p≈ˢq)
 
+infix 4 _≈ᵖ?_
 _≈ᵖ?_ : Decidable _≈ᵖ_
 0ᵖ ≈ᵖ? 0ᵖ = yes ≈ᵖ-refl
 0ᵖ ≈ᵖ? (x^ m ∙ q) = no λ ()
@@ -595,15 +599,6 @@ open CommutativeRing +ⁱ-*ⁱ-commutativeRing using () renaming (+-rawMonoid to
 +ⁱ-*ⁱ-integralDomain : IntegralDomain c (c ⊔ˡ ℓ)
 +ⁱ-*ⁱ-integralDomain = record { isIntegralDomain = +ⁱ-*ⁱ-isIntegralDomain }
 
-lemma 
-
-degreeⁱ-+ⁱ : ∀ p q → degreeⁱ (p +ⁱ q) ≤ᵈ degreeⁱ p ⊔ᵈ degreeⁱ q
-degreeⁱ-+ⁱ 0ⁱ q = ≤ᵈ-refl
-degreeⁱ-+ⁱ (c₁ +x∙ p) 0ⁱ with degreeⁱ (c₁ +x∙ p)
-... | -∞ = ≤ᵈ-refl
-... | ⟨ _ ⟩ = ≤ᵈ-refl
-degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) = {!!}
-
 expandˢ-+x^-lemma : ∀ o n c p → expandˢ o (c +x^ n ∙ p) ≈ⁱ expandˢ o (K c) +ⁱ expandˢ (o +ℕ ⟅ n ⇓⟆) p
 expandˢ-+x^-lemma zero (ℕ+ n) c₁ p = begin⟨ ≈ⁱ-setoid ⟩
   proj₁ c₁        +x∙ expandˢ n p ≈⟨ +≈+ (sym (+-identityʳ (proj₁ c₁))) ≈ⁱ-refl ⟩
@@ -876,91 +871,467 @@ open RingConsequences expand-isRingMonomorphism using (R₂-isIntegralDomain→R
 
 +ᵖ-*ᵖ-integralDomain : IntegralDomain (c ⊔ˡ ℓ) (c ⊔ˡ ℓ)
 +ᵖ-*ᵖ-integralDomain = record { isIntegralDomain = +ᵖ-*ᵖ-isIntegralDomain }
+open IntegralDomain +ᵖ-*ᵖ-integralDomain using () renaming (commutativeRing to +ᵖ-*ᵖ-commutativeRing)
+open CommutativeRing +ᵖ-*ᵖ-commutativeRing using () renaming (+-cong to +ᵖ-cong; +-congˡ to +ᵖ-congˡ; +-congʳ to +ᵖ-congʳ; +-identityʳ to +ᵖ-identityʳ; +-assoc to +ᵖ-assoc; +-comm to +ᵖ-comm)
+open CommutativeRing +ᵖ-*ᵖ-commutativeRing using () renaming (zeroʳ to *ᵖ-zeroʳ; -‿inverseˡ to -ᵖ‿inverseˡ; -‿inverseʳ to -ᵖ‿inverseʳ; *-comm to *ᵖ-comm; distribʳ to *ᵖ-distribʳ-+ᵖ; distribˡ to *ᵖ-distribˡ-+ᵖ)
 
--- degreeⁱ≡degreeˢ : ∀ n p → degreeⁱ (expandˢ n p) ≡ ⟨ n +ℕ degreeˢ p ⟩
--- degreeⁱ≡degreeˢ zero (K c) with proj₁ c ≈? 0#
--- ... | yes c≈0 = contradiction c≈0 (proj₂ c)
--- ... | no  _   = ≡-refl
--- degreeⁱ≡degreeˢ zero (c +x^ (ℕ+ i) ∙ p) rewrite degreeⁱ≡degreeˢ i p = ≡-refl
--- degreeⁱ≡degreeˢ (suc n) p rewrite degreeⁱ≡degreeˢ n p = ≡-refl
-
--- degreeⁱ≡degree : ∀ p → degreeⁱ (expand p) ≡ degree p
--- degreeⁱ≡degree 0ᵖ = ≡-refl
--- degreeⁱ≡degree (x^ n ∙ p) = degreeⁱ≡degreeˢ n p
-
--- degreeˢ-cong : ∀ {p q} → p ≈ˢ q → degreeˢ p ≡ degreeˢ q
--- degreeˢ-cong {K c₁} {K c₂} (K≈ c₁≈c₂) = ≡-refl
--- degreeˢ-cong {c₁ +x^ n ∙ p} {c₂ +x^ n ∙ q} (+≈ c₁≈c₂ ≡-refl p≈q) rewrite degreeˢ-cong p≈q = ≡-refl
-
--- degree-cong : ∀ {p q} → p ≈ᵖ q → degree p ≡ degree q
--- degree-cong {0ᵖ} {0ᵖ} 0ᵖ≈ = ≡-refl
--- degree-cong {x^ n ∙ p} {x^ n ∙ q} (0ᵖ≉ ≡-refl p≈q) rewrite degreeˢ-cong p≈q = ≡-refl
++ᵖ-*ᵖ-almostCommutativeRing : AlmostCommutativeRing (c ⊔ˡ ℓ) (c ⊔ˡ ℓ)
++ᵖ-*ᵖ-almostCommutativeRing = fromCommutativeRing +ᵖ-*ᵖ-commutativeRing isZero
+  where
+  isZero : ∀ x → Maybe (0ᵖ ≈ᵖ x)
+  isZero 0ᵖ = just ≈ᵖ-refl
+  isZero (x^ _ ∙ _) = nothing
 
 
--- ∙ᵖ-spine-degreeˢ : ∀ a p → degreeˢ (∙ᵖ-spine a p) ≡ degreeˢ p
--- ∙ᵖ-spine-degreeˢ a (K c) = ≡-refl
--- ∙ᵖ-spine-degreeˢ a (c +x^ n ∙ p) = ≡-cong (λ x → ⟅ n ⇓⟆ +ℕ x) (∙ᵖ-spine-degreeˢ a p)
+degreeⁱ≡degreeˢ : ∀ n p → degreeⁱ (expandˢ n p) ≡ ⟨ n +ℕ degreeˢ p ⟩
+degreeⁱ≡degreeˢ zero (K c) with proj₁ c ≈? 0#
+... | yes c≈0 = contradiction c≈0 (proj₂ c)
+... | no  _   = ≡-refl
+degreeⁱ≡degreeˢ zero (c +x^ (ℕ+ i) ∙ p) rewrite degreeⁱ≡degreeˢ i p = ≡-refl
+degreeⁱ≡degreeˢ (suc n) p rewrite degreeⁱ≡degreeˢ n p = ≡-refl
 
--- ∙ᵖ-degree : ∀ a p → degree (a ∙ᵖ p) ≡ degree p
--- ∙ᵖ-degree a 0ᵖ = ≡-refl
--- ∙ᵖ-degree a (x^ n ∙ p) = ≡-cong (λ x → ⟨ n +ℕ x ⟩) (∙ᵖ-spine-degreeˢ a p)
+degreeⁱ≡degree : ∀ p → degreeⁱ (expand p) ≡ degree p
+degreeⁱ≡degree 0ᵖ = ≡-refl
+degreeⁱ≡degree (x^ n ∙ p) = degreeⁱ≡degreeˢ n p
 
--- open import AKS.Unsafe using (TODO)
+degreeˢ-cong : ∀ {p q} → p ≈ˢ q → degreeˢ p ≡ degreeˢ q
+degreeˢ-cong {K c₁} {K c₂} (K≈ c₁≈c₂) = ≡-refl
+degreeˢ-cong {c₁ +x^ n ∙ p} {c₂ +x^ n ∙ q} (+≈ c₁≈c₂ ≡-refl p≈q) rewrite degreeˢ-cong p≈q = ≡-refl
 
--- *ᵖ-degree : ∀ p q → degree (p *ᵖ q) ≡ degree p +ᵈ degree q
--- *ᵖ-degree 0ᵖ q = ≡-refl
--- *ᵖ-degree (x^ o₁ ∙ p) 0ᵖ = ≡-refl
--- *ᵖ-degree (x^ o₁ ∙ p) (x^ o₂ ∙ q) = *ᵖ-spine-degree o₁ p o₂ q
+degree-cong : ∀ {p q} → p ≈ᵖ q → degree p ≡ degree q
+degree-cong {0ᵖ} {0ᵖ} 0ᵖ≈ = ≡-refl
+degree-cong {x^ n ∙ p} {x^ n ∙ q} (0ᵖ≉ ≡-refl p≈q) rewrite degreeˢ-cong p≈q = ≡-refl
+
+degreeⁱ-cong : ∀ {p q} → p ≈ⁱ q → degreeⁱ p ≡ degreeⁱ q
+degreeⁱ-cong {0ⁱ} {0ⁱ} 0≈0 = ≡-refl
+degreeⁱ-cong {0ⁱ} {c₂ +x∙ q} (0≈+ c₂≈0 0≈q) with degreeⁱ q | degreeⁱ-cong 0≈q
+... | ⟨ _ ⟩ | ()
+... | -∞    | ≡-refl with c₂ ≈? 0#
+...   | yes _ = ≡-refl
+...   | no c₂≉0 = contradiction c₂≈0 c₂≉0
+degreeⁱ-cong {c₁ +x∙ p} {0ⁱ} (+≈0 c₁≈0 0≈p) with degreeⁱ p | degreeⁱ-cong 0≈p
+... | ⟨ _ ⟩ | ()
+... | -∞    | ≡-refl with c₁ ≈? 0#
+...   | yes _   = ≡-refl
+...   | no c₁≉0 = contradiction c₁≈0 c₁≉0
+degreeⁱ-cong {c₁ +x∙ p} {c₂ +x∙ q} (+≈+ c₁≈c₂ p≈q) with degreeⁱ p | degreeⁱ q | degreeⁱ-cong p≈q
+... | ⟨ n ⟩ | ⟨ n ⟩ | ≡-refl = ≡-refl
+... | -∞    | -∞    | ≡-refl with c₁ ≈? 0# | c₂ ≈? 0#
+...   | yes c₁≈0 | yes c₂≈0 = ≡-refl
+...   | yes c₁≈0 | no  c₂≉0 = contradiction (begin⟨ setoid ⟩ c₂ ≈⟨ sym c₁≈c₂ ⟩ c₁ ≈⟨ c₁≈0 ⟩ 0# ∎) c₂≉0
+...   | no  c₁≉0 | yes c₂≈0 = contradiction (begin⟨ setoid ⟩ c₁ ≈⟨ c₁≈c₂     ⟩ c₂ ≈⟨ c₂≈0 ⟩ 0# ∎) c₁≉0
+...   | no  c₁≉0 | no  c₂≉0 = ≡-refl
+
+module _ where
+  open ≤-Reasoning using (begin_; _≤⟨_⟩_) renaming (_≡⟨_⟩_ to _≡≤⟨_⟩_; _∎ to _≤∎)
+
+  degreeⁱ-+ⁱ : ∀ p q → degreeⁱ (p +ⁱ q) ≤ᵈ degreeⁱ p ⊔ᵈ degreeⁱ q
+  degreeⁱ-+ⁱ 0ⁱ q = ≤ᵈ-refl
+  degreeⁱ-+ⁱ (c₁ +x∙ p) 0ⁱ with degreeⁱ (c₁ +x∙ p)
+  ... | -∞ = ≤ᵈ-refl
+  ... | ⟨ _ ⟩ = ≤ᵈ-refl
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) with degreeⁱ (p +ⁱ q) | degreeⁱ p | degreeⁱ q | degreeⁱ-+ⁱ p q
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | n     | m     | (-∞≤ _) with c₁ + c₂ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | n     | m     | (-∞≤ _) | yes c₁+c₂≈0 = -∞≤ _
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | m     | (-∞≤ _) | no  c₁+c₂≉0 with c₁ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | -∞    | (-∞≤ _) | no  c₁+c₂≉0 | yes c₁≈0 with c₂ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | -∞    | (-∞≤ _) | no  c₁+c₂≉0 | yes c₁≈0 | yes c₂≈0 = contradiction (begin⟨ setoid ⟩ c₁ + c₂ ≈⟨ +-cong c₁≈0 c₂≈0 ⟩ 0# + 0# ≈⟨ +-identityʳ 0# ⟩ 0# ∎) c₁+c₂≉0
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | -∞    | (-∞≤ _) | no  c₁+c₂≉0 | yes c₁≈0 | no  c₂≉0 = ≤ᵈ-refl
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | ⟨ m ⟩ | (-∞≤ _) | no  c₁+c₂≉0 | yes c₁≈0 = ⟨ 0≤n ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | -∞    | (-∞≤ _) | no  c₁+c₂≉0 | no  c₁≉0 with c₂ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | -∞    | (-∞≤ _) | no  c₁+c₂≉0 | no  c₁≉0 | yes c₂≈0 = ≤ᵈ-refl
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | -∞    | (-∞≤ _) | no  c₁+c₂≉0 | no  c₁≉0 | no  c₂≉0 = ⟨ ≤-reflexive (⊔-identityʳ (λ x → 0≤n) 0) ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | -∞    | ⟨ m ⟩ | (-∞≤ _) | no  c₁+c₂≉0 | no  c₁≉0 = ⟨ begin 0 ≤⟨ 0≤n ⟩ suc m ≡≤⟨ ≡-sym (⊔-identityʳ (λ x → 0≤n) (suc m)) ⟩ 0 ⊔ suc m ≤∎ ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | ⟨ n ⟩ | -∞    | (-∞≤ _) | no  c₁+c₂≉0 with c₂ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | ⟨ n ⟩ | -∞    | (-∞≤ _) | no  c₁+c₂≉0 | yes c₂≈0 = ⟨ 0≤n ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | ⟨ n ⟩ | -∞    | (-∞≤ _) | no  c₁+c₂≉0 | no  c₂≉0 = ⟨ begin 0 ≤⟨ 0≤n ⟩ suc n ≡≤⟨ ≡-sym (⊔-identityˡ (λ x → 0≤n) (suc n)) ⟩ suc n ⊔ 0 ≤∎ ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | -∞    | ⟨ n ⟩ | ⟨ m ⟩ | (-∞≤ _) | no  c₁+c₂≉0 = ⟨ 0≤n ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | m     | _ with c₁ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | -∞    | _       | yes c₁≈0 with c₂ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | -∞    | ()      | yes c₁≈0 | yes c₂≈0
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | -∞    | ()      | yes c₁≈0 | no  c₂≉0
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | ⟨ m ⟩ | ⟨ r≤m ⟩ | yes c₁≈0 = ⟨ suc-mono-≤ r≤m ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | -∞    | pf      | no  c₁≉0 with c₂ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | -∞    | ()      | no  c₁≉0 | yes c₂≈0
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | -∞    | ()      | no  c₁≉0 | no  c₂≉0
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | -∞    | ⟨ m ⟩ | ⟨ r≤m ⟩ | no  c₁≉0 = ⟨ begin suc r ≤⟨ suc-mono-≤ r≤m ⟩ suc m ≡≤⟨ ≡-sym (⊔-identityʳ (λ x → 0≤n) (suc m)) ⟩ 0 ⊔ suc m ≤∎ ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | ⟨ n ⟩ | -∞    | ⟨ r≤n ⟩ with c₂ ≈? 0#
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | ⟨ n ⟩ | -∞    | ⟨ r≤n ⟩ | yes c₂≈0 = ⟨ suc-mono-≤ r≤n ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | ⟨ n ⟩ | -∞    | ⟨ r≤n ⟩ | no  c₂≉0 = ⟨ begin suc r ≤⟨ suc-mono-≤ r≤n ⟩ suc n ≡≤⟨ ≡-sym (⊔-identityˡ (λ x → 0≤n) (suc n)) ⟩ suc n ⊔ 0 ≤∎ ⟩
+  degreeⁱ-+ⁱ (c₁ +x∙ p) (c₂ +x∙ q) | ⟨ r ⟩ | ⟨ n ⟩ | ⟨ m ⟩ | ⟨ r≤n⊔m ⟩ = ⟨ begin suc r ≤⟨ suc-mono-≤ r≤n⊔m ⟩ suc (n ⊔ m) ≡≤⟨ +-distribˡ-⊔ 1 n m ⟩ suc n ⊔ suc m ≤∎ ⟩
+
+  -- degreeⁱ-*ⁱ : ∀ p q → degreeⁱ (p *ⁱ q) ≡ degreeⁱ p +ᵈ degreeⁱ q
+  -- degreeⁱ-*ⁱ 0ⁱ q = ≡-refl
+  -- degreeⁱ-*ⁱ (c₁ +x∙ p) 0ⁱ with degreeⁱ p
+  -- ... | ⟨ n ⟩ = ≡-refl
+  -- ... | -∞ with c₁ ≈? 0#
+  -- ...   | yes _ = ≡-refl
+  -- ...   | no  _ = ≡-refl
+  -- degreeⁱ-*ⁱ (c₁ +x∙ p) (c₂ +x∙ q) = {!!}
+  --   -- lemma : degreeⁱ ((c₁ * c₂) +x∙ (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q))) ≡ degreeⁱ (c₁ +x∙ p) +ᵈ degreeⁱ (c₂ +x∙ q)
+  --   -- lemma = {!!}
+
+
+degreeᵖ-+ᵖ : ∀ p q → degree (p +ᵖ q) ≤ᵈ degree p ⊔ᵈ degree q
+degreeᵖ-+ᵖ p q = begin
+  degree (p +ᵖ q)                          ≡ᵈ⟨ ≡-sym (degreeⁱ≡degree (p +ᵖ q)) ⟩
+  degreeⁱ (expand (p +ᵖ q))                ≡ᵈ⟨ degreeⁱ-cong (expand-+ᵖ-homo p q) ⟩
+  degreeⁱ (expand p +ⁱ expand q)           ≤ᵈ⟨ degreeⁱ-+ⁱ (expand p) (expand q) ⟩
+  degreeⁱ (expand p) ⊔ᵈ degreeⁱ (expand q) ≡ᵈ⟨ ≡-cong₂ _⊔ᵈ_ (degreeⁱ≡degree p) (degreeⁱ≡degree q) ⟩
+  degree p ⊔ᵈ degree q                     ∎ᵈ
+  where
+  open ≤ᵈ-Reasoning
+
+∙ᵖ-spine-degreeˢ : ∀ a p → degreeˢ (∙ᵖ-spine a p) ≡ degreeˢ p
+∙ᵖ-spine-degreeˢ a (K c) = ≡-refl
+∙ᵖ-spine-degreeˢ a (c +x^ n ∙ p) = ≡-cong (λ x → ⟅ n ⇓⟆ +ℕ x) (∙ᵖ-spine-degreeˢ a p)
+
+∙ᵖ-degree : ∀ a p → degree (a ∙ᵖ p) ≡ degree p
+∙ᵖ-degree a 0ᵖ = ≡-refl
+∙ᵖ-degree a (x^ n ∙ p) = ≡-cong (λ x → ⟨ n +ℕ x ⟩) (∙ᵖ-spine-degreeˢ a p)
+
+open import Relation.Binary using (Antisymmetric)
+open import AKS.Nat using (≤-antisym; ≤-total)
+
+≤ᵈ-antisym : Antisymmetric _≡_ _≤ᵈ_
+≤ᵈ-antisym (-∞≤ _) (-∞≤ _) = ≡-refl
+≤ᵈ-antisym ⟨ x≤y ⟩ ⟨ y≤x ⟩ = ≡-cong ⟨_⟩ (≤-antisym x≤y y≤x)
+
+m≤ᵈn⇒m⊔ᵈn≡n : ∀ {m n} → m ≤ᵈ n → m ⊔ᵈ n ≡ n
+m≤ᵈn⇒m⊔ᵈn≡n { -∞}   {n} m≤n = ≡-refl
+m≤ᵈn⇒m⊔ᵈn≡n {⟨ m ⟩} {⟨ n ⟩} ⟨ m≤n ⟩ with ≤-total n m
+... | inj₁ n≤m = ≡-cong ⟨_⟩ (≤-antisym m≤n n≤m)
+... | inj₂ _   = ≡-refl
+
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] : ∀ p q → degreeⁱ p ≤ᵈ degreeⁱ q → degreeⁱ q ≤ᵈ degreeⁱ (p +ⁱ q)
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] 0ⁱ q _ = ≤ᵈ-refl
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) 0ⁱ _ = -∞≤ _
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _ with degreeⁱ q
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    with c₂ ≈? 0#
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | yes c₂≈0 = -∞≤ _
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | no  c₂≉0 with degreeⁱ (p +ⁱ q)
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | no  c₂≉0 | -∞    with c₁ + c₂ ≈? 0#
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | no  c₂≉0 | -∞    | yes c₁+c₂≈0 with degreeⁱ p
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | no  c₂≉0 | -∞    | yes c₁+c₂≈0 | -∞    with c₁ ≈? 0#
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | no  c₂≉0 | -∞    | yes c₁+c₂≈0 | -∞    | yes c₁≈0 = contradiction TODO c₂≉0
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | no  c₂≉0 | -∞    | yes c₁+c₂≈0 | -∞    | no  c₁≉0 = contradiction TODO c₂≉0
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) ⟨ () ⟩ | -∞    | no  c₂≉0 | -∞    | yes c₁+c₂≈0 | ⟨ n ⟩
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | no  c₂≉0 | -∞    | no  c₁+c₂≉0 = ≤ᵈ-refl
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | -∞    | no  c₂≉0 | ⟨ r ⟩ = ⟨ 0≤n ⟩
+degreeⁱ[q]≤degreeⁱ[p+ⁱq] (c₁ +x∙ p) (c₂ +x∙ q) _      | ⟨ m ⟩ = TODO
+
+degree[q]≤degree[p+ᵖq] : ∀ p q → degree p ≤ᵈ degree q → degree q ≤ᵈ degree (p +ᵖ q)
+degree[q]≤degree[p+ᵖq] p q degree[p]≤degree[q] = begin
+  degree q                       ≡ᵈ⟨ ≡-sym (degreeⁱ≡degree q) ⟩
+  degreeⁱ (expand q)             ≤ᵈ⟨ degreeⁱ[q]≤degreeⁱ[p+ⁱq] (expand p) (expand q) degreeⁱ[p]≤degreeⁱ[q] ⟩
+  degreeⁱ (expand p +ⁱ expand q) ≡ᵈ⟨ ≡-sym (degreeⁱ-cong (expand-+ᵖ-homo p q)) ⟩
+  degreeⁱ (expand (p +ᵖ q))      ≡ᵈ⟨ degreeⁱ≡degree (p +ᵖ q) ⟩
+  degree (p +ᵖ q)                ∎ᵈ
+  where
+  open ≤ᵈ-Reasoning
+  degreeⁱ[p]≤degreeⁱ[q] : degreeⁱ (expand p) ≤ᵈ degreeⁱ (expand q)
+  degreeⁱ[p]≤degreeⁱ[q] = begin
+    degreeⁱ (expand p) ≡ᵈ⟨ degreeⁱ≡degree p ⟩
+    degree p           ≤ᵈ⟨ degree[p]≤degree[q] ⟩
+    degree q           ≡ᵈ⟨ ≡-sym (degreeⁱ≡degree q) ⟩
+    degreeⁱ (expand q) ∎ᵈ
+
+-- idea : ∀ o₁ p o₂ q → o₁ < o₂ → degree (x^ o₁ ∙ p +ᵖ x^ o₂ ∙ q) ≡ degree (x^ o₂ ∙ q)
+-- idea o₁ p o₂ q o₁<o₂ with <-cmp o₁ o₂
+-- idea o₁ (K c₁)          o₂ q o₁<o₂ | tri< _ _ _ = {!!}
+-- idea o₁ (c₁ +x^ n₁ ∙ p) o₂ q o₁<o₂ | tri< _ _ _ with +ᵖ-spine ⟅ n₁ ⇓⟆ p (o₂ ∸ o₁) q
+-- idea o₁ (c₁ +x^ n₁ ∙ p) o₂ q o₁<o₂ | tri< _ _ _ | 0ᵖ = {!!}
+-- idea o₁ (c₁ +x^ n₁ ∙ p) o₂ q o₁<o₂ | tri< _ _ _ | x^ zero ∙ r = {!!}
+-- idea o₁ (c₁ +x^ n₁ ∙ p) o₂ q o₁<o₂ | tri< _ _ _ | x^ suc n₃ ∙ r = {!!}
+-- idea o₁ p o₂ q o₁<o₂ | tri≈ o₁≮o₂ _ _ = contradiction o₁<o₂ o₁≮o₂
+-- idea o₁ p o₂ q o₁<o₂ | tri> o₁≮o₂ _ _ = contradiction o₁<o₂ o₁≮o₂
+
+*ᵖ-degree : ∀ p q → degree (p *ᵖ q) ≡ degree p +ᵈ degree q
+*ᵖ-degree 0ᵖ q = ≡-refl
+*ᵖ-degree (x^ o₁ ∙ p) 0ᵖ = ≡-refl
+*ᵖ-degree (x^ o₁ ∙ p) (x^ o₂ ∙ q) = *ᵖ-spine-degree o₁ p o₂ q
+  where
+  *ᵖ-spine-degree : ∀ o₁ p o₂ q → degree (*ᵖ-spine o₁ p o₂ q) ≡ ⟨ (o₁ +ℕ degreeˢ p) +ℕ (o₂ +ℕ degreeˢ q) ⟩
+  *ᵖ-spine-degree o₁ (K c₁) o₂ q = begin⟨ ≡-setoid Degree ⟩
+    ⟨ (o₁ +ℕ o₂) +ℕ degreeˢ (∙ᵖ-spine c₁ q) ⟩ ≡⟨ ≡-cong (λ t → ⟨ o₁ +ℕ o₂ +ℕ t ⟩) (∙ᵖ-spine-degreeˢ c₁ q) ⟩
+    ⟨ (o₁ +ℕ o₂) +ℕ degreeˢ q ⟩               ≡⟨ ≡-cong ⟨_⟩ (Nat.+-assoc o₁ o₂ (degreeˢ q))  ⟩
+    ⟨ o₁ +ℕ (o₂ +ℕ degreeˢ q) ⟩               ≡⟨ ≡-cong (λ t → ⟨ t +ℕ (o₂ +ℕ degreeˢ q) ⟩) (≡-sym (Nat.+-identityʳ o₁)) ⟩
+    ⟨ (o₁ +ℕ 0) +ℕ (o₂ +ℕ degreeˢ q) ⟩        ∎
+  *ᵖ-spine-degree o₁ (c₁ +x^ n₁ ∙ p) o₂ (K c₂) = begin⟨ ≡-setoid Degree ⟩
+    ⟨ o₁ +ℕ o₂ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ (∙ᵖ-spine c₂ p)) ⟩ ≡⟨ ≡-cong (λ t → ⟨ o₁ +ℕ o₂ +ℕ (⟅ n₁ ⇓⟆ +ℕ t) ⟩) (∙ᵖ-spine-degreeˢ c₂ p) ⟩
+    ⟨ o₁ +ℕ o₂ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ p) ⟩               ≡⟨ ≡-cong ⟨_⟩ (lemma o₁ o₂ ⟅ n₁ ⇓⟆ (degreeˢ p)) ⟩
+    ⟨ o₁ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ p) +ℕ (o₂ +ℕ 0) ⟩        ∎
+    where
+    lemma : ∀ x y n d → x +ℕ y +ℕ (n +ℕ d) ≡ x +ℕ (n +ℕ d) +ℕ (y +ℕ 0)
+    lemma = solve Nat.ring
+  *ᵖ-spine-degree o₁ (c₁ +x^ n₁ ∙ p) o₂ (c₂ +x^ n₂ ∙ q) = ≤ᵈ-antisym deg<deg+deg deg+deg<deg
+    where
+    open ≤ᵈ-Reasoning
+    last-larger : degree (x^ (o₁ +ℕ o₂) ∙ K (c₁ *-nonzero c₂) +ᵖ c₁ ∙ᵖ x^ (o₁ +ℕ o₂ +ℕ ⟅ n₂ ⇓⟆) ∙ q +ᵖ c₂ ∙ᵖ (x^ (o₁ +ℕ o₂ +ℕ ⟅ n₁ ⇓⟆) ∙ p)) ≤ᵈ degree (*ᵖ-spine (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q)
+    last-larger = TODO
+    deg<deg+deg : degree (*ᵖ-spine o₁ (c₁ +x^ n₁ ∙ p) o₂ (c₂ +x^ n₂ ∙ q)) ≤ᵈ ⟨ (o₁ +ℕ degreeˢ (c₁ +x^ n₁ ∙ p)) +ℕ (o₂ +ℕ degreeˢ (c₂ +x^ n₂ ∙ q)) ⟩
+    deg<deg+deg = begin
+      degree
+       (x^ (o₁ +ℕ o₂) ∙ K (c₁ *-nonzero c₂) +ᵖ c₁ ∙ᵖ x^ (o₁ +ℕ o₂ +ℕ ⟅ n₂ ⇓⟆) ∙ q +ᵖ
+        c₂ ∙ᵖ (x^ (o₁ +ℕ o₂ +ℕ ⟅ n₁ ⇓⟆) ∙ p) +ᵖ *ᵖ-spine (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q)
+      ≤ᵈ⟨ degreeᵖ-+ᵖ (x^ (o₁ +ℕ o₂) ∙ K (c₁ *-nonzero c₂) +ᵖ c₁ ∙ᵖ x^ (o₁ +ℕ o₂ +ℕ ⟅ n₂ ⇓⟆) ∙ q +ᵖ c₂ ∙ᵖ (x^ (o₁ +ℕ o₂ +ℕ ⟅ n₁ ⇓⟆) ∙ p))
+                     (*ᵖ-spine (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q)
+        ⟩
+      degree (x^ (o₁ +ℕ o₂) ∙ K (c₁ *-nonzero c₂) +ᵖ c₁ ∙ᵖ x^ (o₁ +ℕ o₂ +ℕ ⟅ n₂ ⇓⟆) ∙ q +ᵖ c₂ ∙ᵖ (x^ (o₁ +ℕ o₂ +ℕ ⟅ n₁ ⇓⟆) ∙ p))
+      ⊔ᵈ
+      degree (*ᵖ-spine (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q)
+      ≡ᵈ⟨ m≤ᵈn⇒m⊔ᵈn≡n last-larger ⟩
+      degree (*ᵖ-spine (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q)
+      ≡ᵈ⟨ *ᵖ-spine-degree (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q  ⟩
+      ⟨ ((o₁ +ℕ ⟅ n₁ ⇓⟆) +ℕ degreeˢ p) +ℕ ((o₂ +ℕ ⟅ n₂ ⇓⟆) +ℕ degreeˢ q) ⟩
+      ≡ᵈ⟨ ≡-cong₂ (λ x y → ⟨ x +ℕ y ⟩) (Nat.+-assoc o₁ ⟅ n₁ ⇓⟆ (degreeˢ p)) (Nat.+-assoc o₂ ⟅ n₂ ⇓⟆ (degreeˢ q)) ⟩
+      ⟨ o₁ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ p) +ℕ (o₂ +ℕ (⟅ n₂ ⇓⟆ +ℕ degreeˢ q))   ⟩ ∎ᵈ
+
+    deg+deg<deg : ⟨ o₁ +ℕ degreeˢ (c₁ +x^ n₁ ∙ p) +ℕ (o₂ +ℕ degreeˢ (c₂ +x^ n₂ ∙ q)) ⟩ ≤ᵈ degree (*ᵖ-spine o₁ (c₁ +x^ n₁ ∙ p) o₂ (c₂ +x^ n₂ ∙ q))
+    deg+deg<deg = begin
+      ⟨ (o₁ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ p)) +ℕ (o₂ +ℕ (⟅ n₂ ⇓⟆ +ℕ degreeˢ q)) ⟩
+      ≡ᵈ⟨ ≡-cong₂ (λ x y → ⟨ x +ℕ y ⟩) (≡-sym (Nat.+-assoc o₁ ⟅ n₁ ⇓⟆ (degreeˢ p))) (≡-sym (Nat.+-assoc o₂ ⟅ n₂ ⇓⟆ (degreeˢ q))) ⟩
+      ⟨ ((o₁ +ℕ ⟅ n₁ ⇓⟆) +ℕ degreeˢ p) +ℕ ((o₂ +ℕ ⟅ n₂ ⇓⟆) +ℕ degreeˢ q) ⟩
+      ≡ᵈ⟨ ≡-sym (*ᵖ-spine-degree (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q) ⟩
+      degree (*ᵖ-spine (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q)
+        ≤ᵈ⟨ degree[q]≤degree[p+ᵖq] (x^ (o₁ +ℕ o₂) ∙ K (c₁ *-nonzero c₂) +ᵖ c₁ ∙ᵖ x^ (o₁ +ℕ o₂ +ℕ ⟅ n₂ ⇓⟆) ∙ q +ᵖ c₂ ∙ᵖ (x^ (o₁ +ℕ o₂ +ℕ ⟅ n₁ ⇓⟆) ∙ p)) (*ᵖ-spine (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q) last-larger  ⟩
+      degree (*ᵖ-spine o₁ (c₁ +x^ n₁ ∙ p) o₂ (c₂ +x^ n₂ ∙ q)) ∎ᵈ
+
+
+-ᵖ-degree : ∀ p → degree (-ᵖ p) ≡ degree p
+-ᵖ-degree = ∙ᵖ-degree -1#-nonzero
+
+deg-+ᵖ : ∀ p q {p≉0} {q≉0} {p+q≉0} → deg (p +ᵖ q) {p+q≉0} ≤ deg p {p≉0} ⊔ deg q {q≉0}
+deg-+ᵖ 0ᵖ q {p≉0} {q≉0} {p+q≉0} = contradiction ≈ᵖ-refl p≉0
+deg-+ᵖ (x^ o₁ ∙ p) 0ᵖ {p≉0} {q≉0} {p+q≉0} = contradiction ≈ᵖ-refl q≉0
+deg-+ᵖ (x^ o₁ ∙ p) (x^ o₂ ∙ q) {p≉0} {q≉0} {p+q≉0} = helper (x^ o₁ ∙ p +ᵖ x^ o₂ ∙ q) {p+q≉0} (degreeᵖ-+ᵖ (x^ o₁ ∙ p) (x^ o₂ ∙ q))
+  where
+  helper : ∀ d {d≉0} {x} → degree d ≤ᵈ ⟨ x ⟩ → deg d {d≉0} ≤ x
+  helper 0ᵖ {d≉0} = contradiction ≈ᵖ-refl d≉0
+  helper (x^ o₃ ∙ d) {d≉0} ⟨ pf ⟩ = pf
+
+deg-cong : ∀ {p q} {p≉0} {q≉0} → p ≈ᵖ q → deg p {p≉0} ≡ deg q {q≉0}
+deg-cong {0ᵖ} {q} {p≉0} {q≉0} p≈q = contradiction ≈ᵖ-refl p≉0
+deg-cong {x^ o₁ ∙ p} {0ᵖ} {p≉0} {q≉0} p≈q = contradiction ≈ᵖ-refl q≉0
+deg-cong {x^ o₁ ∙ p} {x^ o₂ ∙ q} {p≉0} {q≉0} (0ᵖ≉ ≡-refl p≈q) rewrite degreeˢ-cong p≈q = ≡-refl
+
+data Coefficients : Set (c ⊔ˡ ℓ) where
+  0ᶜ : Coefficients
+  _∙x^_+_ : C/0 → ℕ → Coefficients → Coefficients
+
+coefficientsˢ : ℕ → Spine → Coefficients → Coefficients
+coefficientsˢ o (K c) coeffs = c ∙x^ o + coeffs
+coefficientsˢ o (c +x^ n ∙ p) coeffs = coefficientsˢ (o +ℕ ⟅ n ⇓⟆) p (c ∙x^ o + coeffs)
+
+coefficients : Polynomial → Coefficients
+coefficients 0ᵖ = 0ᶜ
+coefficients (x^ o ∙ p) = coefficientsˢ o p 0ᶜ
+
+polynomial : Coefficients → Polynomial
+polynomial 0ᶜ = 0ᵖ
+polynomial (c ∙x^ n + p) = c ∙𝑋^ n +ᵖ polynomial p
+
+polynomial∘coefficients≡id : ∀ p → polynomial (coefficients p) ≈ᵖ p
+polynomial∘coefficients≡id 0ᵖ = ≈ᵖ-refl
+polynomial∘coefficients≡id (x^ o ∙ p) = loop o p 0ᶜ
+  where
+  lemma : ∀ o c n p → x^ o ∙ K c +ᵖ x^ (o +ℕ ⟅ n ⇓⟆) ∙ p ≈ᵖ x^ o ∙ (c +x^ n ∙ p)
+  lemma o c n p = expand-injective $ begin⟨ ≈ⁱ-setoid ⟩
+    expand (x^ o ∙ K c +ᵖ x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) ≈⟨ expand-+ᵖ-homo (x^ o ∙ K c) (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) ⟩
+    expandˢ o (K c) +ⁱ expandˢ (o +ℕ ⟅ n ⇓⟆) p  ≈⟨ ≈ⁱ-sym (expandˢ-+x^-lemma o n c p) ⟩
+    expandˢ o (c +x^ n ∙ p)                     ∎
+  loop : ∀ o p coeffs → polynomial (coefficientsˢ o p coeffs) ≈ᵖ x^ o ∙ p +ᵖ polynomial coeffs
+  loop o (K c) coeffs = ≈ᵖ-refl
+  loop o (c +x^ n ∙ p) coeffs = begin⟨ ≈ᵖ-setoid ⟩
+    polynomial (coefficientsˢ (o +ℕ ⟅ n ⇓⟆) p (c ∙x^ o + coeffs)) ≈⟨ loop (o +ℕ ⟅ n ⇓⟆) p (c ∙x^ o + coeffs) ⟩
+    x^ (o +ℕ ⟅ n ⇓⟆) ∙ p +ᵖ (x^ o ∙ K c +ᵖ polynomial coeffs)    ≈⟨ ≈ᵖ-sym (+ᵖ-assoc (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) (x^ o ∙ K c) (polynomial coeffs)) ⟩
+    (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p +ᵖ x^ o ∙ K c) +ᵖ polynomial coeffs    ≈⟨ +ᵖ-congʳ (+ᵖ-comm (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) (x^ o ∙ K c)) ⟩
+    (x^ o ∙ K c +ᵖ x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) +ᵖ polynomial coeffs    ≈⟨ +ᵖ-congʳ {polynomial coeffs} {x^ o ∙ K c +ᵖ x^ (o +ℕ ⟅ n ⇓⟆) ∙ p} {x^ o ∙ (c +x^ n ∙ p)} (lemma _ _ _ _) ⟩
+    (x^ o ∙ (c +x^ n ∙ p)) +ᵖ polynomial coeffs                  ∎
+
+coefficientsˢ≢0ᶜ : ∀ o p coeffs → coefficientsˢ o p coeffs ≢ 0ᶜ
+coefficientsˢ≢0ᶜ o (K c) coeffs = λ ()
+coefficientsˢ≢0ᶜ o (c +x^ n ∙ p) coeffs = coefficientsˢ≢0ᶜ (o +ℕ ⟅ n ⇓⟆) p (c ∙x^ o + coeffs)
+
+coefficients≢0ᶜ : ∀ p {p≉0 : p ≉ᵖ 0ᵖ} → coefficients p ≢ 0ᶜ
+coefficients≢0ᶜ 0ᵖ {p≉0} = contradiction ≈ᵖ-refl p≉0
+coefficients≢0ᶜ (x^ o ∙ p) {p≉0} = coefficientsˢ≢0ᶜ o p 0ᶜ
+
+degᶜ : ∀ c {c≉0 : c ≢ 0ᶜ} → ℕ
+degᶜ 0ᶜ {c≉0} = contradiction ≡-refl c≉0
+degᶜ (_ ∙x^ n + _) = n
+
+degᶜ[coefficients] : ∀ p {p≉0} → degᶜ (coefficients p) {coefficients≢0ᶜ p {p≉0}} ≡ deg p {p≉0}
+degᶜ[coefficients] 0ᵖ {p≉0} = contradiction ≈ᵖ-refl p≉0
+degᶜ[coefficients] (x^ o ∙ p) = loop o p 0ᶜ
+  where
+  loop : ∀ o p coeffs → degᶜ (coefficientsˢ o p coeffs) {coefficientsˢ≢0ᶜ o p coeffs} ≡ o +ℕ degreeˢ p
+  loop o (K c) coeffs = ≡-sym (Nat.+-identityʳ o)
+  loop o (c +x^ n ∙ p) coeffs = begin⟨ ≡-setoid ℕ ⟩
+    degᶜ (coefficientsˢ (o +ℕ ⟅ n ⇓⟆) p (c ∙x^ o + coeffs)) ≡⟨ loop (o +ℕ ⟅ n ⇓⟆) p (c ∙x^ o + coeffs) ⟩
+    (o +ℕ ⟅ n ⇓⟆) +ℕ degreeˢ p                              ≡⟨ Nat.+-assoc o ⟅ n ⇓⟆ (degreeˢ p) ⟩
+    o +ℕ (⟅ n ⇓⟆ +ℕ degreeˢ p)                              ∎
+
+-- leading : ∀ p {p≉0 : p ≉ᵖ 0ᵖ} → Leading p {p≉0}
+-- leading p {p≉0} = helper (coefficients p) {coefficients≢0ᶜ p {p≉0}} (polynomial∘coefficients≡id p) (degᶜ[coefficients] p)
 --   where
---   *ᵖ-spine-degree : ∀ o₁ p o₂ q → degree ((x^ o₁ ∙ p) *ᵖ (x^ o₂ ∙ q)) ≡ ⟨ (o₁ +ℕ degreeˢ p) +ℕ (o₂ +ℕ degreeˢ q) ⟩
---   *ᵖ-spine-degree o₁ (K c₁) o₂ q = begin⟨ ≡-setoid Degree ⟩
---     ⟨ (o₁ +ℕ o₂) +ℕ degreeˢ (∙ᵖ-spine c₁ q) ⟩ ≡⟨ ≡-cong (λ t → ⟨ o₁ +ℕ o₂ +ℕ t ⟩) (∙ᵖ-spine-degreeˢ c₁ q) ⟩
---     ⟨ (o₁ +ℕ o₂) +ℕ degreeˢ q ⟩               ≡⟨ ≡-cong ⟨_⟩ (Nat.+-assoc o₁ o₂ (degreeˢ q))  ⟩
---     ⟨ o₁ +ℕ (o₂ +ℕ degreeˢ q) ⟩               ≡⟨ ≡-cong (λ t → ⟨ t +ℕ (o₂ +ℕ degreeˢ q) ⟩) (≡-sym (Nat.+-identityʳ o₁)) ⟩
---     ⟨ (o₁ +ℕ 0) +ℕ (o₂ +ℕ degreeˢ q) ⟩        ∎
---   *ᵖ-spine-degree o₁ (c₁ +x^ n₁ ∙ p) o₂ (K c₂) = begin⟨ ≡-setoid Degree ⟩
---     ⟨ o₁ +ℕ o₂ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ (∙ᵖ-spine c₂ p)) ⟩ ≡⟨ ≡-cong (λ t → ⟨ o₁ +ℕ o₂ +ℕ (⟅ n₁ ⇓⟆ +ℕ t) ⟩) (∙ᵖ-spine-degreeˢ c₂ p) ⟩
---     ⟨ o₁ +ℕ o₂ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ p) ⟩               ≡⟨ ≡-cong ⟨_⟩ (lemma o₁ o₂ ⟅ n₁ ⇓⟆ (degreeˢ p)) ⟩
---     ⟨ o₁ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ p) +ℕ (o₂ +ℕ 0) ⟩        ∎
---     where
---     lemma : ∀ x y n d → x +ℕ y +ℕ (n +ℕ d) ≡ x +ℕ (n +ℕ d) +ℕ (y +ℕ 0)
---     lemma = solve Nat.ring
---   *ᵖ-spine-degree o₁ (c₁ +x^ n₁ ∙ p) o₂ (c₂ +x^ n₂ ∙ q) = begin⟨ ≡-setoid Degree ⟩
---       degree
---        (x^ (o₁ +ℕ o₂) ∙ K (c₁ *-nonzero c₂) +ᵖ
---         c₁ ∙ᵖ x^ (o₁ +ℕ o₂ +ℕ ⟅ n₂ ⇓⟆) ∙ q +ᵖ
---         c₂ ∙ᵖ (x^ (o₁ +ℕ o₂ +ℕ ⟅ n₁ ⇓⟆) ∙ p) +ᵖ
---         *ᵖ-spine (o₁ +ℕ ⟅ n₁ ⇓⟆) p (o₂ +ℕ ⟅ n₂ ⇓⟆) q)
---       ≡⟨ TODO ⟩
---       ⟨ o₁ +ℕ (⟅ n₁ ⇓⟆ +ℕ degreeˢ p) +ℕ (o₂ +ℕ (⟅ n₂ ⇓⟆ +ℕ degreeˢ q)) ⟩ ∎
+--   helper : ∀ coeffs {coeffs≢0} → polynomial coeffs ≈ᵖ p → degᶜ coeffs {coeffs≢0} ≡ deg p {p≉0} → Leading p {p≉0}
+--   helper 0ᶜ {coeffs≢0} = contradiction ≡-refl coeffs≢0
+--   helper (leading-coefficient ∙x^ leading-degree + next-term) roundtrip leading-degree≡degree =
+--     Leading✓ leading-coefficient leading-degree leading-degree≡degree (polynomial next-term) {!!} roundtrip
 
 
--- -ᵖ-degree : ∀ p → degree (-ᵖ p) ≡ degree p
--- -ᵖ-degree = ∙ᵖ-degree -1#-nonzero
+data Remainder (r : Polynomial) (m : Polynomial) {m≉0 : m ≉ᵖ 0ᵖ} : Set (c ⊔ˡ ℓ) where
+  0ᵖ≈ : (r≈0 : r ≈ᵖ 0ᵖ) → Remainder r m
+  0ᵖ≉ : (r≉0 : r ≉ᵖ 0ᵖ) → deg r {r≉0} < deg m {m≉0} → Remainder r m
 
--- open import AKS.Unsafe using (TODO)
+record Leading (p : Polynomial) {p≉0 : p ≉ᵖ 0ᵖ} : Set (c ⊔ˡ ℓ) where
+  constructor Leading✓
+  field
+    leading-coefficent : C/0
+    leading-degree : ℕ
+    leading-degree≡degree : leading-degree ≡ deg p {p≉0}
+    next-term : Polynomial
+    next-term<p : Remainder next-term p {p≉0}
+    proof : leading-coefficent ∙𝑋^ leading-degree +ᵖ next-term ≈ᵖ p
 
+leading : ∀ p {p≉0 : p ≉ᵖ 0ᵖ} → Leading p {p≉0}
+leading 0ᵖ {p≉0} = contradiction ≈ᵖ-refl p≉0
+leading (x^ o ∙ p) {p≉0} = loop o p {p≉0}
+  where
+  open ≤-Reasoning using (begin-strict_; _<⟨_⟩_; _≤⟨_⟩_) renaming (_≡⟨_⟩_ to _≡≤⟨_⟩_; _∎ to _≤∎)
+  degree-step : ∀ o n c p → deg (x^ o +ℕ ⟅ n ⇓⟆ ∙ p) {λ ()} ≡ deg (x^ o ∙ (c +x^ n ∙ p)) {λ ()}
+  degree-step o n c p = Nat.+-assoc o ⟅ n ⇓⟆ (degreeˢ p)
 
--- lc : ∀ p {p≉0 : p ≉ᵖ 0ᵖ} → C/0
--- lc 0ᵖ {p≉0} = contradiction ≈ᵖ-refl p≉0
--- lc (x^ n ∙ p) {p≉0} = lc-spine p
---   where
---   lc-spine : Spine → C/0
---   lc-spine (K c) = c
---   lc-spine (c +x^ n ∙ p) = lc-spine p
+  remainder-smaller : ∀ o n c p {r≉0} {r'≉0} → deg (x^ o ∙ K c) {r≉0} < deg (x^ o ∙ (c +x^ n ∙ p)) {r'≉0}
+  remainder-smaller o (ℕ+ n) c p = lte (n +ℕ degreeˢ p) (lemma o n (degreeˢ p))
+    where
+    lemma : ∀ x y z → suc (x +ℕ 0 +ℕ (y +ℕ z)) ≡ x +ℕ suc (y +ℕ z)
+    lemma = solve Nat.ring
 
--- (n divᵖ m) {m≉0} with n ≈ᵖ? 0ᵖ
--- ... | yes n≈0 = 0ᵖ
--- ... | no  n≉0 = loop 0ᵖ n {n≉0} <-well-founded
---   where
---   leading : ∀ r {r≉0 : r ≉ᵖ 0ᵖ} → Polynomial
---   leading r {r≉0} = (lc r {r≉0} /-nonzero lc m {m≉0}) ∙𝑋^ (deg r {r≉0} ∸ deg m {m≉0})
---   loop : ∀ (q r : Polynomial) {r≉0} → Acc _<_ (deg r {r≉0}) → Polynomial
---   loop q r {r≉0} (acc downward) with <-≤-connex (deg r {r≉0}) (deg m {m≉0})
---   ... | inj₁ r<m = q
---   ... | inj₂ r≥m with r -ᵖ leading r {r≉0} *ᵖ m ≈ᵖ? 0ᵖ
---   ...   | yes r'≈0 = q
---   ...   | no  r'≉0 = loop (q +ᵖ leading r {r≉0}) (r -ᵖ leading r {r≉0} *ᵖ m) {r'≉0} (downward _ TODO)
+  remainder-base : ∀ next o n c p {r≉0} → next ≈ᵖ 0ᵖ → Remainder ((x^ o ∙ K c) +ᵖ next) (x^ o ∙ (c +x^ n ∙ p)) {r≉0}
+  remainder-base next o n c p {r≉0} next≈0 = 0ᵖ≉ c∙𝑋^o+next≉0 smaller
+    where
+    c∙𝑋^o≈c∙𝑋^o+next : c ∙𝑋^ o ≈ᵖ c ∙𝑋^ o +ᵖ next
+    c∙𝑋^o≈c∙𝑋^o+next = begin⟨ ≈ᵖ-setoid ⟩
+      c ∙𝑋^ o         ≈⟨ ≈ᵖ-sym (+ᵖ-identityʳ _) ⟩
+      c ∙𝑋^ o +ᵖ 0ᵖ   ≈⟨ +ᵖ-congˡ {c ∙𝑋^ o} (≈ᵖ-sym next≈0) ⟩
+      c ∙𝑋^ o +ᵖ next ∎
+    c∙𝑋^o+next≉0 : c ∙𝑋^ o +ᵖ next ≉ᵖ 0ᵖ
+    c∙𝑋^o+next≉0 c∙𝑋^o+next≈0 = contradiction (begin⟨ ≈ᵖ-setoid ⟩ c ∙𝑋^ o ≈⟨ c∙𝑋^o≈c∙𝑋^o+next ⟩ c ∙𝑋^ o +ᵖ next ≈⟨ c∙𝑋^o+next≈0 ⟩ 0ᵖ ∎) (λ ())
+    smaller : deg ((x^ o ∙ K c) +ᵖ next) {c∙𝑋^o+next≉0} < deg (x^ o ∙ (c +x^ n ∙ p)) {r≉0}
+    smaller = begin-strict
+      deg (x^ o ∙ K c +ᵖ next)          ≡≤⟨ deg-cong {p≉0 = c∙𝑋^o+next≉0} {q≉0 = λ ()} (≈ᵖ-sym (c∙𝑋^o≈c∙𝑋^o+next)) ⟩
+      deg (x^ o ∙ K c) {λ ()}            <⟨ remainder-smaller o n c p {λ ()} {r≉0} ⟩
+      deg (x^ o ∙ (c +x^ n ∙ p)) {r≉0}   ≤∎
+
+  remainder-step : ∀ next o n c p {r≉0} → Remainder next (x^ o +ℕ ⟅ n ⇓⟆ ∙ p) {λ ()} → Remainder ((x^ o ∙ K c) +ᵖ next) (x^ o ∙ (c +x^ n ∙ p)) {r≉0}
+  remainder-step next o n c p {r≉0} (0ᵖ≈ next≈0) = remainder-base next o n c p next≈0
+  remainder-step next o n c p {r≉0} (0ᵖ≉ next≉0 next<r) with x^ o ∙ K c +ᵖ next ≈ᵖ? 0ᵖ
+  ... | yes r'≈0 = 0ᵖ≈ r'≈0
+  ... | no  r'≉0 = 0ᵖ≉ r'≉0 smaller
+    where
+    smaller : deg ((x^ o ∙ K c) +ᵖ next) {r'≉0} < deg (x^ o ∙ (c +x^ n ∙ p)) {r≉0}
+    smaller rewrite degree-step o n c p = begin-strict
+      deg ((x^ o ∙ K c) +ᵖ next) {r'≉0}           ≤⟨ deg-+ᵖ (x^ o ∙ K c) next {p≉0 = λ ()} ⟩
+      deg (x^ o ∙ K c) {λ ()} ⊔ deg next {next≉0} <⟨ ⊔-least-< (deg (x^ o ∙ K c) {λ ()}) (deg next) (deg (x^ o ∙ (c +x^ n ∙ p)) {r≉0}) (remainder-smaller o n c p {λ ()} {r≉0}) next<r ⟩
+      deg (x^ o ∙ (c +x^ n ∙ p)) {r≉0}            ≤∎
+
+  lemma : ∀ o c n p → x^ o ∙ K c +ᵖ x^ (o +ℕ ⟅ n ⇓⟆) ∙ p ≈ᵖ x^ o ∙ (c +x^ n ∙ p)
+  lemma o c n p = expand-injective $ begin⟨ ≈ⁱ-setoid ⟩
+    expand (x^ o ∙ K c +ᵖ x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) ≈⟨ expand-+ᵖ-homo (x^ o ∙ K c) (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) ⟩
+    expandˢ o (K c) +ⁱ expandˢ (o +ℕ ⟅ n ⇓⟆) p  ≈⟨ ≈ⁱ-sym (expandˢ-+x^-lemma o n c p) ⟩
+    expandˢ o (c +x^ n ∙ p)                     ∎
+
+  proof-step
+    : ∀ lc o n c p next
+    → lc ∙𝑋^ deg (x^ o +ℕ ⟅ n ⇓⟆ ∙ p) {λ ()} +ᵖ next ≈ᵖ x^ o +ℕ ⟅ n ⇓⟆ ∙ p
+    → lc ∙𝑋^ deg (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) {λ ()} +ᵖ ((x^ o ∙ K c) +ᵖ next) ≈ᵖ x^ o ∙ (c +x^ n ∙ p)
+  proof-step lc o n c p next pf = begin⟨ ≈ᵖ-setoid ⟩
+    lc ∙𝑋^ deg (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) {λ ()} +ᵖ (x^ o ∙ K c +ᵖ next) ≈⟨ +ᵖ-congˡ {lc ∙𝑋^ deg (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) {λ ()}} (+ᵖ-comm (x^ o ∙ K c) next) ⟩
+    lc ∙𝑋^ deg (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) {λ ()} +ᵖ (next +ᵖ x^ o ∙ K c) ≈⟨ ≈ᵖ-sym (+ᵖ-assoc (lc ∙𝑋^ deg (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) {λ ()}) next (x^ o ∙ K c)) ⟩
+    (lc ∙𝑋^ deg (x^ (o +ℕ ⟅ n ⇓⟆) ∙ p) {λ ()} +ᵖ next) +ᵖ x^ o ∙ K c ≈⟨ +ᵖ-congʳ {x^ o ∙ K c} pf ⟩
+    x^ o +ℕ ⟅ n ⇓⟆ ∙ p +ᵖ x^ o ∙ K c                                  ≈⟨ +ᵖ-comm (x^ o +ℕ ⟅ n ⇓⟆ ∙ p) (x^ o ∙ K c) ⟩
+    x^ o ∙ K c +ᵖ x^ o +ℕ ⟅ n ⇓⟆ ∙ p                                  ≈⟨ lemma o c n p ⟩
+    x^ o ∙ (c +x^ n ∙ p)                                              ∎
+
+  loop : ∀ o p {p≉0 : x^ o ∙ p ≉ᵖ 0ᵖ} → Leading (x^ o ∙ p) {p≉0}
+  loop o (K c) = Leading✓ c o (≡-sym (Nat.+-identityʳ o)) 0ᵖ (0ᵖ≈ ≈ᵖ-refl) (+ᵖ-identityʳ (c ∙𝑋^ o))
+  loop o (c +x^ n ∙ p) with loop (o +ℕ ⟅ n ⇓⟆) p {λ ()}
+  ... | Leading✓ lc d ≡-refl next next<p pf = Leading✓ lc d (degree-step o n c p) (c ∙𝑋^ o +ᵖ next) (remainder-step next o n c p next<p) (proof-step lc o n c p next pf)
+
+record Euclidean (n : Polynomial) (m : Polynomial) {m≉0 : m ≉ᵖ 0ᵖ} : Set (c ⊔ˡ ℓ) where
+  constructor Euclidean✓
+  field
+    q : Polynomial
+    r : Polynomial
+    division : n ≈ᵖ m *ᵖ q +ᵖ r
+    remainder : Remainder r m {m≉0}
+
+divMod-base₁ : ∀ n m → n ≈ᵖ 0ᵖ → n ≈ᵖ m *ᵖ 0ᵖ +ᵖ 0ᵖ
+divMod-base₁ n m n≈0 = begin⟨ ≈ᵖ-setoid ⟩
+  n ≈⟨ n≈0 ⟩ 0ᵖ ≈⟨ ≈ᵖ-sym (*ᵖ-zeroʳ m) ⟩
+  m *ᵖ 0ᵖ       ≈⟨ ≈ᵖ-sym (+ᵖ-identityʳ _) ⟩
+  m *ᵖ 0ᵖ +ᵖ 0ᵖ ∎
+
+-- open import Strict using (force)
+open import Agda.Builtin.Strict using (primForce; primForceLemma)
+
+force : ∀ {a b} {A : Set a} {B : A → Set b} (x : A) → (∀ y → x ≡ y → B y) → B x
+force {B = B} x f = primForce ≡-refl (primForce {B = λ y → x ≡ y → B y} x f)
+
+force-≡ : ∀ {a b} {A : Set a} {B : A → Set b} (x : A) (f : ∀ y → x ≡ y → B y) → force x f ≡ f x ≡-refl
+force-≡ {B = B} x f rewrite primForceLemma {B = λ y → x ≡ y → B y} x f = ≡-refl
+
+divMod : ∀ n m {m≉0} → Euclidean n m {m≉0}
+divMod n m {m≉0} with n ≈ᵖ? 0ᵖ
+... | yes n≈0 = Euclidean✓ 0ᵖ 0ᵖ (divMod-base₁ n m n≈0) (0ᵖ≈ ≈ᵖ-refl)
+... | no  n≉0 = loop 0ᵖ n {n≉0} (solveOver (n ∷ m ∷ []) +ᵖ-*ᵖ-almostCommutativeRing) <-well-founded
+  where
+  open ≤-Reasoning using (begin-strict_; _<⟨_⟩_; _≤⟨_⟩_) renaming (_≡⟨_⟩_ to _≡≤⟨_⟩_; _∎ to _≤∎)
+
+  term : ∀ r {r≉0} → Polynomial
+  term r {r≉0} with leading r {r≉0} | leading m {m≉0}
+  ... | Leading✓ lcʳ degʳ _ _ _ _ | Leading✓ lcᵐ degᵐ _ _ _ _ = (lcʳ /-nonzero lcᵐ) ∙𝑋^ (degʳ ∸ degᵐ)
+
+  term-smaller : ∀ r {r≉0 : r ≉ᵖ 0ᵖ} {r'≉0 : r -ᵖ term r {r≉0} *ᵖ m ≉ᵖ 0ᵖ} → deg m {m≉0} ≤ deg r {r≉0} → deg (r -ᵖ term r {r≉0} *ᵖ m) {r'≉0} < deg r {r≉0}
+  term-smaller r {r≉0} {r'≉0} m≤r with leading r {r≉0} | leading m {m≉0}
+  ... | Leading✓ lcʳ degʳ degʳ-pf restʳ restʳ<r pfʳ | Leading✓ lcᵐ degᵐ ≡-refl degᵐ-pf restᵐ<m pfᵐ = begin-strict
+    deg (r -ᵖ ((lcʳ /-nonzero lcᵐ) ∙𝑋^ (degʳ ∸ degᵐ)) *ᵖ m) {r'≉0} <⟨ {!!} ⟩
+    deg r {r≉0}                                                    ≤∎
+  -- restʳ -ᵖ (lcʳ /-nonzero lcᵐ) ∙𝑋^ (degʳ ∸ degᵐ) *ᵖ restᵐ)
+  -- deg[r] ∸ deg[m] + deg[restᵐ] < deg[r]
+
+  divMod-base₂ : ∀ q r {r≉0} → n ≈ᵖ m *ᵖ q +ᵖ r → r -ᵖ term r {r≉0} *ᵖ m ≈ᵖ 0ᵖ → n ≈ᵖ m *ᵖ (q +ᵖ term r {r≉0}) +ᵖ 0ᵖ
+  divMod-base₂ q r {r≉0} n≈mq+r r-t*m≈0 = begin⟨ ≈ᵖ-setoid ⟩
+    n                                                              ≈⟨ n≈mq+r ⟩
+    m *ᵖ q +ᵖ r                                                    ≈⟨ ≈ᵖ-sym (+ᵖ-identityʳ _) ⟩
+    m *ᵖ q +ᵖ r +ᵖ 0ᵖ                                              ≈⟨ +ᵖ-congˡ {m *ᵖ q +ᵖ r} (≈ᵖ-sym (-ᵖ‿inverseˡ (term r {r≉0} *ᵖ m))) ⟩
+    m *ᵖ q +ᵖ r +ᵖ ((-ᵖ (term r {r≉0} *ᵖ m)) +ᵖ term r {r≉0} *ᵖ m) ≈⟨ ≈ᵖ-sym (+ᵖ-assoc (m *ᵖ q +ᵖ r) (-ᵖ (term r *ᵖ m)) (term r *ᵖ m)) ⟩
+    ((m *ᵖ q +ᵖ r) -ᵖ term r {r≉0} *ᵖ m) +ᵖ term r {r≉0} *ᵖ m      ≈⟨ +ᵖ-cong (+ᵖ-assoc (m *ᵖ q) r (-ᵖ (term r *ᵖ m))) (*ᵖ-comm (term r) m) ⟩
+    (m *ᵖ q +ᵖ (r -ᵖ term r {r≉0} *ᵖ m)) +ᵖ m *ᵖ term r {r≉0}      ≈⟨ +ᵖ-congʳ {m *ᵖ term r} (+ᵖ-congˡ {m *ᵖ q} r-t*m≈0) ⟩
+    (m *ᵖ q +ᵖ 0ᵖ) +ᵖ m *ᵖ term r {r≉0}                            ≈⟨ +ᵖ-congʳ {m *ᵖ term r} (+ᵖ-identityʳ (m *ᵖ q)) ⟩
+    m *ᵖ q +ᵖ m *ᵖ term r {r≉0}                                    ≈⟨ ≈ᵖ-sym (*ᵖ-distribˡ-+ᵖ m q (term r)) ⟩
+    m *ᵖ (q +ᵖ term r {r≉0})                                       ≈⟨ ≈ᵖ-sym (+ᵖ-identityʳ (m *ᵖ (q +ᵖ term r))) ⟩
+    m *ᵖ (q +ᵖ term r {r≉0}) +ᵖ 0ᵖ                                 ∎
+
+  divMod-step : ∀ q r {r≉0} → n ≈ᵖ m *ᵖ q +ᵖ r → n ≈ᵖ m *ᵖ (q +ᵖ term r {r≉0}) +ᵖ (r -ᵖ term r {r≉0} *ᵖ m)
+  divMod-step q r {r≉0} n≈mq+r = begin⟨ ≈ᵖ-setoid ⟩
+    n                                                       ≈⟨ n≈mq+r ⟩
+    m *ᵖ q +ᵖ r                                             ≈⟨ ≈ᵖ-sym (+ᵖ-identityʳ _) ⟩
+    m *ᵖ q +ᵖ r +ᵖ 0ᵖ                                       ≈⟨ +ᵖ-congˡ {m *ᵖ q +ᵖ r} (≈ᵖ-sym (-ᵖ‿inverseʳ (term r {r≉0} *ᵖ m))) ⟩
+    m *ᵖ q +ᵖ r +ᵖ (term r {r≉0} *ᵖ m -ᵖ term r {r≉0} *ᵖ m) ≈⟨ final m q r (term r) (-ᵖ (term r *ᵖ m)) ⟩
+    m *ᵖ (q +ᵖ term r {r≉0}) +ᵖ (r -ᵖ term r {r≉0} *ᵖ m)    ∎
+    where
+    final : ∀ m q r x y → m *ᵖ q +ᵖ r +ᵖ (x *ᵖ m +ᵖ y) ≈ᵖ m *ᵖ (q +ᵖ x) +ᵖ (r +ᵖ y)
+    final = solve +ᵖ-*ᵖ-almostCommutativeRing
+
+  loop : ∀ q r {r≉0} → n ≈ᵖ m *ᵖ q +ᵖ r → Acc _<_ (deg r {r≉0}) → Euclidean n m {m≉0}
+  loop q r {r≉0} n≈mq+r (acc downward) with <-≤-connex (deg r {r≉0}) (deg m {m≉0})
+  ... | inj₁ r<m = Euclidean✓ q r n≈mq+r (0ᵖ≉ r≉0 r<m)
+  ... | inj₂ r≥m with (r -ᵖ term r {r≉0} *ᵖ m) ≈ᵖ? 0ᵖ
+  ...   | yes r'≈0 = Euclidean✓ (q +ᵖ term r {r≉0}) 0ᵖ (divMod-base₂ q r {r≉0} n≈mq+r r'≈0) (0ᵖ≈ ≈ᵖ-refl)
+  ...   | no  r'≉0 = force (q +ᵖ term r {r≉0}) λ { q' ≡-refl → loop q' (r -ᵖ term r {r≉0} *ᵖ m) {r'≉0} (divMod-step q r {r≉0} n≈mq+r) (downward _ (term-smaller r r≥m)) }
 
 -- factor : ∀ p a → ⟦ p ⟧ a ≈ 0# → (𝑋 -ᵖ 𝐾 a) ∣ p
 -- factor = TODO
