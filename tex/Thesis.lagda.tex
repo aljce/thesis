@@ -1,0 +1,42 @@
+\documentclass[12pt,twoside]{reedthesis}
+\usepackage{amssymb,amsthm,amsmath}
+\usepackage{url}
+
+\usepackage[utf8]{inputenc}
+\usepackage{agda}
+
+\usepackage{subfiles}
+
+% TODO: Banish this
+\usepackage{lipsum}  
+
+\title{A Replication of the Famous AKS Primality Decision Algorithm}
+\author{Alice J. McKean}
+\date{May 2020}
+\division{Mathematical and Natural Sciences}
+\advisor{James D. Fix}
+\department{Computer Science}
+
+\begin{document}
+
+\maketitle
+\frontmatter
+\pagestyle{empty}
+
+\mainmatter
+\pagestyle{fancyplain}
+
+\tableofcontents
+
+\subfile{Abstract}
+\subfile{Chapter1}
+\subfile{Conclusion}
+
+\appendix
+
+\backmatter 
+
+\bibliographystyle{apalike}
+\bibliography{citations}
+
+\end{document}
