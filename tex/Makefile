@@ -1,24 +1,28 @@
 OUTDIR=latex
 
+all: init check build
+
+quick: init gen build
+
+.DEFAULT_GOAL=all
+
 clean:
 		rm -rf ${OUTDIR}
 		rm -f *.agdai
 
-copy:
+init:
 		mkdir -p ${OUTDIR}
 		cp -n reedthesis.cls ${OUTDIR}
 		cp citations.bib ${OUTDIR}
 
-agda:
-		rm -rf ${OUTDIR}/*.tex
-		agda --latex --latex-dir=${OUTDIR} Thesis.lagda.tex
-		agda --latex --latex-dir=${OUTDIR} Abstract.lagda.tex
-		agda --latex --latex-dir=${OUTDIR} Chapter1.lagda.tex
-		agda --latex --latex-dir=${OUTDIR} Conclusion.lagda.tex
+check: init
+		rm -f ${OUTDIR}/*.tex
+		parallel agda --latex --latex-dir=${OUTDIR} {} ::: *.lagda.tex
+
+gen: init
+		rm -f ${OUTDIR}/*.tex
+		parallel agda --latex --latex-dir=${OUTDIR} --only-scope-checking {} ::: *.lagda.tex
 
 build:
 		cd ${OUTDIR} && latexmk -pdf Thesis.tex
 
-all: copy agda build
-
-.DEFAULT_GOAL=all

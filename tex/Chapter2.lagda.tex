@@ -1,0 +1,75 @@
+\documentclass[./Thesis.tex]{subfiles}
+\begin{document}
+
+\chapter{Polynomials}
+\label{chap:polynomials}
+
+\begin{code}[hide]
+open import AKS.Algebra.Bundles using (DecField)
+\end{code}
+\begin{code}
+module Chapter2 {c ℓ} (F : DecField c ℓ) where
+  open DecField F
+    using (0#; 1#; _+_; _*_; -_; _-_; _⁻¹; _/_; C/0)
+    renaming (Carrier to C)
+\end{code}
+
+Before we can prove facts about polynomials, we first consider how to represent
+polynomials as a datastructure. You could represent polynomials as a list of
+coefficient's and exponents. The way mathematicians think about polynomials but
+this representation has a glaring flaw. Its not normalized by construction. This
+problem appears when considering adding the polynomial
+$x^2 + 2x^2 = [ \, (1, 2), \, (2, 2) \, ]$ 
+and $x^2 = [ \, (1, 2) \, ]$. In this example to which coefficient do you add
+the second polynomial's coefficient? The common solution to this problem is too
+normalize before every operation. 
+
+\begin{AgdaAlign}
+  \begin{code}
+  data Polynomialⁱ : Set c where
+    0ⁱ    : Polynomialⁱ
+    _+x∙_ : C → Polynomialⁱ → Polynomialⁱ
+  \end{code}
+  \begin{align*}
+    x^3 + 2x + 1 = 1 + x\left( 2 + x\left( 0 + x\left( 1 + x\left( 0 \right) \right) \right) \right)
+  \end{align*}
+  \begin{code}
+  1ⁱ : Polynomialⁱ
+  1ⁱ = 1# +x∙ 0ⁱ
+  \end{code}
+  \begin{code}[hide]
+  infixl 6 _+ⁱ_
+  \end{code}
+  \begin{code}
+  _+ⁱ_ : Polynomialⁱ → Polynomialⁱ → Polynomialⁱ
+  0ⁱ +ⁱ q = q
+  (c₁ +x∙ p) +ⁱ 0ⁱ = c₁ +x∙ p
+  (c₁ +x∙ p) +ⁱ (c₂ +x∙ q) = (c₁ + c₂) +x∙ (p +ⁱ q)
+  \end{code}
+  \begin{code}[hide]
+  infix 8 x∙_
+  \end{code}
+  \begin{code}
+  x∙_ : Polynomialⁱ → Polynomialⁱ
+  x∙ p = 0# +x∙ p
+  \end{code}
+  \begin{code}[hide]
+  infixl 7 _∙ⁱ_
+  \end{code}
+  \begin{code}
+  _∙ⁱ_ : C → Polynomialⁱ → Polynomialⁱ
+  a ∙ⁱ 0ⁱ = 0ⁱ
+  a ∙ⁱ (c +x∙ p) = (a * c) +x∙ (a ∙ⁱ p)
+  \end{code}
+  \begin{code}[hide]
+  infixl 7 _*ⁱ_
+  \end{code}
+  \begin{code}
+  _*ⁱ_ : Polynomialⁱ → Polynomialⁱ → Polynomialⁱ
+  0ⁱ *ⁱ q = 0ⁱ
+  (c₁ +x∙ p) *ⁱ 0ⁱ = 0ⁱ
+  (c₁ +x∙ p) *ⁱ (c₂ +x∙ q) = (c₁ * c₂) +x∙ (c₁ ∙ⁱ q +ⁱ c₂ ∙ⁱ p +ⁱ x∙ (p *ⁱ q))
+  \end{code}
+\end{AgdaAlign}
+
+\end{document}

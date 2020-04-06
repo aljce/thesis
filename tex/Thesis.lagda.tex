@@ -2,13 +2,47 @@
 \usepackage{amssymb,amsthm,amsmath}
 \usepackage{url}
 
-\usepackage[utf8]{inputenc}
-\usepackage{agda}
-
 \usepackage{subfiles}
 
 % TODO: Banish this
 \usepackage{lipsum}  
+
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[links]{agda}
+\usepackage{newunicodechar}
+\newunicodechar{λ}{\ensuremath{\mathnormal\lambda}}
+\newunicodechar{→}{\ensuremath{\mathnormal\to}}
+\newunicodechar{∀}{\ensuremath{\mathnormal\forall}}
+\newunicodechar{𝔹}{\ensuremath{\mathbb{B}}}
+\newunicodechar{ℕ}{\ensuremath{\mathbb{N}}}
+\newunicodechar{₁}{\ensuremath{{}_1}}
+\newunicodechar{¹}{\ensuremath{{}^1}}
+\newunicodechar{₂}{\ensuremath{{}_2}}
+\newunicodechar{²}{\ensuremath{{}^2}}
+\newunicodechar{₃}{\ensuremath{{}_3}}
+\newunicodechar{³}{\ensuremath{{}^3}}
+\newunicodechar{≡}{{\small \ensuremath{\equiv}}}
+\newunicodechar{∙}{\ensuremath{\cdot}}
+\newunicodechar{×}{\ensuremath{\times}}
+\newunicodechar{ε}{\ensuremath{\varepsilon}}
+\newunicodechar{∎}{\ensuremath{\rule{1ex}{1.2ex}}}
+\newunicodechar{⟨}{\ensuremath{\langle}}
+\newunicodechar{⟩}{\ensuremath{\rangle}}
+\newunicodechar{ˡ}{\ensuremath{{}^l}}
+\newunicodechar{ʳ}{\ensuremath{{}^r}}
+\newunicodechar{∷}{\ensuremath{::}}
+\newunicodechar{ⁱ}{\ensuremath{{}^i}}
+\newunicodechar{ℓ}{\ensuremath{\ell}}
+\newunicodechar{⁻}{\ensuremath{{}^{-}}}
+
+\newcommand{\Boolean}[0]{\AgdaDatatype{$\mathbb{B}$}}
+\newcommand{\Natural}[0]{\AgdaDatatype{$\mathbb{N}$}}
+\newcommand{\Set}[0]{\AgdaPrimitiveType{Set}}
+
+\newcommand{\CitationNeeded}[1]{{\color{blue} [citation needed: #1]}}
+
+\setlength{\parindent}{0em}
 
 \title{A Replication of the Famous AKS Primality Decision Algorithm}
 \author{Alice J. McKean}
@@ -30,12 +64,14 @@
 
 \subfile{Abstract}
 \subfile{Chapter1}
+\subfile{Chapter2}
 \subfile{Conclusion}
 
 \appendix
 
 \backmatter 
 
+\nocite{gnu-parallel}
 \bibliographystyle{apalike}
 \bibliography{citations}
 
