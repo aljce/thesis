@@ -1,0 +1,93 @@
+\documentclass[./Thesis.tex]{subfiles}
+\begin{document}
+
+\chapter{Exponentiation}
+\label{chap:exponentiation}
+
+\epigraph{
+  Accurate reckoning. \\
+  The entrance into the knowledge of all existing
+  things and all obscure secrets.
+}{
+  Translated from the Rhind Egyptian Mathematical Papyrus.
+  \cite{rhind-papyrus}
+}
+
+In this chapter we will investigate formalizing exponentiation and the
+algorithms to compute it. As \Agda{} is a proof theoretic language these things
+are one and the same \cite{hott-book}.
+
+\section{Inductive Definitions}
+\label{sec:inductive-definitions}
+
+\begin{code}[hide]
+  open import Algebra using (CommutativeMonoid)
+  module Exponentiation where
+  open import AKS.Nat using (ℕ; zero; suc; _+_; _*_; _<_)
+  open import Data.Nat.Properties using (*-identityˡ; *-assoc)
+  open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; module ≡-Reasoning) renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong)
+\end{code}
+
+Before thinking of formalizing a piece of mathematics its often useful to step
+back and think about the desired semantics of your formalism. In this case we
+ask the question what are the semantics of exponentiation. Middle and Elementary
+students often learn that exponentiation is ``repeated'' multiplication. This
+thought is made more precise below:
+\begin{align*}
+  x^n = \underbrace{x \times x \times \dots \times x}_{n \text{ multiplications}}
+\end{align*}
+The equation above lacks parentheses, arbitrarily assigning right precedence
+the equation becomes:
+\begin{align*}
+  x^n = x \times (x \times (x \times \dots))
+\end{align*}
+This leads to an obvious inductive definition to compute $x^n$ just multply $x$
+by $x^{n -1}$ with a base case of $x^0 = 1$. This definition cleanly bakes a law
+of exponents $x^{1+n} = x^1 \times x^n = x \times x^n$ into the definition. This
+idea is formalized below. \\
+
+\begin{code}[hide]
+  module Basic (C : Set) where
+    open ≡-Reasoning using (begin_; _≡⟨_⟩_; _≡⟨⟩_; _∎)
+    infixr 8 _^_
+\end{code}
+\begin{code}[inline]
+    _^_ : ℕ → ℕ → ℕ
+    x ^ zero = 1
+    x ^ suc n = x * x ^ n
+\end{code} \\
+
+We demonstrate the correctness of this definition by proving one of the
+fundemental laws of exponentiation,
+the exponentiational homomorphism $x^{n + m} = x^n x^m$. \\
+\begin{code}
+    ^-homo : ∀ x n m → x ^ (n + m) ≡ x ^ n * x ^ m
+\end{code} \\
+The type above just makes the quantifiers explict. The base case below
+is more intresting. We first simplify and unwrap the definitons then
+tac a $1$ onto the exponential. This is allowable as $1$ is the
+multpliciative unit. Finally we rewrap definitions, notice that
+$x \string^{} \, 0$ is defined to be $1$ so the simplifier can work in reverse.
+\begin{code}
+    ^-homo x zero m = begin
+      x ^ (0 + m)   ≡⟨⟩
+      x ^ m         ≡⟨ ≡-sym (*-identityˡ (x ^ m)) ⟩
+      1 * x ^ m     ≡⟨⟩
+      x ^ 0 * x ^ m ∎
+\end{code} \\
+The inductive step starts similarlly to the base case in so far as we
+unfold the defintions. Then we invoke the inductive hypothesis which in \Agda{}
+is just a recursive call to our proof. Notice that the induction is well founded
+as the natural $n$ is decreasing by one each inductive step.
+Lastly we associate the multiplications correctly.
+\begin{code}
+    ^-homo x (suc n) m = begin
+      x ^ (suc n + m)     ≡⟨⟩
+      x ^ suc (n + m)     ≡⟨⟩
+      x * x ^ (n + m)     ≡⟨ ≡-cong (λ e → x * e) (^-homo x n m) ⟩
+      x * (x ^ n * x ^ m) ≡⟨ ≡-sym (*-assoc x (x ^ n) (x ^ m)) ⟩
+      (x * x ^ n) * x ^ m ≡⟨⟩
+      (x ^ suc n) * x ^ m ∎
+\end{code} \\
+
+\end{document}

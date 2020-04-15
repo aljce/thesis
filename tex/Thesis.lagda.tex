@@ -3,6 +3,8 @@
 \usepackage{url}
 
 \usepackage{subfiles}
+\usepackage{epigraph}
+\setlength{\epigraphwidth}{0.9\textwidth}
 
 % TODO: Banish this
 \usepackage{lipsum}  
@@ -35,10 +37,13 @@
 \newunicodechar{ⁱ}{\ensuremath{{}^i}}
 \newunicodechar{ℓ}{\ensuremath{\ell}}
 \newunicodechar{⁻}{\ensuremath{{}^{-}}}
+\newunicodechar{≈}{\ensuremath{\approx}}
 
 \newcommand{\Boolean}[0]{\AgdaDatatype{$\mathbb{B}$}}
 \newcommand{\Natural}[0]{\AgdaDatatype{$\mathbb{N}$}}
 \newcommand{\Set}[0]{\AgdaPrimitiveType{Set}}
+
+\newcommand{\Agda}[0]{Agda}
 
 \newcommand{\CitationNeeded}[1]{{\color{blue} [citation needed: #1]}}
 
@@ -63,8 +68,9 @@
 \tableofcontents
 
 \subfile{Abstract}
-\subfile{Chapter1}
-\subfile{Chapter2}
+\subfile{Introduction}
+\subfile{Exponentiation}
+\subfile{Polynomials}
 \subfile{Conclusion}
 
 \appendix
