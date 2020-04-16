@@ -28,7 +28,7 @@ are one and the same \cite{hott-book}.
   open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; module ≡-Reasoning) renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong)
 \end{code}
 
-Before thinking of formalizing a piece of mathematics its often useful to step
+Before formalizing a piece of mathematics its often useful to step
 back and think about the desired semantics of your formalism. In this case we
 ask the question what are the semantics of exponentiation. Middle and Elementary
 students often learn that exponentiation is ``repeated'' multiplication. This
@@ -59,10 +59,10 @@ idea is formalized below. \\
 
 We demonstrate the correctness of this definition by proving one of the
 fundemental laws of exponentiation,
-the exponentiational homomorphism $x^{n + m} = x^n x^m$. \\
+the exponentiational homomorphism $x^{n + m} = x^n x^m$.
 \begin{code}
     ^-homo : ∀ x n m → x ^ (n + m) ≡ x ^ n * x ^ m
-\end{code} \\
+\end{code}
 The type above just makes the quantifiers explict. The base case below
 is more intresting. We first simplify and unwrap the definitons then
 tac a $1$ onto the exponential. This is allowable as $1$ is the
@@ -74,7 +74,7 @@ $x \string^{} \, 0$ is defined to be $1$ so the simplifier can work in reverse.
       x ^ m         ≡⟨ ≡-sym (*-identityˡ (x ^ m)) ⟩
       1 * x ^ m     ≡⟨⟩
       x ^ 0 * x ^ m ∎
-\end{code} \\
+\end{code}
 The inductive step starts similarlly to the base case in so far as we
 unfold the defintions. Then we invoke the inductive hypothesis which in \Agda{}
 is just a recursive call to our proof. Notice that the induction is well founded
@@ -88,6 +88,159 @@ Lastly we associate the multiplications correctly.
       x * (x ^ n * x ^ m) ≡⟨ ≡-sym (*-assoc x (x ^ n) (x ^ m)) ⟩
       (x * x ^ n) * x ^ m ≡⟨⟩
       (x ^ suc n) * x ^ m ∎
-\end{code} \\
+\end{code}
+\section{Don't Repeat Yourself}
+\label{sec:dont-repeat-yourself}
+In the previous section we assumed that the base of our exponential was a
+natural number. This definition restricts even basic mathematics as expressions
+like $(-1)^3$ and $\pi^2$ are not well typed. A mathematician might suggest
+using a base of complex numbers as the naturals, integers, and reals are all
+subclasses of $\mathbb{C}$. This solution has two problems, firstly subtyping
+(the type theoretic analog of subclassing) is an open problem in a language like
+\Agda{} \cite{algebraic-subtyping}. Secondly there are types which are not
+subclasses of $\mathbb{C}$ that we would like to exponentiate. A famous example
+from linear algebra, the nth entry of the Fibonacci sequence can be found by
+raising a certain matrix to the nth power \cite{linear-algebra}.
+\begin{align*}
+  \rowarrowsep=-2pt
+  \begin{gmatrix}[p]
+    F_{n - 1} & F_{n} \\
+    F_{n} & F_{n + 1}
+  \end{gmatrix}
+  =
+  {
+  \begin{gmatrix}[p]
+    0 & 1 \\
+    1 & 1
+  \end{gmatrix}
+  }^n
+\end{align*}
+In the coming chapters we will need to exponentiate non number types so we need
+to step back and generalize our base. In the previous section the proofs
+required almost no properties of multiplication. The proofs required an
+associative binary operation equipped with an identity element. Those
+constraints basically define a monoid. A quick sanity check shows that all the
+types listed above form a monoid under their respective multiplication
+operators. \\
+We can generalize our definition by creating a module that takes any monoid.
+\begin{code}[hide]
+  open import Algebra using (Monoid; CommutativeMonoid)
+  open import Relation.Binary using (Setoid)
+\end{code}
+\begin{code}
+  module Exponentiation₁ {c ℓ} (M : Monoid c ℓ) where
+    open Monoid M public
+      using (ε; _∙_; ∙-cong; ∙-congˡ; ∙-congʳ; identityˡ; identityʳ; assoc)
+      using (_≈_; setoid)
+      renaming (Carrier to C)
+    open Setoid setoid public using (sym)
+    open import Relation.Binary.Reasoning.Setoid setoid public
+\end{code}
+From this point on bases are values of type C, the
+binary operation is $∙$, and the identity element is
+$\varepsilon$. This leads to a more general inductive definition:
+\begin{code}
+    _^_ : C → ℕ → C
+    x ^ zero = ε
+    x ^ suc n = x ∙ x ^ n
+\end{code}
+We can update the homomorphism proof as well keeping in mind now we are working
+over an arbitrary setoid instead of the built in equality type. This is
+reflected in the following new type of $\AgdaFunction{\^{}-homo}$.
+\begin{code}[hide]
+    infixr 8 _^_
+\end{code}
+\begin{code}
+    ^-homo : ∀ x n m → x ^ (n + m) ≈ x ^ n ∙ x ^ m
+\end{code}
+The base case closely resembles the original proof with one change. Adding on
+the identity element is only true up to setoid equality. This is
+reflected in the combinator used to string the proof steps together.
+\begin{code}
+    ^-homo x zero m = begin
+      x ^ (0 + m)   ≡⟨⟩
+      x ^ m         ≈⟨ sym (identityˡ (x ^ m)) ⟩
+      ε ∙ x ^ m     ≡⟨⟩
+      x ^ 0 ∙ x ^ m ∎
+\end{code}
+Not all functions are congruent over an arbitrary setoid, so you need to prove
+congruence for specific functions. Luckily by definition all monodial binary
+operations are congruent. This fact is witnessed by the
+proof generating function $\AgdaFunction{∙-congˡ}$.
+\begin{code}
+    ^-homo x (suc n) m = begin
+      x ^ (suc n + m)     ≡⟨⟩
+      x ^ suc (n + m)     ≡⟨⟩
+      x ∙ x ^ (n + m)     ≈⟨ ∙-congˡ (^-homo x n m) ⟩
+      x ∙ (x ^ n ∙ x ^ m) ≈⟨ sym (assoc x (x ^ n) (x ^ m)) ⟩
+      (x ∙ x ^ n) ∙ x ^ m ≡⟨⟩
+      (x ^ suc n) ∙ x ^ m ∎
+\end{code}
+Another core law of exponentiation is the fact that exponentiation distributes
+over multiplication or in our case the binary operator
+$(x \cdot y)^n = x^n \cdot y^n$. Unfortunately this law is false over non
+commutative monoids. For instance the free monoid, commonly called the list
+data structure, is a counterexample to this law:
+\begin{align*}
+       ([1] \, \diamond \, [2])^2
+     = [1, 2]^2
+     = [1, 2, 1, 2]
+  \neq [1, 1, 2, 2]
+     = [1, 1] \, \diamond \, [2, 2]
+     = [1]^2 \, \diamond \, [2]^2
+\end{align*}
+This means we need to strength our assumptions and work with commutative
+monoids. As every commutative monoid is a monoid all our previous work holds
+true, and this can be witnessed by passing the correct modules around.
+Note that we now have access to the comm axiom, the proof that the
+binary operator is commutative. 
+\begin{code}
+  module Exponentiation₂ {c ℓ} (M : CommutativeMonoid c ℓ) where
+    open CommutativeMonoid M using (monoid; comm) public
+    open Exponentiation₁ monoid public
+\end{code}
+The type and base case for this proof are quite similar to the proof above. Note
+that for any monoid $\varepsilon = \varepsilon^2$.
+\begin{code}
+    ∙-^-dist : ∀ x y n → (x ∙ y) ^ n ≈ x ^ n ∙ y ^ n
+    ∙-^-dist x y zero = begin
+      (x ∙ y) ^ 0   ≡⟨⟩
+      ε             ≈⟨ sym (identityˡ ε) ⟩
+      ε ∙ ε         ≡⟨⟩
+      x ^ 0 ∙ y ^ 0 ∎
+\end{code}
+The inductive step contains the meat of this proof. We first apply the inductive
+hypothesis then we reassociate the terms until $y$ and $x \,\,\, \hat{} \,\,\, n$ are siblings.
+Only then can we apply the commutativity axiom. Note the repeated uses of
+$\AgdaFunction{∙-cong}$ to ignore irrelevant parts of expression tree. The proof concludes by
+reassociating the terms in reverse. 
+\begin{code}
+    ∙-^-dist x y (suc n) = begin
+      (x ∙ y) ^ suc n           ≡⟨⟩
+      (x ∙ y) ∙ (x ∙ y) ^ n     ≈⟨ ∙-congˡ (∙-^-dist x y n) ⟩
+      (x ∙ y) ∙ (x ^ n ∙ y ^ n) ≈⟨ assoc x y (x ^ n ∙ y ^ n) ⟩
+      x ∙ (y ∙ (x ^ n ∙ y ^ n)) ≈⟨ ∙-congˡ (sym (assoc y (x ^ n) (y ^ n))) ⟩
+      x ∙ ((y ∙ x ^ n) ∙ y ^ n) ≈⟨ ∙-congˡ (∙-congʳ (comm y (x ^ n))) ⟩
+      x ∙ ((x ^ n ∙ y) ∙ y ^ n) ≈⟨ ∙-congˡ (assoc (x ^ n) y (y ^ n)) ⟩
+      x ∙ (x ^ n ∙ (y ∙ y ^ n)) ≈⟨ sym (assoc x (x ^ n) (y ∙ y ^ n)) ⟩
+      (x ∙ x ^ n) ∙ (y ∙ y ^ n) ≡⟨⟩
+      x ^ suc n ∙ y ^ suc n     ∎
+\end{code}
+We end this section by analyzing the run time of this algorithm. The run time
+can be represented by this simple recurrence. Assume that the binary operation
+runs in $O(f(n))$ time.
+\begin{align*}
+  T(0) &= O(1) \\
+  T(n) &= T(n - 1) + O(f(n))
+\end{align*}
+This recurrence clearly solves to $T(n) = O(n f(n))$. This linear result obscures
+the exponential run time of this algorithm. The key to realize this is to ask
+``What does n represent in that recurrance?'' It represents the full integer not
+the length of the binary representation. This insight shows that an inductively
+defined exponential algorithm will run exponentially slower then run time of the
+binary operation. This assumes the binary operation runs in logarithmic time
+$f(n) = \text{lg}(n)$.
+\section{Exponential Speedup}
+\label{sec:exponential-speedup}
 
 \end{document}
