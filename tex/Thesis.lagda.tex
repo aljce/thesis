@@ -1,16 +1,22 @@
 \documentclass[12pt,twoside]{reedthesis}
-\usepackage{amssymb,amsthm,amsmath}
-\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathbbol}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+\DeclarePairedDelimiter\Parens{\lparen}{\rparen}
+
+\usepackage{gauss}
+
+% TODO: banish this evil
+\usepackage{lipsum}
 
 \usepackage{subfiles}
 \usepackage{epigraph}
 \setlength{\epigraphwidth}{0.9\textwidth}
 
-\usepackage{gauss}
-
-% TODO: Banish this
-\usepackage{lipsum}  
-
+\usepackage{url}
 \usepackage{hyperref}
 \usepackage[utf8]{inputenc}
 \usepackage[links]{agda}
@@ -26,6 +32,8 @@
 \newunicodechar{²}{\ensuremath{{}^2}}
 \newunicodechar{₃}{\ensuremath{{}_3}}
 \newunicodechar{³}{\ensuremath{{}^3}}
+\newunicodechar{ᵇ}{\ensuremath{{}^b}}
+\newunicodechar{⁺}{\ensuremath{{}^+}}
 \newunicodechar{≡}{{\small \ensuremath{\equiv}}}
 \newunicodechar{∙}{\ensuremath{\cdot}}
 \newunicodechar{×}{\ensuremath{\times}}
@@ -40,12 +48,20 @@
 \newunicodechar{ℓ}{\ensuremath{\ell}}
 \newunicodechar{⁻}{\ensuremath{{}^{-}}}
 \newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{𝕓}{\ensuremath{\mathbb{b}}} % TODO: This looks terrible 
+\newunicodechar{⇓}{\ensuremath{\Downarrow}}
+\newunicodechar{⟦}{\ensuremath{\llbracket}}
+\newunicodechar{⟧}{\ensuremath{\rrbracket}}
 
 \newcommand{\Boolean}[0]{\AgdaDatatype{$\mathbb{B}$}}
 \newcommand{\Natural}[0]{\AgdaDatatype{$\mathbb{N}$}}
 \newcommand{\Set}[0]{\AgdaPrimitiveType{Set}}
 
 \newcommand{\Agda}[0]{Agda}
+
+\newcommand{\BigO}[1]{\ensuremath{O\Parens{#1}}}
+
+\newcommand{\Lg}[1]{\ensuremath{\text{lg}\Parens{#1}}}
 
 \newcommand{\CitationNeeded}[1]{{\color{blue} [citation needed: #1]}}
 

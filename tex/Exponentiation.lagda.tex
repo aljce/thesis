@@ -33,14 +33,16 @@ back and think about the desired semantics of your formalism. In this case we
 ask the question what are the semantics of exponentiation. Middle and Elementary
 students often learn that exponentiation is ``repeated'' multiplication. This
 thought is made more precise below:
-\begin{align*}
+\begin{align}
+  \label{eqn:exp-first-idea}
   x^n = \underbrace{x \times x \times \dots \times x}_{n \text{ multiplications}}
-\end{align*}
+\end{align}
 The equation above lacks parentheses, arbitrarily assigning right precedence
 the equation becomes:
-\begin{align*}
+\begin{align}
+  \label{eqn:exp-second-idea}
   x^n = x \times (x \times (x \times \dots))
-\end{align*}
+\end{align}
 This leads to an obvious inductive definition to compute $x^n$ just multply $x$
 by $x^{n -1}$ with a base case of $x^0 = 1$. This definition cleanly bakes a law
 of exponents $x^{1+n} = x^1 \times x^n = x \times x^n$ into the definition. This
@@ -51,7 +53,7 @@ idea is formalized below. \\
     open ≡-Reasoning using (begin_; _≡⟨_⟩_; _≡⟨⟩_; _∎)
     infixr 8 _^_
 \end{code}
-\begin{code}[inline]
+\begin{code}
     _^_ : ℕ → ℕ → ℕ
     x ^ zero = 1
     x ^ suc n = x * x ^ n
@@ -101,7 +103,8 @@ subclasses of $\mathbb{C}$. This solution has two problems, firstly subtyping
 subclasses of $\mathbb{C}$ that we would like to exponentiate. A famous example
 from linear algebra, the nth entry of the Fibonacci sequence can be found by
 raising a certain matrix to the nth power \cite{linear-algebra}.
-\begin{align*}
+\begin{align}
+  \label{eqn:fib-example}
   \rowarrowsep=-2pt
   \begin{gmatrix}[p]
     F_{n - 1} & F_{n} \\
@@ -114,7 +117,7 @@ raising a certain matrix to the nth power \cite{linear-algebra}.
     1 & 1
   \end{gmatrix}
   }^n
-\end{align*}
+\end{align}
 In the coming chapters we will need to exponentiate non number types so we need
 to step back and generalize our base. In the previous section the proofs
 required almost no properties of multiplication. The proofs required an
@@ -180,15 +183,16 @@ Another core law of exponentiation is the fact that exponentiation distributes
 over multiplication or in our case the binary operator
 $(x \cdot y)^n = x^n \cdot y^n$. Unfortunately this law is false over non
 commutative monoids. For instance the free monoid, commonly called the list
-data structure, is a counterexample to this law:
-\begin{align*}
+data structure \cite{awodey}, is a counterexample to this law:
+\begin{align}
+  \label{eqn:dist-counterexample}
        ([1] \, \diamond \, [2])^2
      = [1, 2]^2
      = [1, 2, 1, 2]
   \neq [1, 1, 2, 2]
      = [1, 1] \, \diamond \, [2, 2]
      = [1]^2 \, \diamond \, [2]^2
-\end{align*}
+\end{align}
 This means we need to strength our assumptions and work with commutative
 monoids. As every commutative monoid is a monoid all our previous work holds
 true, and this can be witnessed by passing the correct modules around.
@@ -228,19 +232,156 @@ reassociating the terms in reverse.
 \end{code}
 We end this section by analyzing the run time of this algorithm. The run time
 can be represented by this simple recurrence. Assume that the binary operation
-runs in $O(f(n))$ time.
-\begin{align*}
-  T(0) &= O(1) \\
-  T(n) &= T(n - 1) + O(f(n))
-\end{align*}
-This recurrence clearly solves to $T(n) = O(n f(n))$. This linear result obscures
+runs in $\BigO{f(n)}$ time.
+\begin{align}
+  \label{eqn:slow-recurrence}
+  \begin{split}
+    T(0) &= \BigO{1} \\
+    T(n) &= T(n - 1) + \BigO{f(n)}
+  \end{split}
+\end{align}
+This recurrence clearly solves to $T(n) = \BigO{n f(n)}$. This linear result obscures
 the exponential run time of this algorithm. The key to realize this is to ask
 ``What does n represent in that recurrance?'' It represents the full integer not
-the length of the binary representation. This insight shows that an inductively
+the length of the integer's binary representation. This insight shows that an inductively
 defined exponential algorithm will run exponentially slower then run time of the
 binary operation. This assumes the binary operation runs in logarithmic time
-$f(n) = \text{lg}(n)$.
+$f(n) = \Lg{n}^c$.
 \section{Exponential Speedup}
 \label{sec:exponential-speedup}
-
+The solution to this exponential problem can be found by analayzing exponentials
+of exponentials. In the following equation assume $n$ is a power of two $n = 2^\ell$:
+\begin{align}
+  \label{eqn:squaring-even}
+  x^n = x^{2^{\, \ell}}
+  {}  = x^{2 \cdot 2^{\ell - 1}}
+  {}  = \Parens*{x^2}^{2^{\ell - 1}}
+  {}  = \Parens*{x^2}^{n / 2}
+\end{align}
+This equation provides a simple algorithm to exponentiate a base to a power of
+two. Just square the base and recurse on half the exponent. The run time of this
+algorithm is modeled by the recurrence given below.
+\begin{align}
+  \label{eqn:power-of-two-recurrance}
+  \begin{split}
+    T(0) &= \BigO{1} \\
+    T(n) &= T(n / 2) + \BigO{f(n)}
+  \end{split}
+\end{align}
+When $f(n) = \Lg{n}^c$ the recurrence can be solved by the master method
+% TODO: citation going off margin
+\cite{clrs} to yield a complexity of $T(n) = \BigO{\Lg{n}^{c + 1}}$. This is an
+exponential improvement. Unfortunately this algorithm only works correctly for
+powers of two. It's important to realize why this algorithm only works correctly
+for powers of two. Note that equation \ref{eqn:squaring-even} requires n to be
+even. The defining feature of powers of two is that they are all even,
+disregarding $1$. So if we can find a parallel equation to equation
+\ref{eqn:squaring-even} for odd numbers we will be able to exponentiate any power
+quickly.
+\begin{align}
+  \label{eqn:squaring-odd}
+  x^n = x^{n - 1 + 1} = x x^{n - 1} = x x^{2\Parens*{n - 1} / 2} = x \Parens*{x^2}^{\Parens*{n - 1} / 2}
+\end{align}
+We can combine these two ideas \ref{eqn:squaring-even}, \ref{eqn:squaring-odd}
+into a single cased based definition.
+\begin{align}
+  \label{eqn:squaring-def-division}
+  \begin{split}
+    x^0 &= 1 \\
+    x^n &=
+    \begin{cases}
+      \Parens*{x^2}^{n / 2} & n \text{ is even} \\
+      x \Parens*{x^2}^{\Parens*{n - 1} / 2} & n \text{ is odd}
+    \end{cases}
+  \end{split}
+\end{align}
+This leads straight into a similar cased based recurrence.
+\begin{align}
+  \label{eqn:squaring-recurrance}
+  \begin{split}
+    T(0) &= \BigO{1} \\
+    T(n) &=
+    \begin{cases}
+      T(n / 2) + \BigO{f(n)} & n \text{ is even} \\
+      T(n / 2) + 2 \BigO{f(n)} & n \text{ is odd} \\
+  \end{cases}
+  \end{split}
+\end{align}
+The cases in this recurrence collapse together as the constant $2$ folds into
+the big o term $\BigO{f(n)}$. This fact makes this recurrence equal to
+\ref{eqn:power-of-two-recurrance} and so they have equal run time.
+\section{A Binary Digression}
+\label{sec:a-binary-digression}
+We could attempt to translate definition \ref{eqn:squaring-def-division} directly to
+\Agda{}. While this is possible the definition obstructs proof writing as
+checking for parity and integer division are non trivial constructions in
+\Agda{}. Instead we can apply a couple of well known tricks in the world
+of bitwise programming. Firstly division by two is the same as bit shift right
+by 1.
+\begin{align}
+  n / 2  &=  \Parens[\big]{n_{\ell - 1} n_{\ell - 2} \dots n_{1} n_{0}} / 2 \\
+  {}     &=  \Parens[\big]{2^{\ell - 1}n_{\ell - 1} + 2^{\ell - 2} n_{\ell - 2} + \dots + 2^1 n_1 + 2^0 n_0} / 2 \\
+  {}     &=  \Parens[\big]{2^{\ell - 1}n_{\ell - 1}} / 2
+           + \Parens[\big]{2^{\ell - 2} n_{\ell - 2}} / 2
+           + \dots
+           + \Parens[\big]{2^1 n_1} / 2
+           + \Parens[\big]{2^0 n_0} / 2 \\
+  {}     &=  2^{\ell - 2}n_{\ell - 1}
+           + 2^{\ell - 3} n_{\ell - 2}
+           + \dots
+           + 2^0 n_1 \\
+  {}     &= n_{\ell - 2} n_{\ell - 3} \dots n_{1} = n \gg 1
+\end{align}
+The term $\Parens[\big]{2^0 n_0} / 2$ disappears because the numerator is less
+than $2$, a quirk of integer division. By a similar analysis shown above the
+parity of an integer can be determined by the first bit of the integer's binary
+representation. If the first bit is set then the integer is odd. These two
+tricks allow us to rewrite our definition in terms \Agda{} will like.
+\begin{align}
+  \label{eqn:squaring-def-shift}
+  \begin{split}
+    x^0 &= 1 \\
+    x^n &=
+    \begin{cases}
+      \Parens*{x^2}^{n \gg 1} & n_0 = 0𝕓 \\
+      x \Parens*{x^2}^{n \gg 1} & n_0 = 1𝕓
+    \end{cases}
+  \end{split}
+\end{align}
+Note that at every level of recursion we only need to inspect the last element
+of the bitstring. Then we drop that element. Thus if we store the bitstring as a
+snoc list we can perform the required operations in $\BigO{1}$. A snoc list is a
+just a linked list where a user can append/uncons from the back of the list in
+$\BigO{1}$ time \cite{okasaki}.
+\begin{code}
+  infixl 5 _0ᵇ _1ᵇ
+  data 𝔹⁺ : Set where
+    𝕓1ᵇ : 𝔹⁺
+    _0ᵇ _1ᵇ : 𝔹⁺ → 𝔹⁺
+\end{code}
+\begin{code}
+  infixr 4 +_
+  data 𝔹 : Set where
+    𝕓0ᵇ : 𝔹
+    +_ : 𝔹⁺ → 𝔹
+\end{code}
+\begin{code}
+  2* : ℕ → ℕ
+  2* n = n + n
+\end{code}
+\begin{code}
+  ⟦_⇓⟧⁺ : 𝔹⁺ → ℕ
+  ⟦ 𝕓1ᵇ  ⇓⟧⁺ = 1
+  ⟦ x 0ᵇ ⇓⟧⁺ = 2* ⟦ x ⇓⟧⁺
+  ⟦ x 1ᵇ ⇓⟧⁺ = 1 + 2* ⟦ x ⇓⟧⁺
+\end{code}
+\begin{code}
+  ⟦_⇓⟧ : 𝔹 → ℕ
+  ⟦ 𝕓0ᵇ ⇓⟧ = 0
+  ⟦ + x ⇓⟧ = ⟦ x ⇓⟧⁺
+\end{code}
+\begin{code}
+  evaluation-test : ⟦ + 𝕓1ᵇ 0ᵇ 1ᵇ 0ᵇ ⇓⟧ ≡ 10
+  evaluation-test = ≡-refl
+\end{code}
 \end{document}
