@@ -18,6 +18,7 @@
 
 \usepackage{url}
 \usepackage{hyperref}
+\usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[links]{agda}
 \usepackage{newunicodechar}
@@ -34,7 +35,9 @@
 \newunicodechar{³}{\ensuremath{{}^3}}
 \newunicodechar{ᵇ}{\ensuremath{{}^b}}
 \newunicodechar{⁺}{\ensuremath{{}^+}}
-\newunicodechar{≡}{{\small \ensuremath{\equiv}}}
+\newunicodechar{≡}{\small {\ensuremath{\equiv}}}
+\newunicodechar{≢}{\small {\ensuremath{\not\equiv}}}
+\newunicodechar{≟}{\small {\ensuremath{\stackrel{?}{=}}}}
 \newunicodechar{∙}{\ensuremath{\cdot}}
 \newunicodechar{×}{\ensuremath{\times}}
 \newunicodechar{ε}{\ensuremath{\varepsilon}}
@@ -50,8 +53,10 @@
 \newunicodechar{≈}{\ensuremath{\approx}}
 \newunicodechar{𝕓}{\ensuremath{\mathbb{b}}} % TODO: This looks terrible 
 \newunicodechar{⇓}{\ensuremath{\Downarrow}}
+\newunicodechar{⇑}{\ensuremath{\Uparrow}}
 \newunicodechar{⟦}{\ensuremath{\llbracket}}
 \newunicodechar{⟧}{\ensuremath{\rrbracket}}
+\newunicodechar{✓}{\ensuremath{\checkmark}}
 
 \newcommand{\Boolean}[0]{\AgdaDatatype{$\mathbb{B}$}}
 \newcommand{\Natural}[0]{\AgdaDatatype{$\mathbb{N}$}}

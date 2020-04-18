@@ -23,8 +23,11 @@ are one and the same \cite{hott-book}.
 \begin{code}[hide]
   open import Algebra using (CommutativeMonoid)
   module Exponentiation where
-  open import AKS.Nat using (ℕ; zero; suc; _+_; _*_; _<_)
-  open import Data.Nat.Properties using (*-identityˡ; *-assoc)
+  open import Relation.Nullary.Decidable using (False)
+  open import Relation.Nullary.Negation using (contradiction)
+  open import AKS.Nat using (ℕ; zero; suc; _+_; _*_; _<_; lte; _≟_)
+  open import AKS.Nat using (n%m<m)
+  open import Data.Nat.Properties using (*-identityˡ; *-assoc; *-comm)
   open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; module ≡-Reasoning) renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong)
 \end{code}
 
@@ -136,7 +139,7 @@ We can generalize our definition by creating a module that takes any monoid.
       using (ε; _∙_; ∙-cong; ∙-congˡ; ∙-congʳ; identityˡ; identityʳ; assoc)
       using (_≈_; setoid)
       renaming (Carrier to C)
-    open Setoid setoid public using (sym)
+    open Setoid setoid public using (refl; sym)
     open import Relation.Binary.Reasoning.Setoid setoid public
 \end{code}
 From this point on bases are values of type C, the
@@ -348,40 +351,187 @@ tricks allow us to rewrite our definition in terms \Agda{} will like.
     \end{cases}
   \end{split}
 \end{align}
-Note that at every level of recursion we only need to inspect the last element
-of the bitstring. Then we drop that element. Thus if we store the bitstring as a
-snoc list we can perform the required operations in $\BigO{1}$. A snoc list is a
-just a linked list where a user can append/uncons from the back of the list in
-$\BigO{1}$ time \cite{okasaki}.
+\Agda{} does not come with bitwise operator primitives so we will need to build
+our own binary number type. Note that at every level of recursion we only need
+to inspect the last element of the bitstring. Then we drop that element.
+Thus if we store the binary number as a snoc list we can perform the
+required operations in $\BigO{1}$. A snoc list is a purely functional linked
+list that supports append/uncons operations from the back of the list in
+$\BigO{1}$ time \cite{okasaki}. The figure below is a snoc list encoding of the
+number $10$.
+\begin{align}
+  \label{eqn:snoc-binary-10}
+  [] :: 1𝕓 :: 0𝕓 :: 1𝕓 :: 0𝕓
+\end{align}
+This encoding has one major flaw. Numbers do not have a unique encoding as a user
+can add arbitrarily many leading zeros. Take for instance the two encodings of
+$3$ given below.
+\begin{align}
+  [] :: 0𝕓 :: 1𝕓 :: 1𝕓 \stackrel{?}{=} [] :: 1𝕓 :: 1𝕓
+\end{align}
+We can fix this issue by fusing the empty list and the most significant digit
+together \cite{donnacha}. This idea generates a simple \Agda{} data type, note
+that $\AgdaInductiveConstructor{𝕓1ᵇ}$ is the fused based case.
 \begin{code}
   infixl 5 _0ᵇ _1ᵇ
   data 𝔹⁺ : Set where
     𝕓1ᵇ : 𝔹⁺
     _0ᵇ _1ᵇ : 𝔹⁺ → 𝔹⁺
 \end{code}
+This encoding unfortunately forbids any leading zeros, and the number $0$
+requires exactly one leading zero. We can special case $0$ with its own
+constructor.
 \begin{code}
   infixr 4 +_
   data 𝔹 : Set where
     𝕓0ᵇ : 𝔹
     +_ : 𝔹⁺ → 𝔹
+
+  three : 𝔹
+  three = + 𝕓1ᵇ 1ᵇ
 \end{code}
+The following code defines a function to reify a binary encoded natural number
+into \Agda{} primitive naturals. We define a helper function to multiply a number
+by two. We could have used the term $2 * n$ but the simplifier transforms that
+expression into $n + (n + 0)$. This expression unnecessarily complicates proofs
+in the following sections.
 \begin{code}
   2* : ℕ → ℕ
   2* n = n + n
-\end{code}
-\begin{code}
+
   ⟦_⇓⟧⁺ : 𝔹⁺ → ℕ
   ⟦ 𝕓1ᵇ  ⇓⟧⁺ = 1
   ⟦ x 0ᵇ ⇓⟧⁺ = 2* ⟦ x ⇓⟧⁺
   ⟦ x 1ᵇ ⇓⟧⁺ = 1 + 2* ⟦ x ⇓⟧⁺
-\end{code}
-\begin{code}
+
   ⟦_⇓⟧ : 𝔹 → ℕ
   ⟦ 𝕓0ᵇ ⇓⟧ = 0
   ⟦ + x ⇓⟧ = ⟦ x ⇓⟧⁺
-\end{code}
-\begin{code}
+
   evaluation-test : ⟦ + 𝕓1ᵇ 0ᵇ 1ᵇ 0ᵇ ⇓⟧ ≡ 10
   evaluation-test = ≡-refl
 \end{code}
+
+\begin{code}
+  record Euclidean (n : ℕ) (m : ℕ) : Set where
+    constructor Euclidean✓
+    field
+      q : ℕ
+      r : ℕ
+      division : n ≡ r + m * q
+      r<m : r < m
+\end{code}
+
+\begin{code}[hide]
+  open import Data.Nat.DivMod using (_/_; _%_; m≡m%n+[m/n]*n)
+  open import Relation.Binary.PropositionalEquality.TrustMe using (trustMe)
+\end{code}
+\begin{code}
+  _div_ : ∀ (n m : ℕ) {≢0 : False (m ≟ 0)} → Euclidean n m
+\end{code}
+\begin{code}[hide]
+  n div (suc m) = Euclidean✓ (n / suc m) (n % suc m) div-proof (n%m<m n (suc m))
+    where
+    div-proof : n ≡ n % suc m + suc m * (n / suc m)
+    div-proof rewrite *-comm (suc m) (n / suc m) = m≡m%n+[m/n]*n n m
+\end{code}
+
+\begin{code}[hide]
+  {-# TERMINATING #-}
+\end{code}
+\begin{code}
+  ⟦_⇑⟧⁺ : ∀ (n : ℕ) {≢0 : False (n ≟ 0)} → 𝔹⁺
+  ⟦ suc n ⇑⟧⁺ with suc n div 2
+  ... | Euclidean✓ (suc q) 0 _ _ = ⟦ suc q ⇑⟧⁺ 0ᵇ
+  ... | Euclidean✓ zero    1 _ _ = 𝕓1ᵇ
+  ... | Euclidean✓ (suc q) 1 _ _ = ⟦ suc q ⇑⟧⁺ 1ᵇ
+\end{code}
+
+\begin{code}
+  ⟦_⇑⟧ : ℕ → 𝔹
+  ⟦ zero ⇑⟧ = 𝕓0ᵇ
+  ⟦ suc n ⇑⟧ = + ⟦ suc n ⇑⟧⁺
+\end{code}
+
+\begin{code}
+  ℕ→𝔹→ℕ : ∀ n → ⟦ ⟦ n ⇑⟧ ⇓⟧ ≡ n
+\end{code}
+\begin{code}[hide]
+  ℕ→𝔹→ℕ n = trustMe
+\end{code}
+
+
+\begin{code}
+  module Exponentiation₃ {c ℓ} (M : CommutativeMonoid c ℓ) where
+    open Exponentiation₂ M
+      renaming (_^_ to _^ⁱ_; ^-homo to ^ⁱ-homo; ∙-^-dist to ∙-^ⁱ-dist)
+\end{code}
+
+\begin{code}
+    _^ᵇ⁺_ : C → 𝔹⁺ → C
+    x ^ᵇ⁺ 𝕓1ᵇ = x
+    x ^ᵇ⁺ (b 0ᵇ) = (x ∙ x) ^ᵇ⁺ b
+    x ^ᵇ⁺ (b 1ᵇ) = x ∙ (x ∙ x) ^ᵇ⁺ b
+
+    _^ᵇ_ : C → 𝔹 → C
+    x ^ᵇ 𝕓0ᵇ = ε
+    x ^ᵇ (+ b) = x ^ᵇ⁺ b
+
+    _^_ : C → ℕ → C
+    x ^ n = x ^ᵇ ⟦ n ⇑⟧
+\end{code}
+
+\begin{code}
+    x^n≈x^ⁱn : ∀ x n → x ^ n ≈ x ^ⁱ n
+    x^n≈x^ⁱn x n = begin
+      x ^ n ≈⟨ loop x ⟦ n ⇑⟧ ⟩
+      x ^ⁱ ⟦ ⟦ n ⇑⟧ ⇓⟧ ≡⟨ ≡-cong (λ t → x ^ⁱ t) (ℕ→𝔹→ℕ n) ⟩
+      x ^ⁱ n ∎
+\end{code}
+\begin{code}[hide]
+      where
+\end{code}
+\begin{code}
+      even : ∀ x b → (x ∙ x) ^ᵇ⁺ b ≈ x ^ⁱ 2* ⟦ b ⇓⟧⁺
+      loop⁺ : ∀ x b → x ^ᵇ⁺ b ≈ x ^ⁱ ⟦ b ⇓⟧⁺
+\end{code}
+\begin{code}
+      even x b = begin
+        (x ∙ x) ^ᵇ⁺ b               ≈⟨ loop⁺ (x ∙ x) b ⟩
+        (x ∙ x) ^ⁱ ⟦ b ⇓⟧⁺          ≈⟨ ∙-^ⁱ-dist x x ⟦ b ⇓⟧⁺  ⟩
+        x ^ⁱ ⟦ b ⇓⟧⁺ ∙ x ^ⁱ ⟦ b ⇓⟧⁺ ≈⟨ sym (^ⁱ-homo x ⟦ b ⇓⟧⁺ ⟦ b ⇓⟧⁺) ⟩
+        x ^ⁱ (⟦ b ⇓⟧⁺ + ⟦ b ⇓⟧⁺)    ≡⟨⟩
+        x ^ⁱ 2* ⟦ b ⇓⟧⁺            ∎
+\end{code}
+\begin{code}
+      loop⁺ x 𝕓1ᵇ = begin
+        x ^ᵇ⁺ 𝕓1ᵇ      ≡⟨⟩
+        x              ≈⟨ sym (identityʳ x) ⟩
+        x ∙ ε          ≡⟨⟩
+        x ∙ x ^ⁱ 0     ≡⟨⟩
+        x ^ⁱ 1         ≡⟨⟩
+        x ^ⁱ ⟦ 𝕓1ᵇ ⇓⟧⁺ ∎
+      loop⁺ x (b 0ᵇ) = begin
+        x ^ᵇ⁺ (b 0ᵇ)    ≡⟨⟩
+        (x ∙ x) ^ᵇ⁺ b   ≈⟨ even x b ⟩
+        x ^ⁱ 2* ⟦ b ⇓⟧⁺ ≡⟨⟩
+        x ^ⁱ ⟦ b 0ᵇ ⇓⟧⁺ ∎
+      loop⁺ x (b 1ᵇ) = begin
+        x ^ᵇ⁺ (b 1ᵇ)          ≡⟨⟩
+        x ∙ (x ∙ x) ^ᵇ⁺ b     ≈⟨ ∙-congˡ (even x b) ⟩
+        x ∙ x ^ⁱ 2* ⟦ b ⇓⟧⁺   ≡⟨⟩
+        x ^ⁱ (1 + 2* ⟦ b ⇓⟧⁺) ≡⟨⟩
+        x ^ⁱ ⟦ b 1ᵇ ⇓⟧⁺       ∎
+\end{code}
+\begin{code}
+      loop : ∀ x b → x ^ᵇ b ≈ x ^ⁱ ⟦ b ⇓⟧
+      loop x 𝕓0ᵇ = refl
+      loop x (+ b) = begin
+        x ^ᵇ (+ b)    ≡⟨⟩
+        x ^ᵇ⁺ b       ≈⟨ loop⁺ x b ⟩
+        x ^ⁱ ⟦ b ⇓⟧⁺  ≡⟨⟩
+        x ^ⁱ ⟦ + b ⇓⟧ ∎
+\end{code}
+
+
 \end{document}

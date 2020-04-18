@@ -3,6 +3,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
 
 open import Data.List using (List)
 open List
+open import Data.Unit using (tt)
 
 module AKS.Binary.Base where
 
@@ -12,7 +13,7 @@ open Nat.Reflection using (∀⟨_⟩)
 
 open import AKS.Nat using (ℕ; _+_; _*_; _≟_; _<_; lte; suc-mono-≤)
 open ℕ
-open import AKS.Nat using (ℕ⁺; ℕ+)
+open import AKS.Nat using (ℕ⁺; ℕ+; ⟅_⇑⟆)
 open import AKS.Nat using (Euclidean; Euclidean✓; _div_)
 open import AKS.Nat using (Acc; acc; <-well-founded)
 
@@ -44,37 +45,28 @@ private
   lemma₂ : ∀ {q} → suc q < suc (suc (q + suc (q + zero)))
   lemma₂ {q} = lte (suc q) (∀⟨ q ∷ [] ⟩)
 
+⟦_⇑_⟧ʰ : ∀ n → Acc _<_ n → ∀ {≢0 : False (n ≟ 0)} → 𝔹⁺
+⟦ suc n ⇑ acc downward ⟧ʰ with suc n div 2
+... | Euclidean✓ (suc q) 0 refl r<m = ⟦ suc q ⇑ downward _ lemma₁ ⟧ʰ 0ᵇ
+... | Euclidean✓ zero 1 refl r<m = 𝕓1ᵇ
+... | Euclidean✓ (suc q) 1 refl r<m = ⟦ suc q ⇑ downward _ lemma₂ ⟧ʰ 1ᵇ
+
 ⟦_⇑⟧⁺ : ℕ⁺ → 𝔹⁺
 ⟦ ℕ+ n ⇑⟧⁺ = ⟦ suc n ⇑ <-well-founded ⟧ʰ
-  where
-  ⟦_⇑_⟧ʰ : ∀ n → Acc _<_ n → ∀ {≢0 : False (n ≟ 0)} → 𝔹⁺
-  ⟦ suc n ⇑ acc downward ⟧ʰ with suc n div 2
-  ... | Euclidean✓ (suc q) 0 refl r<m = ⟦ suc q ⇑ downward _ lemma₁ ⟧ʰ 0ᵇ
-  ... | Euclidean✓ zero 1 refl r<m = 𝕓1ᵇ
-  ... | Euclidean✓ (suc q) 1 refl r<m = ⟦ suc q ⇑ downward _ lemma₂ ⟧ʰ 1ᵇ
 
 ⟦_⇑⟧ : ℕ → 𝔹
 ⟦ zero ⇑⟧ = 𝕓0ᵇ
 ⟦ suc n ⇑⟧ = + ⟦ ℕ+ n ⇑⟧⁺
 
-open import AKS.Nat.Properties using (+-identityʳ)
-open import Relation.Binary.PropositionalEquality using (cong₂; module ≡-Reasoning)
-open ≡-Reasoning
-
-open import AKS.Unsafe using (trustMe)
-
 ℕ→𝔹→ℕ : ∀ n → ⟦ ⟦ n ⇑⟧ ⇓⟧ ≡ n
-ℕ→𝔹→ℕ _ = trustMe
-
--- ℕ→𝔹→ℕ : ∀ n → ⟦ ⟦ n ⇑⟧ ⇓⟧ ≡ n
--- ℕ→𝔹→ℕ zero = refl
--- ℕ→𝔹→ℕ (suc n) = ℕ⁺→𝔹⁺→ℕ (suc n) <-well-founded
---   where
---   ℕ⁺→𝔹⁺→ℕ : ∀ n → Acc _<_ n → ∀ {≢0 : False (n ≟ 0)} → ⟦ ⟦ n ⇑⟧⁺ {≢0} ⇓⟧⁺ ≡ n
---   ℕ⁺→𝔹⁺→ℕ (suc n) (acc downward) with suc n div 2
---   ... | Euclidean✓ (suc q) 0 refl r<m = {!!}
---   ... | Euclidean✓ zero 1 refl r<m = refl
---   ... | Euclidean✓ (suc q) 1 refl r<m = {!refl!}
+ℕ→𝔹→ℕ zero = refl
+ℕ→𝔹→ℕ (suc n) = ℕ⁺→𝔹⁺→ℕ (suc n) <-well-founded
+  where
+  ℕ⁺→𝔹⁺→ℕ : ∀ (n : ℕ) (rec : Acc _<_ n) {≢0 : False (n ≟ 0)} → ⟦ ⟦ n ⇑ rec ⟧ʰ {≢0} ⇓⟧⁺ ≡ n
+  ℕ⁺→𝔹⁺→ℕ (suc n) (acc downward) with suc n div 2
+  ... | Euclidean✓ (suc q) 0 refl r<m rewrite ℕ⁺→𝔹⁺→ℕ (suc q) (downward _ lemma₁) {tt} = ∀⟨ q ∷ [] ⟩
+  ... | Euclidean✓ zero 1 refl r<m = refl
+  ... | Euclidean✓ (suc q) 1 refl r<m rewrite ℕ⁺→𝔹⁺→ℕ (suc q) (downward _ lemma₂) {tt} = ∀⟨ q ∷ [] ⟩
 
 ⌈log₂_⌉⁺ : 𝔹⁺ → ℕ
 ⌈log₂ 𝕓1ᵇ ⌉⁺ = 1
