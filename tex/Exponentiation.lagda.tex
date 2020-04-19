@@ -411,7 +411,12 @@ in the following sections.
   evaluation-test : ⟦ + 𝕓1ᵇ 0ᵇ 1ᵇ 0ᵇ ⇓⟧ ≡ 10
   evaluation-test = ≡-refl
 \end{code}
-
+In order to develop a way to upcast naturals to our binary represenation we
+need to introduce an axiomamtic method of computing integer division. In order
+to use the results of integer division a user usually requires both the quotient
+and remainder so we create a type that bundles these results together. This type
+also contains a proof of correctness of the division algorithm along with a
+proof that the remainder is less than the divisor.
 \begin{code}
   record Euclidean (n : ℕ) (m : ℕ) : Set where
     constructor Euclidean✓
@@ -421,7 +426,15 @@ in the following sections.
       division : n ≡ r + m * q
       r<m : r < m
 \end{code}
-
+The code above is just a type, we also require a function that produces the type
+for a given dividend and divisor. We must ensure that the divisor is not equal
+to zero, to do this we introduce two new concepts. A boolean function
+$\AgdaFunction{\_≟\_}$ which returns true if the two inputs are equal. As well
+as a type which is only inhabited if a boolean function returns
+$\AgdaDatatype{false}$. These two concepts combine to require that any user of
+the $\AgdaFunction{\_div\_}$ proves that the divisor is not equal to zero. The
+actual implementation of this function is omitted as it makes use of complicated
+primitive functions provided by \Agda{}.
 \begin{code}[hide]
   open import Data.Nat.DivMod using (_/_; _%_; m≡m%n+[m/n]*n)
   open import Relation.Binary.PropositionalEquality.TrustMe using (trustMe)
@@ -435,7 +448,16 @@ in the following sections.
     div-proof : n ≡ n % suc m + suc m * (n / suc m)
     div-proof rewrite *-comm (suc m) (n / suc m) = m≡m%n+[m/n]*n n m
 \end{code}
-
+Now we can write a function that reifies non zero naturals into our binary
+representation. We begin by dividing the input by two. Note that we can
+determine the parity of the input by observing the remainder after dividing by
+two. In the case where the remainder is $0$ we know the input is even so we
+recurse adding a $\AgdaInductiveConstructor{0ᵇ}$ to the result. \Agda{} infers
+that the quotient must be greater then zero as the input is greater then zero.
+When the remainder is equal to $1$ the quotient could be $0$ so we perform a
+case analysis. If the quotient is zero we introduce our base case of
+$\AgdaInductiveConstructor{𝕓1ᵇ}$ otherwise we recurse and add
+$\AgdaInductiveConstructor{1ᵇ}$ to the result as the input was odd.
 \begin{code}[hide]
   {-# TERMINATING #-}
 \end{code}
@@ -445,14 +467,15 @@ in the following sections.
   ... | Euclidean✓ (suc q) 0 _ _ = ⟦ suc q ⇑⟧⁺ 0ᵇ
   ... | Euclidean✓ zero    1 _ _ = 𝕓1ᵇ
   ... | Euclidean✓ (suc q) 1 _ _ = ⟦ suc q ⇑⟧⁺ 1ᵇ
-\end{code}
 
-\begin{code}
   ⟦_⇑⟧ : ℕ → 𝔹
   ⟦ zero ⇑⟧ = 𝕓0ᵇ
   ⟦ suc n ⇑⟧ = + ⟦ suc n ⇑⟧⁺
 \end{code}
-
+Lastly we need a proof that $\AgdaFunction{⟦\_⇓⟧}$ and $\AgdaFunction{⟦\_⇑⟧}$
+form an isomorphism. After applying the inductive hypothesis the proof
+can be offloaded to an automated ring solver. For this reason we exclude
+the body of the proof.
 \begin{code}
   ℕ→𝔹→ℕ : ∀ n → ⟦ ⟦ n ⇑⟧ ⇓⟧ ≡ n
 \end{code}
@@ -460,13 +483,20 @@ in the following sections.
   ℕ→𝔹→ℕ n = trustMe
 \end{code}
 
-
+\section{Mutally Recursive Proofs}
+\label{sec:mutally-recursive-proofs}
+In this section we redefine our exponential inline with
+\ref{eqn:squaring-def-shift}. Then we prove that the fast exponential is
+equivalent to the inductively defined exponential up to setoid equality. In
+order to do this we need to rename the old exponential and all it's associated
+proofs. To accomplish this we tac an (i)nductive onto all the old functions and proofs.
 \begin{code}
   module Exponentiation₃ {c ℓ} (M : CommutativeMonoid c ℓ) where
     open Exponentiation₂ M
       renaming (_^_ to _^ⁱ_; ^-homo to ^ⁱ-homo; ∙-^-dist to ∙-^ⁱ-dist)
 \end{code}
-
+With that renaming out of the way the definitions follow simply from
+\ref{eqn:squaring-def-shift}.
 \begin{code}
     _^ᵇ⁺_ : C → 𝔹⁺ → C
     x ^ᵇ⁺ 𝕓1ᵇ = x
@@ -480,7 +510,13 @@ in the following sections.
     _^_ : C → ℕ → C
     x ^ n = x ^ᵇ ⟦ n ⇑⟧
 \end{code}
-
+As $\AgdaFunction{\_\^{}ᵇ\_}$ is defined by recursion on a value of type
+$\AgdaDatatype{𝔹}$ any proof about $\AgdaFunction{\_\^{}ᵇ\_}$ will have to case
+on an input of type $\AgdaDatatype{𝔹}$ in order for the proof term to simplify.
+So we create a lemma $\AgdaFunction{loop}$ that is true for any value of type
+$\AgdaDatatype{𝔹}$ then we instantiate that lemma at $⟦ \, n ⇑⟧ :
+\AgdaDatatype{𝔹}$. This will leave a term of the form $⟦ \, ⟦ \, n ⇑⟧ ⇓⟧$ which is
+isomorphic to $n$.
 \begin{code}
     x^n≈x^ⁱn : ∀ x n → x ^ n ≈ x ^ⁱ n
     x^n≈x^ⁱn x n = begin
@@ -491,47 +527,69 @@ in the following sections.
 \begin{code}[hide]
       where
 \end{code}
+This lemma only proves the desired result for values of type $\AgdaDatatype{𝔹}$
+we require another similar lemma (produced below) for values of type $\AgdaDatatype{𝔹⁺}$.
 \begin{code}
-      even : ∀ x b → (x ∙ x) ^ᵇ⁺ b ≈ x ^ⁱ 2* ⟦ b ⇓⟧⁺
-      loop⁺ : ∀ x b → x ^ᵇ⁺ b ≈ x ^ⁱ ⟦ b ⇓⟧⁺
+        loop : ∀ x b → x ^ᵇ b ≈ x ^ⁱ ⟦ b ⇓⟧
+        loop x 𝕓0ᵇ = refl
+        loop x (+ b) = begin
+          x ^ᵇ (+ b)    ≡⟨⟩
+          x ^ᵇ⁺ b       ≈⟨ loop⁺ x b ⟩
+          x ^ⁱ ⟦ b ⇓⟧⁺  ≡⟨⟩
+          x ^ⁱ ⟦ + b ⇓⟧ ∎
 \end{code}
+\begin{code}[hide]
+          where
+\end{code}
+Cases two and three simplify to extremely similar expressions so we factored the
+common pattern out into the function $\AgdaFunction{even}$. This has a problem
+though, $\AgdaFunction{even}$ calls $\AgdaFunction{loop⁺}$ and
+$\AgdaFunction{loop⁺}$ calls $\AgdaFunction{even}$. This pattern is called
+mutual recursion, and \Agda{} supports it nicely. To signal to \Agda{} that two
+functions are mutually recursive you just declare both their type signatures
+before providing a body to either function.
 \begin{code}
-      even x b = begin
-        (x ∙ x) ^ᵇ⁺ b               ≈⟨ loop⁺ (x ∙ x) b ⟩
-        (x ∙ x) ^ⁱ ⟦ b ⇓⟧⁺          ≈⟨ ∙-^ⁱ-dist x x ⟦ b ⇓⟧⁺  ⟩
-        x ^ⁱ ⟦ b ⇓⟧⁺ ∙ x ^ⁱ ⟦ b ⇓⟧⁺ ≈⟨ sym (^ⁱ-homo x ⟦ b ⇓⟧⁺ ⟦ b ⇓⟧⁺) ⟩
-        x ^ⁱ (⟦ b ⇓⟧⁺ + ⟦ b ⇓⟧⁺)    ≡⟨⟩
-        x ^ⁱ 2* ⟦ b ⇓⟧⁺            ∎
+          even : ∀ x b → (x ∙ x) ^ᵇ⁺ b ≈ x ^ⁱ 2* ⟦ b ⇓⟧⁺
+          loop⁺ : ∀ x b → x ^ᵇ⁺ b ≈ x ^ⁱ ⟦ b ⇓⟧⁺
 \end{code}
+The idea behind $\AgdaFunction{even}$ is quite simple, we just apply the
+inductive hypothesis and then we can work with proofs about the inductively
+defined exponential.
 \begin{code}
-      loop⁺ x 𝕓1ᵇ = begin
-        x ^ᵇ⁺ 𝕓1ᵇ      ≡⟨⟩
-        x              ≈⟨ sym (identityʳ x) ⟩
-        x ∙ ε          ≡⟨⟩
-        x ∙ x ^ⁱ 0     ≡⟨⟩
-        x ^ⁱ 1         ≡⟨⟩
-        x ^ⁱ ⟦ 𝕓1ᵇ ⇓⟧⁺ ∎
-      loop⁺ x (b 0ᵇ) = begin
-        x ^ᵇ⁺ (b 0ᵇ)    ≡⟨⟩
-        (x ∙ x) ^ᵇ⁺ b   ≈⟨ even x b ⟩
-        x ^ⁱ 2* ⟦ b ⇓⟧⁺ ≡⟨⟩
-        x ^ⁱ ⟦ b 0ᵇ ⇓⟧⁺ ∎
-      loop⁺ x (b 1ᵇ) = begin
-        x ^ᵇ⁺ (b 1ᵇ)          ≡⟨⟩
-        x ∙ (x ∙ x) ^ᵇ⁺ b     ≈⟨ ∙-congˡ (even x b) ⟩
-        x ∙ x ^ⁱ 2* ⟦ b ⇓⟧⁺   ≡⟨⟩
-        x ^ⁱ (1 + 2* ⟦ b ⇓⟧⁺) ≡⟨⟩
-        x ^ⁱ ⟦ b 1ᵇ ⇓⟧⁺       ∎
+          even x b = begin
+            (x ∙ x) ^ᵇ⁺ b               ≈⟨ loop⁺ (x ∙ x) b ⟩
+            (x ∙ x) ^ⁱ ⟦ b ⇓⟧⁺          ≈⟨ ∙-^ⁱ-dist x x ⟦ b ⇓⟧⁺  ⟩
+            x ^ⁱ ⟦ b ⇓⟧⁺ ∙ x ^ⁱ ⟦ b ⇓⟧⁺ ≈⟨ sym (^ⁱ-homo x ⟦ b ⇓⟧⁺ ⟦ b ⇓⟧⁺) ⟩
+            x ^ⁱ (⟦ b ⇓⟧⁺ + ⟦ b ⇓⟧⁺)    ≡⟨⟩
+            x ^ⁱ 2* ⟦ b ⇓⟧⁺            ∎
 \end{code}
+The simplifier can deduce most $\AgdaFunction{loop⁺}$ and then we apply
+$\AgdaFunction{even}$. The only difference in the even and odd cases is a
+single $x$ on the outside of the proof.
 \begin{code}
-      loop : ∀ x b → x ^ᵇ b ≈ x ^ⁱ ⟦ b ⇓⟧
-      loop x 𝕓0ᵇ = refl
-      loop x (+ b) = begin
-        x ^ᵇ (+ b)    ≡⟨⟩
-        x ^ᵇ⁺ b       ≈⟨ loop⁺ x b ⟩
-        x ^ⁱ ⟦ b ⇓⟧⁺  ≡⟨⟩
-        x ^ⁱ ⟦ + b ⇓⟧ ∎
+          loop⁺ x 𝕓1ᵇ = begin
+            x ^ᵇ⁺ 𝕓1ᵇ      ≡⟨⟩
+            x              ≈⟨ sym (identityʳ x) ⟩
+            x ∙ ε          ≡⟨⟩
+            x ∙ x ^ⁱ 0     ≡⟨⟩
+            x ^ⁱ 1         ≡⟨⟩
+            x ^ⁱ ⟦ 𝕓1ᵇ ⇓⟧⁺ ∎
+          loop⁺ x (b 0ᵇ) = begin
+            x ^ᵇ⁺ (b 0ᵇ)    ≡⟨⟩
+            (x ∙ x) ^ᵇ⁺ b   ≈⟨ even x b ⟩
+            x ^ⁱ 2* ⟦ b ⇓⟧⁺ ≡⟨⟩
+            x ^ⁱ ⟦ b 0ᵇ ⇓⟧⁺ ∎
+          loop⁺ x (b 1ᵇ) = begin
+            x ^ᵇ⁺ (b 1ᵇ)          ≡⟨⟩
+            x ∙ (x ∙ x) ^ᵇ⁺ b     ≈⟨ ∙-congˡ (even x b) ⟩
+            x ∙ x ^ⁱ 2* ⟦ b ⇓⟧⁺   ≡⟨⟩
+            x ^ⁱ (1 + 2* ⟦ b ⇓⟧⁺) ≡⟨⟩
+            x ^ⁱ ⟦ b 1ᵇ ⇓⟧⁺       ∎
 \end{code}
+This proof has more use that pure correctness. If we ever need to prove a
+property of exponentials we can prove that fact with the inductive definition.
+Then we can apply this proof to get a version of that property that works on
+fast exponentiation for free.
 
 
 \end{document}
