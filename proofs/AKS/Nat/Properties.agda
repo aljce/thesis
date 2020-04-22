@@ -263,7 +263,7 @@ m<n⇒n∸m≢0 {suc m} {suc n} m<n n∸m≡0 = m<n⇒n∸m≢0 (suc-injective-�
 module ≤-Reasoning where
    open import Relation.Binary.Reasoning.Base.Triple
      ≤-isPreorder <-trans (resp₂ _<_) <⇒≤ <-≤-trans ≤-<-trans
-     public hiding (_≈⟨_⟩_)
+     public
 
 n≤m⇒n<m⊎n≡m : ∀ {n m} → n ≤ m → n < m ⊎ n ≡ m
 n≤m⇒n<m⊎n≡m {n} (lte zero ≤-proof) rewrite ≡-erase (+-identityʳ n) = inj₂ ≤-proof

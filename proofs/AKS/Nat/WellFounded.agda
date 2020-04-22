@@ -7,24 +7,25 @@ open import AKS.Nat.Base using (ℕ; _+_; _∸_; _≤_; _<_; lte)
 open ℕ
 open import AKS.Nat.Properties using (+-identityʳ; +-suc; ∸-mono-<ˡ; ∸-mono-<ʳ; suc-injective)
 
+data _≤ⁱ_ : ℕ → ℕ → Set where
+  ≤-same : ∀ {n} → n ≤ⁱ n
+  ≤-step : ∀ {n m} → n ≤ⁱ m → n ≤ⁱ suc m
+
+_<ⁱ_ : ℕ → ℕ → Set
+n <ⁱ m = suc n ≤ⁱ m
+
+<⇒<ⁱ : ∀ {n m} → n < m → n <ⁱ m
+<⇒<ⁱ {n} {m} (lte zero refl) rewrite +-identityʳ n = ≤-same
+<⇒<ⁱ {n} {m} (lte (suc k) refl) = ≤-step (<⇒<ⁱ (lte k (sym (+-suc n k))))
+
 <-well-founded : ∀ {n} → Acc _<_ n
-<-well-founded {n} = wf₁ n -- wf-hack 1000 n
+<-well-founded {n} = wf₁ n
   where
   wf₁ : ∀ t → Acc _<_ t
-  wf₂ : ∀ t b k → suc (b + k) ≡ t → Acc _<_ b
-
-  wf₁ t = acc λ { b (lte k suc[b+k]≡t) → wf₂ t b k suc[b+k]≡t }
-
-  wf₂ (suc t) b zero refl rewrite sym (+-identityʳ b) = wf₁ t
-  wf₂ (suc t) b (suc k) suc[b+suc[k]]≡suc[t] rewrite +-suc b k = wf₂ t b k (suc-injective suc[b+suc[k]]≡suc[t])
-
-  -- This hack ignores the proof that b < t for count reduction steps
-  -- Acc proofs are erased at compile time but this can help speed up type checking
-  wf-hack : ∀ (count t : ℕ) → Acc _<_ t
-  wf-hack zero t = wf₁ t
-  -- Need to match on n to avoid unfolding on neutral argument!
-  wf-hack (suc count) zero = acc (λ b _ → wf-hack count b)
-  wf-hack (suc count) (suc _) = acc (λ b _ → wf-hack count b)
+  wf₂ : ∀ t b → b <ⁱ t → Acc _<_ b
+  wf₁ t = acc λ b b<t → wf₂ t b (<⇒<ⁱ b<t)
+  wf₂ (suc t) b ≤-same = wf₁ t
+  wf₂ (suc t) b (≤-step b<ⁱt) = wf₂ t b b<ⁱt
 
 record [_,_] (low : ℕ) (high : ℕ) : Set where
   inductive
