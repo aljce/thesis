@@ -14,7 +14,7 @@ open import Agda.Builtin.FromNat using (Number)
 open import AKS.Nat using (ℕ; _<_; _≟_)
 open import AKS.Fin using (Fin)
 
-open import Algebra.FunctionProperties using (Op₂; Op₁)
+open import Algebra.Core using (Op₂; Op₁)
 open import Algebra.Structures _≈_ using (IsCommutativeRing; IsAbelianGroup)
 
 infix 4 _≉_

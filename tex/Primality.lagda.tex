@@ -1,0 +1,252 @@
+\documentclass[./Thesis.tex]{subfiles}
+\begin{document}
+
+\chapter{Primality}
+\label{chap:primality}
+
+\epigraph{
+  3 is prime, 5 is prime, 7 is prime. By induction, all the odd integers are
+  prime.
+}{\cite{leroy}}
+
+\begin{code}[hide]
+  module Primality where
+  open import AKS.Nat using (ℕ; zero; suc; _+_; _∸_; _*_; _≤_; _<_; lte; _≟_)
+  open import AKS.Nat using (auto-≤; <⇒≱; n≮n; ≤-<-trans; m≤m+n; ≢⇒¬≟)
+  open import Data.Nat.Properties using (*-identityˡ; *-comm; *-zeroʳ; *-distribʳ-∸; m+n∸n≡m)
+  open import AKS.Nat.Divisibility using (_/_; Euclidean✓; _div_)
+  open import Relation.Nullary using (¬_)
+  open import Relation.Nullary.Decidable using (False; True; from-no)
+  open import Relation.Nullary.Negation using (contradiction)
+  open import Relation.Binary using (Reflexive)
+  open import Relation.Binary.PropositionalEquality
+    using (_≡_; _≢_; module ≡-Reasoning)
+    renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong; cong₂ to ≡-cong₂)
+  open import Data.Empty using (⊥; ⊥-elim)
+  open import Data.Unit using (tt)
+  open import Function using (_$_)
+  open ≡-Reasoning
+\end{code}
+\section{Divisibility}
+\label{sec:divisibility}
+Before we can define primality we require a definition of divisibility. We
+follow a standard definition of divisibility, namely a natural number $d$
+divides into another natural $a$ iff there exists some $q$ such that $a = q d$.
+\begin{code}[hide]
+  infix 3 _∣_
+\end{code}
+\begin{code}
+  record _∣_ (d : ℕ) (a : ℕ) : Set where
+    constructor divides
+    field
+      quotient : ℕ
+      equality : a ≡ quotient * d
+
+  _∤_ : ℕ → ℕ → Set
+  d ∤ a = ¬ (d ∣ a)
+\end{code}
+\begin{code}[hide]
+  module Decidable where
+    data Dec (P : Set) : Set where
+      yes :   P → Dec P
+      no  : ¬ P → Dec P
+\end{code}
+\begin{code}[hide]
+  open import Relation.Nullary using (Dec; yes; no)
+\end{code}
+\begin{code}
+  ∣-refl : Reflexive _∣_
+  ∣-refl {n} = divides 1 $ begin n ≡⟨ ≡-sym (*-identityˡ n) ⟩ 1 * n ∎
+\end{code}
+\begin{code}
+  0∣n⇒n≡0 : ∀ {n} → 0 ∣ n → n ≡ 0
+  0∣n⇒n≡0 {n} (divides q n≡q*0) = begin
+    n ≡⟨ n≡q*0 ⟩
+    q * 0 ≡⟨ *-zeroʳ q ⟩
+    0 ∎
+\end{code}
+\begin{code}
+  ∣-respʳ : ∀ {i n m} → n ≡ m → i ∣ n → i ∣ m
+  ∣-respʳ {i} {n} {m} n≡m (divides q n≡q*i) =
+    divides q $ begin
+      m ≡⟨ ≡-sym n≡m ⟩
+      n ≡⟨ n≡q*i ⟩
+      q * i ∎
+\end{code}
+\begin{code}
+  m∣m*n : ∀ {n m} → m ∣ m * n
+  m∣m*n {n} {m} = divides n $ begin m * n ≡⟨ *-comm m n ⟩ n * m ∎
+\end{code}
+\begin{code}
+  ∣n+m∣m⇒∣n : ∀ {i n m} → i ∣ n + m → i ∣ m → i ∣ n
+  ∣n+m∣m⇒∣n {i} {n} {m} (divides q₁ n+m≡q₁*i) (divides q₂ m≡q₂*i) =
+    divides (q₁ ∸ q₂) $ begin
+      n               ≡⟨ ≡-sym (m+n∸n≡m n m) ⟩
+      n + m ∸ m       ≡⟨ ≡-cong₂ (λ x y → x ∸ y) n+m≡q₁*i m≡q₂*i ⟩
+      q₁ * i ∸ q₂ * i ≡⟨ ≡-sym (*-distribʳ-∸ i q₁ q₂) ⟩
+      (q₁ ∸ q₂) * i   ∎
+\end{code}
+\begin{code}
+  ∣⇒≤ : ∀ {n m} → m ≢ 0 → n ∣ m → n ≤ m
+  ∣⇒≤ {n} {zero} m≢0 (divides q m≡q*n) = contradiction ≡-refl m≢0
+  ∣⇒≤ {n} {suc m} m≢0 (divides (suc q) m≡q*n) =
+    lte (q * n) $ begin
+      suc q * n ≡⟨⟩
+      n + q * n ≡⟨ ≡-sym m≡q*n ⟩
+      suc m     ∎
+\end{code}
+\begin{code}
+  _∣?_ : ∀ (d a : ℕ) → Dec (d ∣ a)
+  d ∣? a with d ≟ 0
+  d ∣? a | yes ≡-refl with a ≟ 0
+  d ∣? a | yes ≡-refl | yes ≡-refl = yes ∣-refl
+  d ∣? a | yes ≡-refl | no a≢0 = no λ 0∣a → contradiction (0∣n⇒n≡0 0∣a) a≢0
+  d ∣? a | no d≢0 with (a div d) {≢⇒¬≟ d≢0}
+  d ∣? a | no d≢0 | Euclidean✓ q r pf r<d with r ≟ 0
+  d ∣? a | no d≢0 | Euclidean✓ q r pf r<d | yes ≡-refl =
+    yes $ divides q $ begin
+      a ≡⟨ pf ⟩
+      0 + d * q ≡⟨⟩
+      d * q ≡⟨ *-comm d q ⟩
+      q * d ∎
+  d ∣? a | no d≢0 | Euclidean✓ q r pf r<d | no r≢0 = no ¬d∣a
+\end{code}
+\begin{code}[hide]
+    where
+\end{code}
+\begin{code}
+    ¬d∣a : d ∣ a → ⊥
+    ¬d∣a d∣a = contradiction d≤r (<⇒≱ r<d)
+\end{code}
+\begin{code}[hide]
+      where
+\end{code}
+\begin{code}
+      d∣r+d*q : d ∣ r + d * q
+      d∣r+d*q = ∣-respʳ pf d∣a
+\end{code}
+\begin{code}
+      d∣r : d ∣ r
+      d∣r = ∣n+m∣m⇒∣n d∣r+d*q m∣m*n
+\end{code}
+\begin{code}
+      d≤r : d ≤ r
+      d≤r = ∣⇒≤ r≢0 d∣r
+\end{code}
+\section{Investigating Definitions}
+\label{sec:investigating-definitions}
+There are many isomorphic definitions of primality. Unfortunately not all
+definitions are equal in the eyes of \Agda{}. For instance consider the
+following definition, ``A prime number is a natural number greater than $1$ that
+has no prime divisors smaller then itself.''. This definition translates
+directly into \Agda{} as shown below.
+\begin{code}[hide]
+  module Primality₁ where
+    {-# NO_POSITIVITY_CHECK #-}
+\end{code}
+\begin{code}
+    record IsPrime (p : ℕ) : Set where
+      inductive
+      constructor IsPrime✓
+      field
+        1<p : 1 < p
+        ∀i[i∤p] : ∀ {i} → i < p → IsPrime i → i ∤ p
+\end{code}
+This definition has one critical flaw, it is refused by \Agda{}. The type is
+recursively defined but the recursion is in \textit{negative} position
+\cite{harper}. This means the recursion occurs in the domain of a function type.
+Allowing recursive calls in negative position makes your logic inconsistent.
+Consider the following code and note that $\AgdaDatatype{Bad}$ has a recursive
+call in negative position.
+\begin{code}[hide]
+  {-# NO_POSITIVITY_CHECK #-}
+\end{code}
+\begin{code}
+  record Bad : Set where
+    constructor Bad✓
+    field
+      ¬bad : Bad → ⊥
+
+  Bad-false : Bad → ⊥
+  Bad-false (Bad✓ b) = b (Bad✓ b)
+
+  Bad-true : Bad
+  Bad-true = Bad✓ Bad-false
+
+  false : ⊥
+  false = Bad-false Bad-true
+\end{code}
+Note how similar $\AgdaFunction{false}$ is to the famous non terminating omega
+combinator shown in \ref{eqn:omega}. The only difference is the required
+wrapping and unwrapping of $\AgdaDatatype{Bad}$ values. Unlike the type
+$\AgdaDatatype{Bad}$, the type $\AgdaDatatype{IsPrime}$ given above is actually a safe
+use of negative recursion. Convincing \Agda{} of this fact is quite hard and
+outside the scope of this thesis.
+\begin{align}
+  \label{eqn:omega}
+  \Omega = (\lambda x. \, x \, x) (\lambda x. \, x \, x)
+\end{align}
+We can remove the recursion by considering when a number can divide a prime. If
+some number divides a prime then that number is either $1$ or the prime itself.
+This leads to a non recursive definition of primality. A natural number is prime
+when it is greater than $1$ and it's only divisors are $1$ and itself.
+\begin{code}[hide]
+  module Primality₂ where
+    infixr 3 _or_
+    data _or_ (A : Set) (B : Set) : Set where
+\end{code}
+\begin{code}
+    record IsPrime (p : ℕ) : Set where
+      constructor IsPrime✓
+      field
+        1<p : 1 < p
+        ∀i∣p[i≡p] : ∀ {i} → i ∣ p → i ≡ 1 or i ≡ p
+\end{code}
+The definition above is usable but in the following sections most of the proofs
+will know $1 < i$ for relevant instantiations of $i$. Thus the definition
+generates many superfluous cases where the user must show $i = 1$ is impossible.
+So we bake the fact that $i$ must be greater than $1$ into the definition. This
+yields our final definition.
+\begin{code}
+  record IsPrime (p : ℕ) : Set where
+    constructor IsPrime✓
+    field
+      1<p : 1 < p
+      ∀i∣p[i≡p] : ∀ {i} → 1 < i → i ∣ p → i ≡ p
+\end{code}
+\begin{code}
+  3-isPrime : IsPrime 3
+  3-isPrime = IsPrime✓ auto-≤ 3-primality
+\end{code}
+\begin{code}[hide]
+    where
+\end{code}
+\begin{code}
+    3-primality : ∀ {i} → 1 < i → i ∣ 3 → i ≡ 3
+    3-primality {suc (suc zero)} _ 2∣3 = contradiction 2∣3 (from-no (2 ∣? 3))
+    3-primality {suc (suc (suc zero))} _ i∣3 = ≡-refl
+    3-primality {suc (suc (suc (suc i)))} _ i∣3 = contradiction 3<3 n≮n
+\end{code}
+\begin{code}[hide]
+      where
+\end{code}
+\begin{code}
+      3+i<3 : 3 + i < 3
+      3+i<3 = ∣⇒≤ (λ ()) i∣3
+\end{code}
+\begin{code}
+      3<3 : 3 < 3
+      3<3 = ≤-<-trans m≤m+n 3+i<3
+\end{code}
+\begin{code}
+  record IsComposite (c : ℕ) : Set where
+    constructor IsComposite✓
+    field
+      p : ℕ
+      p<c : p < c
+      p-isPrime : IsPrime p
+      p∣c : p ∣ c
+\end{code}
+
+
+\end{document}

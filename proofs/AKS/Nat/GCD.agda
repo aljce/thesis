@@ -1,5 +1,5 @@
 open import Relation.Nullary using (yes; no)
-open import Relation.Nullary.Decidable using (False)
+open import Relation.Nullary.Decidable using (True; False)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary using (Antisymmetric; Irrelevant)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; cong; module ≡-Reasoning)
@@ -17,6 +17,10 @@ open import AKS.Algebra.Structures ℕ _≡_ using (module Modulus)
 open import AKS.Algebra.Divisibility *-+-commutativeSemiring public
 
 open import AKS.Unsafe using (≢-irrelevant)
+
+auto-∣ : ∀ {d a} {{ d≢0 : False (d ≟ 0) }} {{ pf : True (a ≟ (a / d) {d≢0} * d)}} → d ∣ a
+auto-∣ {d} {a} {{ d≢0 }} with a ≟ (a / d) {d≢0} * d
+... | yes pf = divides (a / d) pf
 
 ∣-antisym : Antisymmetric _≡_ _∣_
 ∣-antisym {x} {y} (divides zero refl) (divides q₂ refl) = *-zeroʳ q₂

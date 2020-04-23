@@ -2,7 +2,7 @@ open import Level using (0ℓ)
 open import Function using (_$_; _∘_)
 
 open import Relation.Nullary using (yes; no)
-open import Relation.Nullary.Decidable using (False)
+open import Relation.Nullary.Decidable using (False; True)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary
   using (Reflexive; Transitive; Trans; Antisymmetric; Asymmetric; Irreflexive; Decidable; Total; IsPreorder; IsPartialOrder; IsTotalOrder; TotalOrder; _Preserves₂_⟶_⟶_; Trichotomous; Tri; Irrelevant; Connex)
@@ -354,4 +354,6 @@ m≤n⇒m⊔n≡n {m} {n} m≤n with ≤-total n m
 ... | inj₁ n≤m = ≤-antisym m≤n n≤m
 ... | inj₂ _   = refl
 
-
+auto-≤ : ∀ {n m} {{ pf : True (n + (m ∸ n) ≟ m) }} → n ≤ m
+auto-≤ {n} {m} with n + (m ∸ n) ≟ m
+... | yes pf = lte (m ∸ n) pf

@@ -2,6 +2,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
+\usepackage{mathabx}
 \usepackage{mathbbol}
 \usepackage{mathtools}
 \usepackage{stmaryrd}
@@ -51,12 +52,21 @@
 \newunicodechar{ℓ}{\ensuremath{\ell}}
 \newunicodechar{⁻}{\ensuremath{{}^{-}}}
 \newunicodechar{≈}{\ensuremath{\approx}}
-\newunicodechar{𝕓}{\ensuremath{\mathbb{b}}} % TODO: This looks terrible 
+\newunicodechar{𝕓}{\ensuremath{\mathbb{b}}} % TODO: This looks terrible
 \newunicodechar{⇓}{\ensuremath{\Downarrow}}
 \newunicodechar{⇑}{\ensuremath{\Uparrow}}
+\newunicodechar{⇒}{\ensuremath{\Rightarrow}}
 \newunicodechar{⟦}{\ensuremath{\llbracket}}
 \newunicodechar{⟧}{\ensuremath{\rrbracket}}
 \newunicodechar{✓}{\ensuremath{\checkmark}}
+\newunicodechar{∣}{\ensuremath{\mid}}
+\newunicodechar{∤}{\ensuremath{\nmid}}
+\newunicodechar{¬}{\ensuremath{\neg}}
+\newunicodechar{⊥}{\ensuremath{\bot}}
+\newunicodechar{∸}{\ensuremath{\dotdiv}}
+\newunicodechar{≤}{\ensuremath{\leq}}
+\newunicodechar{≱}{\ensuremath{\not\geq}}
+\newunicodechar{≮}{\ensuremath{\not<}}
 
 \newcommand{\Boolean}[0]{\AgdaDatatype{$\mathbb{B}$}}
 \newcommand{\Natural}[0]{\AgdaDatatype{$\mathbb{N}$}}
@@ -93,6 +103,7 @@
 \subfile{Abstract}
 \subfile{Introduction}
 \subfile{Exponentiation}
+\subfile{Primality}
 \subfile{Polynomials}
 \subfile{Conclusion}
 
