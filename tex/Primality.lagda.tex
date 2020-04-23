@@ -24,7 +24,7 @@
     renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong; cong₂ to ≡-cong₂)
   open import Data.Empty using (⊥; ⊥-elim)
   open import Data.Unit using (tt)
-  open import Function using (_$_)
+  open import Function using (_$_) -- $
   open ≡-Reasoning
 \end{code}
 \section{Divisibility}
@@ -45,19 +45,21 @@ divides into another natural $a$ iff there exists some $q$ such that $a = q d$.
   _∤_ : ℕ → ℕ → Set
   d ∤ a = ¬ (d ∣ a)
 \end{code}
-\begin{code}[hide]
-  module Decidable where
-    data Dec (P : Set) : Set where
-      yes :   P → Dec P
-      no  : ¬ P → Dec P
-\end{code}
-\begin{code}[hide]
-  open import Relation.Nullary using (Dec; yes; no)
-\end{code}
+In order to make a decision procedure for primality we first require a decision
+procedure for divisibility. This would have to be a proof relevant algorithm. An
+algorithm that would take two natural numbers and produce either a proof of
+divisibility or a proof of non-divisibility. This is no small task, one which
+will become easier with the correct lemmas. We first prove that the divisibility
+relation is reflexive, that is that for any $n$ the expression
+$n \, \AgdaFunction{∣} \, n$ is true.
 \begin{code}
   ∣-refl : Reflexive _∣_
   ∣-refl {n} = divides 1 $ begin n ≡⟨ ≡-sym (*-identityˡ n) ⟩ 1 * n ∎
-\end{code}
+\end{code} % $
+As \Agda{} is a proof relevant logic every proof of divisibility materializes
+similarly. The user simply specifies what natural to multiply the divisor by to
+get the dividend. Then they supply a proof that the two numbers do indeed multiply
+to the dividend. 
 \begin{code}
   0∣n⇒n≡0 : ∀ {n} → 0 ∣ n → n ≡ 0
   0∣n⇒n≡0 {n} (divides q n≡q*0) = begin
@@ -94,6 +96,17 @@ divides into another natural $a$ iff there exists some $q$ such that $a = q d$.
       suc q * n ≡⟨⟩
       n + q * n ≡⟨ ≡-sym m≡q*n ⟩
       suc m     ∎
+\end{code}
+\begin{code}[hide]
+  module Decidable where
+\end{code}
+\begin{code}
+    data Dec (P : Set) : Set where
+      yes :   P → Dec P
+      no  : ¬ P → Dec P
+\end{code}
+\begin{code}[hide]
+  open import Relation.Nullary using (Dec; yes; no)
 \end{code}
 \begin{code}
   _∣?_ : ∀ (d a : ℕ) → Dec (d ∣ a)
