@@ -26,7 +26,7 @@ open import Algebra.Core using (Op₂)
 open import Algebra.Definitions _≈_ using (Commutative; Congruent₂; LeftCongruent; RightCongruent)
 
 open import AKS.Algebra.Structures C _≈_ using (module Divisibility; module Modulus)
-open Divisibility _*_ using (_∣_; divides; IsGCD) public
+open Divisibility _*_ using (_∣_; _∤_; divides; IsGCD) public
 
 infix 4 _≉_
 _≉_ : Rel C ℓ

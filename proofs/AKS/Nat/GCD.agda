@@ -1,17 +1,20 @@
-open import Relation.Nullary using (yes; no)
+open import Relation.Nullary using (yes; no; ¬_)
 open import Relation.Nullary.Decidable using (True; False)
 open import Relation.Nullary.Negation using (contradiction)
-open import Relation.Binary using (Antisymmetric; Irrelevant)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; cong; module ≡-Reasoning)
+open import Relation.Binary using (Antisymmetric; Irrelevant; Decidable)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; cong; cong₂; module ≡-Reasoning)
 open import Relation.Binary.PropositionalEquality.WithK using (≡-irrelevant)
 open ≡-Reasoning
+open import Function using (_$_)
 
 module AKS.Nat.GCD where
 
 open import AKS.Nat.Base using (ℕ; _+_; _*_; zero; suc; _<_; _≤_; lte; _≟_; _∸_)
-open import AKS.Nat.Properties using (≢⇒¬≟; ≤-antisym)
-open import Data.Nat.Properties using (*-distribʳ-∸)
-open import AKS.Nat.Divisibility using (modₕ; _/_; _%_; n%m<m; m≡m%n+[m/n]*n; m%n≡m∸m/n*n; /-cancelʳ)
+open import AKS.Nat.Properties using (≢⇒¬≟; ≤-antisym; <⇒≱)
+open import Data.Nat.Properties using (*-distribʳ-∸; m+n∸n≡m)
+open import AKS.Nat.Divisibility
+  using (modₕ; _/_; _%_; n%m<m; m≡m%n+[m/n]*n; m%n≡m∸m/n*n; /-cancelʳ; Euclidean✓)
+  renaming (_div_ to _ediv_)
 open import Data.Nat.Properties using (*-+-commutativeSemiring; *-zeroʳ; +-comm; *-comm; *-assoc)
 open import AKS.Algebra.Structures ℕ _≡_ using (module Modulus)
 open import AKS.Algebra.Divisibility *-+-commutativeSemiring public
@@ -83,5 +86,40 @@ open GCD gcd-isGCD ∣-antisym
     ; gcd[a,0]≈1⇒a≈1 to gcd[a,0]≡1⇒a≡1
     ) public
 
+∣n+m∣m⇒∣n : ∀ {i n m} → i ∣ n + m → i ∣ m → i ∣ n
+∣n+m∣m⇒∣n {i} {n} {m} (divides q₁ n+m≡q₁*i) (divides q₂ m≡q₂*i) =
+  divides (q₁ ∸ q₂) $ begin
+    n               ≡⟨ sym (m+n∸n≡m n m) ⟩
+    (n + m) ∸ m     ≡⟨ cong₂ (λ x y → x ∸ y) n+m≡q₁*i m≡q₂*i ⟩
+    q₁ * i ∸ q₂ * i ≡⟨ sym (*-distribʳ-∸ i q₁ q₂) ⟩
+    (q₁ ∸ q₂) * i   ∎
+
 ∣⇒≤ : ∀ {m n} {n≢0 : False (n ≟ 0)} → m ∣ n → m ≤ n
 ∣⇒≤ {m} {suc n} (divides (suc q) 1+n≡m+q*m) = lte (q * m) (sym 1+n≡m+q*m)
+
+_∣?_ : Decidable _∣_
+d ∣? a with d ≟ 0
+d ∣? a | yes refl with a ≟ 0
+d ∣? a | yes refl | yes refl = yes ∣-refl
+d ∣? a | yes refl | no a≢0 = no λ 0∣a → contradiction (0∣n⇒n≈0 0∣a) a≢0
+d ∣? a | no d≢0 with (a ediv d) {≢⇒¬≟ d≢0}
+d ∣? a | no d≢0 | Euclidean✓ q r pf r<d with r ≟ 0
+d ∣? a | no d≢0 | Euclidean✓ q r pf r<d | yes refl =
+  yes $ divides q $ begin
+    a ≡⟨ pf ⟩
+    0 + d * q ≡⟨⟩
+    d * q ≡⟨ *-comm d q ⟩
+    q * d ∎
+d ∣? a | no d≢0 | Euclidean✓ q r pf r<d | no r≢0 = no ¬d∣a
+  where
+  ¬d∣a : ¬ (d ∣ a)
+  ¬d∣a d∣a = contradiction d≤r (<⇒≱ r<d)
+    where
+    d∣r+d*q : d ∣ r + d * q
+    d∣r+d*q = ∣-respʳ pf d∣a
+
+    d∣r : d ∣ r
+    d∣r = ∣n+m∣m⇒∣n d∣r+d*q (∣n⇒∣n*m _ _ _ ∣-refl)
+
+    d≤r : d ≤ r
+    d≤r = ∣⇒≤ {n≢0 = ≢⇒¬≟ r≢0} d∣r

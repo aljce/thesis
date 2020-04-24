@@ -1,5 +1,6 @@
 open import Level using (_⊔_; suc; Lift; lift)
 open import Function using (_$_; _∘_; _⤖_)
+open import Relation.Nullary using (¬_)
 open import Relation.Nullary.Decidable using (False)
 open import Relation.Binary using (Rel; Decidable; Setoid; DecSetoid; IsEquivalence; IsDecEquivalence)
 
@@ -98,6 +99,10 @@ module Divisibility (_*_ : Op₂ C) where
     field
       quotient : C
       equality : a ≈ (quotient * d)
+
+  infix 4 _∤_
+  _∤_ : C → C → Set (c ⊔ ℓ)
+  d ∤ a = ¬ (d ∣ a)
 
   record IsGCD (gcd : Op₂ C) : Set (c ⊔ ℓ) where
     field

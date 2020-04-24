@@ -303,6 +303,12 @@ n≤m⇒n<m⊎n≡m {n} (lte (suc k) ≤-proof) rewrite ≡-erase (+-suc n k) = 
 ... | no  m≢n | yes m<n = tri< (<ᵇ⇒< m n m<n) m≢n (<⇒≯ (<ᵇ⇒< m n m<n))
 ... | no  m≢n | no  m≮n = tri> (m≮n ∘ <⇒<ᵇ m n) m≢n (≤∧≢⇒< (≮⇒≥ (m≮n ∘ <⇒<ᵇ m n)) (m≢n ∘ sym))
 
+_<?_ : Decidable _<_
+a <? b with <-cmp a b
+... | tri< a<b _ _ = yes a<b
+... | tri≈ _ refl _ = no λ a<b → n≮n a<b
+... | tri> _ _ a>b = no λ a<b → <-asym a>b a<b
+
 <-≤-connex : Connex _<_ _≤_
 <-≤-connex m n with <-cmp m n
 ... | tri< n<m _ _  = inj₁ n<m

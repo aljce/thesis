@@ -8,22 +8,28 @@
   3 is prime, 5 is prime, 7 is prime. By induction, all the odd integers are
   prime.
 }{\cite{leroy}}
-
+In this chapter we will explore various proof relevant definitions of primality.
+Then we will construct a decision procedure for these definitions via the
+standard brute force primality algorithm.
 \begin{code}[hide]
   module Primality where
-  open import AKS.Nat using (ℕ; zero; suc; _+_; _∸_; _*_; _≤_; _<_; lte; _≟_)
-  open import AKS.Nat using (auto-≤; <⇒≱; n≮n; ≤-<-trans; m≤m+n; ≢⇒¬≟)
-  open import Data.Nat.Properties using (*-identityˡ; *-comm; *-zeroʳ; *-distribʳ-∸; m+n∸n≡m)
+  open import AKS.Nat using (ℕ; zero; suc; _+_; _∸_; _*_; _≤_; _<_; lte; _<?_; _≟_)
+  open import AKS.Nat using (auto-≤; <⇒≱; n≮n; ≤-<-trans; m≤m+n; ≢⇒¬≟; suc-injective-≤; ≤-refl) renaming (n≤m⇒n<m⊎n≡m to n≤m⇒n<m∨n≡m)
+  open import AKS.Nat using (<-irrefl; <-cmp; <-trans; n<1+n; 0<1+n)
+  open import AKS.Nat using (Acc; acc; <-well-founded; [_,_]; binary-search)
+  open import Data.Nat.Properties using (*-identityˡ; *-comm; *-assoc; *-zeroʳ; *-distribʳ-∸; m+n∸n≡m)
   open import AKS.Nat.Divisibility using (_/_; Euclidean✓; _div_)
   open import Relation.Nullary using (¬_)
-  open import Relation.Nullary.Decidable using (False; True; from-no)
+  open import Relation.Nullary.Decidable using (False; True; from-yes; from-no)
   open import Relation.Nullary.Negation using (contradiction)
-  open import Relation.Binary using (Reflexive)
+  open import Relation.Binary using (Reflexive; Transitive; Tri)
+  open Tri
   open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; module ≡-Reasoning)
     renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong; cong₂ to ≡-cong₂)
   open import Data.Empty using (⊥; ⊥-elim)
   open import Data.Unit using (tt)
+  open import Data.Sum using (inj₁; inj₂)
   open import Function using (_$_) -- $
   open ≡-Reasoning
 \end{code}
@@ -51,15 +57,27 @@ algorithm that would take two natural numbers and produce either a proof of
 divisibility or a proof of non-divisibility. This is no small task, one which
 will become easier with the correct lemmas. We first prove that the divisibility
 relation is reflexive, that is that for any $n$ the expression
-$n \, \AgdaFunction{∣} \, n$ is true.
+$n \, \AgdaFunction{∣} \, n$ is true. After which we will prove that the
+divisibility relation is transitive. 
 \begin{code}
   ∣-refl : Reflexive _∣_
   ∣-refl {n} = divides 1 $ begin n ≡⟨ ≡-sym (*-identityˡ n) ⟩ 1 * n ∎
 \end{code} % $
+\begin{code}
+  ∣-trans : Transitive _∣_
+  ∣-trans {x} {y} {z} (divides q₁ y≡q₁*x) (divides q₂ z≡q₂*y) = divides (q₂ * q₁) $
+    z ≡⟨ z≡q₂*y ⟩
+    q₂ * y ≡⟨ ≡-cong (λ t → q₂ * t) y≡q₁*x ⟩
+    q₂ * (q₁ * x) ≡⟨ ≡-sym (*-assoc q₂ q₁ x) ⟩
+    (q₂ * q₁) * x ∎
+\end{code} % $
 As \Agda{} is a proof relevant logic every proof of divisibility materializes
 similarly. The user simply specifies what natural to multiply the divisor by to
 get the dividend. Then they supply a proof that the two numbers do indeed multiply
-to the dividend. 
+to the dividend. It the following proof we assume a divisibility relation is
+true. We ``consume'' the divisibility relation.
+Specifically we consider when $0$ divides another number. The only number $0$
+divides is $0$ itself.
 \begin{code}
   0∣n⇒n≡0 : ∀ {n} → 0 ∣ n → n ≡ 0
   0∣n⇒n≡0 {n} (divides q n≡q*0) = begin
@@ -67,36 +85,66 @@ to the dividend.
     q * 0 ≡⟨ *-zeroʳ q ⟩
     0 ∎
 \end{code}
+The following two lemmas have simple proofs, so we leave the proofs to the
+reader. The first lemma shows that the divisibility relation respects equality
+in its second argument and the second lemma shows that some number $m$ will
+divide a number if it has $m$ as a factor.
 \begin{code}
   ∣-respʳ : ∀ {i n m} → n ≡ m → i ∣ n → i ∣ m
+
+  m∣m*n : ∀ {n m} → m ∣ m * n
+\end{code}
+\begin{code}[hide]
   ∣-respʳ {i} {n} {m} n≡m (divides q n≡q*i) =
     divides q $ begin
       m ≡⟨ ≡-sym n≡m ⟩
       n ≡⟨ n≡q*i ⟩
       q * i ∎
-\end{code}
-\begin{code}
-  m∣m*n : ∀ {n m} → m ∣ m * n
+
   m∣m*n {n} {m} = divides n $ begin m * n ≡⟨ *-comm m n ⟩ n * m ∎
 \end{code}
+This proof shows is the ``reverse'' of the idea that if a number $i$ divides two
+numbers $m$ and $n$ then it must divide their sum. This because $i$ is a common
+factor of the two numbers. If $n + m = q_1 i$ and $m = q_2 i$ then it follows
+that $n = (q_1 - q_2) * i$. Note that $q_1 \geq q_2$ as $q_1$ contains $q_2$. This
+is important in the following \Agda{} proof as the type $\AgdaDatatype{ℕ}$ does
+not contain negative numbers. There is a subtraction like function commonly
+called ``monus'' that returns $0$ when the difference is negative. This is
+denoted as $\dotdiv$ in \Agda{} and it behaves similarly to subtraction in many
+proofs.
 \begin{code}
   ∣n+m∣m⇒∣n : ∀ {i n m} → i ∣ n + m → i ∣ m → i ∣ n
   ∣n+m∣m⇒∣n {i} {n} {m} (divides q₁ n+m≡q₁*i) (divides q₂ m≡q₂*i) =
     divides (q₁ ∸ q₂) $ begin
       n               ≡⟨ ≡-sym (m+n∸n≡m n m) ⟩
-      n + m ∸ m       ≡⟨ ≡-cong₂ (λ x y → x ∸ y) n+m≡q₁*i m≡q₂*i ⟩
+      (n + m) ∸ m     ≡⟨ ≡-cong₂ (λ x y → x ∸ y) n+m≡q₁*i m≡q₂*i ⟩
       q₁ * i ∸ q₂ * i ≡⟨ ≡-sym (*-distribʳ-∸ i q₁ q₂) ⟩
       (q₁ ∸ q₂) * i   ∎
-\end{code}
+\end{code} % $
+This final lemma reduces many proofs about divisibility into proofs about
+inequalities. This lemma occurs multiple times in the following sections and
+chapters. The key idea is that if $n$ divides $m$ then it must be less than or
+equal to $m$ in order to be a factor. Technically this is false when $m = 0$ as
+every number divides $0$. So we just assume $m \neq 0$. This proof illustrates
+the importance of choosing your definitions correctly. Using the definition
+$\exists k. \, n + k = m$ of $n \leq m$ makes this proof almost trivial. An
+inductive definition of $n \leq m$ would complicate this proof by a large measure.
 \begin{code}
   ∣⇒≤ : ∀ {n m} → m ≢ 0 → n ∣ m → n ≤ m
   ∣⇒≤ {n} {zero} m≢0 (divides q m≡q*n) = contradiction ≡-refl m≢0
-  ∣⇒≤ {n} {suc m} m≢0 (divides (suc q) m≡q*n) =
+  ∣⇒≤ {n} {suc m} m≢0 (divides (suc q) m≡[1+q]*n) =
     lte (q * n) $ begin
-      suc q * n ≡⟨⟩
-      n + q * n ≡⟨ ≡-sym m≡q*n ⟩
+      n + q * n ≡⟨⟩
+      suc q * n ≡⟨ ≡-sym m≡[1+q]*n ⟩
       suc m     ∎
-\end{code}
+\end{code} % $
+With the lemmas out of the way we have one last bookkeeping task. What is the
+correct type of decision procedures? A proof relevant decision procedure should
+return not just the truth value of the predicate the user is testing. It should
+also return a proof that the predicate is true or a proof that the predicate is
+false. These cases are mutually exclusive so we can represent this idea with the
+following datatype. Note this type can be used generically in decision producers
+over any proposition $P$.
 \begin{code}[hide]
   module Decidable where
 \end{code}
@@ -108,12 +156,20 @@ to the dividend.
 \begin{code}[hide]
   open import Relation.Nullary using (Dec; yes; no)
 \end{code}
+The full decision procedure begins by checking if the divisor is $0$. If the
+divisor is $0$, then we ensure the dividend is $0$ as $0$ only divides $0$.
 \begin{code}
   _∣?_ : ∀ (d a : ℕ) → Dec (d ∣ a)
   d ∣? a with d ≟ 0
   d ∣? a | yes ≡-refl with a ≟ 0
   d ∣? a | yes ≡-refl | yes ≡-refl = yes ∣-refl
   d ∣? a | yes ≡-refl | no a≢0 = no λ 0∣a → contradiction (0∣n⇒n≡0 0∣a) a≢0
+\end{code}
+If the divisor is not $0$, then we can divide the dividend by the divisor. If
+the integer remainder of that division is $0$, then the divisor divides the
+dividend. Otherwise the divisor can not divide the dividend as the remainder is
+strictly less than the divisor.
+\begin{code}
   d ∣? a | no d≢0 with (a div d) {≢⇒¬≟ d≢0}
   d ∣? a | no d≢0 | Euclidean✓ q r pf r<d with r ≟ 0
   d ∣? a | no d≢0 | Euclidean✓ q r pf r<d | yes ≡-refl =
@@ -122,11 +178,18 @@ to the dividend.
       0 + d * q ≡⟨⟩
       d * q ≡⟨ *-comm d q ⟩
       q * d ∎
+\end{code}
+\begin{code}
   d ∣? a | no d≢0 | Euclidean✓ q r pf r<d | no r≢0 = no ¬d∣a
 \end{code}
 \begin{code}[hide]
     where
 \end{code}
+In this $\AgdaInductiveConstructor{no}$ case we must prove that the divisor
+dividing the dividend leads to a contradiction. All proofs to a contradiction
+start with assuming truth, so we assume that the divisor does divide the
+dividend $d \, \AgdaFunction{∣} \, a$. We show this contradiction by producing a
+proof that $d \leq r$.
 \begin{code}
     ¬d∣a : d ∣ a → ⊥
     ¬d∣a d∣a = contradiction d≤r (<⇒≱ r<d)
@@ -134,15 +197,18 @@ to the dividend.
 \begin{code}[hide]
       where
 \end{code}
+Our division algorithm returns a proof of correctness namely that $a = r + dq$.
+We substitute $a$ with $r + dq$ in our assumption of $d \mid a$. Then we remove
+the $d * q$ term from the sum as $d$ trivially divides it. Lastly we transform
+our divisibility relation into an inequality as the remainder is not zero.
+This illustrates the contradiction and the decision procedure is complete.
 \begin{code}
       d∣r+d*q : d ∣ r + d * q
       d∣r+d*q = ∣-respʳ pf d∣a
-\end{code}
-\begin{code}
+
       d∣r : d ∣ r
       d∣r = ∣n+m∣m⇒∣n d∣r+d*q m∣m*n
-\end{code}
-\begin{code}
+
       d≤r : d ≤ r
       d≤r = ∣⇒≤ r≢0 d∣r
 \end{code}
@@ -175,10 +241,8 @@ call in negative position.
   {-# NO_POSITIVITY_CHECK #-}
 \end{code}
 \begin{code}
-  record Bad : Set where
-    constructor Bad✓
-    field
-      ¬bad : Bad → ⊥
+  data Bad : Set where
+    Bad✓ : (Bad → ⊥) → Bad
 
   Bad-false : Bad → ⊥
   Bad-false (Bad✓ b) = b (Bad✓ b)
@@ -227,13 +291,20 @@ yields our final definition.
       1<p : 1 < p
       ∀i∣p[i≡p] : ∀ {i} → 1 < i → i ∣ p → i ≡ p
 \end{code}
+Using this definition we can prove specific natural numbers are prime by hand.
 \begin{code}
   3-isPrime : IsPrime 3
-  3-isPrime = IsPrime✓ auto-≤ 3-primality
+  3-isPrime = IsPrime✓ (from-yes (1 <? 3)) 3-primality
 \end{code}
 \begin{code}[hide]
     where
 \end{code}
+In order to prove $3$ is a prime we need to show that any divisor $i$ of $3$ is
+equal to $3$. To accomplish this we perform a case analysis on $i$. \Agda{} can
+infer that $i = 0, 1$ are impossible cases so we do not have to fill them out.
+The case $i = 2$ is impossible as $2 \nmid 3$ and we can illustrate this fact by
+running the decision procedure for divisibility on $2$ and $3$. Finally any
+input of the form $4 + i$ will not divide $3$ as it will be too large.
 \begin{code}
     3-primality : ∀ {i} → 1 < i → i ∣ 3 → i ≡ 3
     3-primality {suc (suc zero)} _ 2∣3 = contradiction 2∣3 (from-no (2 ∣? 3))
@@ -246,11 +317,17 @@ yields our final definition.
 \begin{code}
       3+i<3 : 3 + i < 3
       3+i<3 = ∣⇒≤ (λ ()) i∣3
-\end{code}
-\begin{code}
+
       3<3 : 3 < 3
       3<3 = ≤-<-trans m≤m+n 3+i<3
 \end{code}
+This rote work does outline a decision procedure for primality of a number $n$. Test every
+number between $2$ and $n - 1$ for divisibility with $n$. If any of the numbers
+divide $n$ return false, but that begs the question ``What does falsehood
+represent in this instance?''. In this case it implies that the number is a
+composite. So we define another predicate $\AgdaDatatype{IsComposite}$. A number
+is composite if it has a smaller prime factor. Note every composite number is
+guaranteed by the fundamental theorem of arithmetic to have a a prime factor. 
 \begin{code}
   record IsComposite (c : ℕ) : Set where
     constructor IsComposite✓
@@ -260,6 +337,117 @@ yields our final definition.
       p-isPrime : IsPrime p
       p∣c : p ∣ c
 \end{code}
-
+Notice how proving compositionality reduces to proving primality.
+\begin{code}
+  6-isComposite : IsComposite 6
+  6-isComposite = IsComposite✓ 3 (from-yes (3 <? 6)) 3-isPrime (from-yes (3 ∣? 6))
+\end{code}
+\section{A Decision Procedure}
+\label{sec:a-decision-procedure}
+\begin{code}
+  ¬prime<2 : ∀ p → p < 2 → ¬ (IsPrime p)
+  ¬prime<2 p p<2 (IsPrime✓ 1<p _) = contradiction 1<p (<⇒≱ p<2)
+\end{code}
+\begin{code}
+  exclusive : ∀ {n} → IsPrime n → IsComposite n → ⊥
+  exclusive {n} (IsPrime✓ 1<n ∀i∣n⇒i≡n) (IsComposite✓ p p<n (IsPrime✓ 1<p _) p∣n)
+    = contradiction p<n p≮n
+\end{code}
+\begin{code}[hide]
+    where
+\end{code}
+\begin{code}
+    p≮n : ¬ (p < n)
+    p≮n = <-irrefl (∀i∣n⇒i≡n 1<p p∣n)
+\end{code}
+\begin{code}
+  data Compositionality (n : ℕ) : Set where
+    Composite✓ : IsComposite n → Compositionality n
+    Prime✓ : (∀ {p} → p < n → IsPrime p → p ∤ n) → Compositionality n
+\end{code}
+\begin{code}
+  data Primality (n : ℕ) : Set where
+    Composite✓ : IsComposite n → Primality n
+    Prime✓ : IsPrime n → Primality n
+\end{code}
+\begin{code}
+  compositionalityⁱ : ∀ n → 1 < n → Acc _<_ n → Compositionality n
+  primalityⁱ : ∀ n → 1 < n → Acc _<_ n → Primality n
+\end{code}
+\begin{code}
+  compositionalityⁱ n 1<n (acc downward)
+    = loop 2 (from-yes (1 <? 2)) 1<n binary-search ¬p<2[p∤n]
+\end{code}
+\begin{code}[hide]
+    where
+\end{code}
+\begin{code}
+    ¬p<2[p∤n] : ∀ {p} → p < 2 → IsPrime p → p ∤ n
+    ¬p<2[p∤n] {p} p<2 p-isPrime _ = contradiction p-isPrime (¬prime<2 p p<2)
+\end{code}
+\begin{code}
+    cons
+      : ∀ {x}
+      → (IsPrime x → x ∤ n)
+      → (∀ {p} → p < x → IsPrime p → p ∤ n)
+      → (∀ {p} → p < 1 + x → IsPrime p → p ∤ n)
+    cons {x} x-isPrime⇒x∤n ∀p<x⇒p∤n {p} p<1+x p-isPrime p∣n with <-cmp p x
+    ... | tri< p<x _ _ = contradiction p∣n (∀p<x⇒p∤n p<x p-isPrime)
+    ... | tri≈ _ ≡-refl _ = contradiction p∣n (x-isPrime⇒x∤n p-isPrime)
+    ... | tri> _ _ x<p = contradiction (suc-injective-≤ p<1+x) (<⇒≱ x<p)
+\end{code}
+\begin{code}
+    loop
+      : ∀ x → 1 < x → x ≤ n → [ x , n ]
+      → (∀ {p} → p < x → IsPrime p → p ∤ n)
+      → Compositionality n
+    loop x 1<x x≤n (acc _ upward) ∀p<x⇒p∤n with n≤m⇒n<m∨n≡m x≤n
+    ... | inj₂ ≡-refl = Prime✓ ∀p<x⇒p∤n
+    ... | inj₁ x<n with primalityⁱ x 1<x (downward _ x<n)
+    ...   | Composite✓ x-isComposite = loop (1 + x) (<-trans 1<x n<1+n) x<n (upward ≤-refl x<n) ∀p<1+x⇒p∤n
+            where ∀p<1+x⇒p∤n = cons (λ x-isPrime _ → exclusive x-isPrime x-isComposite) ∀p<x⇒p∤n
+    ...   | Prime✓ x-isPrime with x ∣? n
+    ...     | yes x∣n = Composite✓ (IsComposite✓ x x<n x-isPrime x∣n)
+    ...     | no ¬x∣n = loop (1 + x) (<-trans 1<x n<1+n) x<n (upward ≤-refl x<n) ∀p<1+x[p∤n]
+            where ∀p<1+x[p∤n] = cons (λ _ x∣n → ¬x∣n x∣n) ∀p<x⇒p∤n
+\end{code}
+\begin{code}
+  primalityⁱ n 1<n wf@(acc downward) with compositionalityⁱ n 1<n wf
+  ... | Composite✓ isComposite = Composite✓ isComposite
+    -- n is a composite so just return the proof of compositionality
+  ... | Prime✓ ∀p<n⇒p∤n = Prime✓ (IsPrime✓ 1<n ∀i∣n⇒i≡n)
+    -- All prime divisors less then n do not divide n therefore n is prime (#1)
+\end{code}
+\begin{code}[hide]
+    where
+    n≢0 : n ≢ 0
+    n≢0 n≡0 = <-irrefl (≡-sym n≡0) (<-trans 0<1+n 1<n)
+\end{code}
+\begin{code}
+    ∀i∣n⇒i≡n : ∀ {i} → 1 < i → i ∣ n → i ≡ n
+    ∀i∣n⇒i≡n {i} 1<i i∣n with <-cmp i n
+    ... | tri> _ _ n<i = contradiction (∣⇒≤ n≢0 i∣n) (<⇒≱ n<i)
+        -- i is larger than n so i divides n so i is less then or equal to n ⇒⇐
+    ... | tri≈ _ i≡n _ = i≡n
+    ... | tri< i<n _ _ with primalityⁱ i 1<i (downward _ i<n)
+    ...   | Prime✓ i-isPrime
+          = contradiction i∣n (∀p<n⇒p∤n i<n i-isPrime)
+          -- i is a prime divisor of n (#1) ⇒⇐
+    ...   | Composite✓ (IsComposite✓ p p<i p-isPrime p∣i)
+          = contradiction (∣-trans p∣i i∣n) (∀p<n⇒p∤n (<-trans p<i i<n) p-isPrime)
+          -- i is a composite number with a prime divisor therefore there exists a prime divisor of n (#1) ⇒⇐
+\end{code}
+\begin{code}
+  primality : ∀ n → 1 < n → Primality n
+  primality n 1<n = primalityⁱ n 1<n <-well-founded
+\end{code}
+\begin{code}
+  prime? : ∀ n → Dec (IsPrime n)
+  prime? n with 1 <? n
+  ... | no ¬1<n = no λ { (IsPrime✓ 1<n _) → ¬1<n 1<n }
+  ... | yes 1<n with primality n 1<n
+  ... | Prime✓ isPrime = yes isPrime
+  ... | Composite✓ isComposite = no λ { isPrime → exclusive isPrime isComposite }
+\end{code}
 
 \end{document}
