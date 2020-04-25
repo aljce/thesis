@@ -56,6 +56,9 @@ n≢0∧m≢0⇒n*m≢0 {zero} {m} n≢0 m≢0 = contradiction refl n≢0
 n≢0∧m≢0⇒n*m≢0 {suc n} {zero} n≢0 m≢0 = contradiction refl m≢0
 n≢0∧m≢0⇒n*m≢0 {suc n} {suc m} n≢0 m≢0 ()
 
+suc-injective-≡ : ∀ {n m} → suc n ≡ suc m → n ≡ m
+suc-injective-≡ refl = refl
+
 ------------ _≤_ --------------
 
 0≤n : ∀ {n} → 0 ≤ n
