@@ -2,11 +2,11 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
-\usepackage{mathabx}
 \usepackage{mathbbol}
 \usepackage{mathtools}
 \usepackage{stmaryrd}
 \DeclarePairedDelimiter\Parens{\lparen}{\rparen}
+\DeclarePairedDelimiter\Floor{\lfloor}{\rfloor}
 
 \usepackage{gauss}
 
@@ -37,6 +37,8 @@
 \newunicodechar{²}{\ensuremath{{}^2}}
 \newunicodechar{₃}{\ensuremath{{}_3}}
 \newunicodechar{³}{\ensuremath{{}^3}}
+\newunicodechar{₄}{\ensuremath{{}_4}}
+\newunicodechar{⁴}{\ensuremath{{}^4}}
 \newunicodechar{ᵇ}{\ensuremath{{}^b}}
 \newunicodechar{⁺}{\ensuremath{{}^+}}
 \newunicodechar{≡}{\small {\ensuremath{\equiv}}}
@@ -68,10 +70,25 @@
 \newunicodechar{∤}{\ensuremath{\nmid}}
 \newunicodechar{¬}{\ensuremath{\neg}}
 \newunicodechar{⊥}{\ensuremath{\bot}}
-\newunicodechar{∸}{\ensuremath{\dotdiv}}
+\newcommand{\Dotdiv}{%
+  \mathbin{%
+    \vphantom{+}%
+    \text{%
+      \mathsurround=0pt%
+      \ooalign{%
+        \noalign{\kern-.35ex}%
+        \hidewidth$\smash{\cdot}$\hidewidth\cr%
+        \noalign{\kern.35ex}%
+        $-$\cr%
+      }%
+    }%
+  }%
+}
+\newunicodechar{∸}{\ensuremath{\Dotdiv}}
 \newunicodechar{≤}{\ensuremath{\leq}}
 \newunicodechar{≱}{\ensuremath{\not\geq}}
 \newunicodechar{≮}{\ensuremath{\not<}}
+\newunicodechar{≺}{\ensuremath{\prec}}
 \newunicodechar{∨}{\ensuremath{\wedge}}
 
 \newcommand{\Boolean}[0]{\AgdaDatatype{$\mathbb{B}$}}
@@ -85,6 +102,15 @@
 \newcommand{\Lg}[1]{\ensuremath{\text{lg}\Parens{#1}}}
 
 \newcommand{\CitationNeeded}[1]{{\color{blue} [citation needed: #1]}}
+
+\newenvironment{dedication}{
+  \begin{center}
+    \thispagestyle{empty}
+    \vspace*{\fill}
+}{
+    \vspace*{\fill}
+  \end{center}
+}
 
 \setlength{\parindent}{0em}
 
@@ -104,6 +130,10 @@
 \mainmatter
 \pagestyle{fancyplain}
 
+\begin{dedication}
+  To my family, I can't believe y'all stuck with me through all this
+\end{dedication}
+
 \tableofcontents
 
 \subfile{Abstract}
@@ -116,7 +146,7 @@
 
 \appendix
 
-\backmatter 
+\backmatter
 
 \nocite{gnu-parallel}
 \bibliographystyle{apalike}

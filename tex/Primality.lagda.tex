@@ -110,7 +110,7 @@ that $n = (q_1 - q_2) * i$. Note that $q_1 \geq q_2$ as $q_1$ contains $q_2$. Th
 is important in the following \Agda{} proof as the type $\AgdaDatatype{ℕ}$ does
 not contain negative numbers. There is a subtraction like function commonly
 called ``monus'' that returns $0$ when the difference is negative. This is
-denoted as $\dotdiv$ in \Agda{} and it behaves similarly to subtraction in many
+denoted as $\AgdaFunction{∸}$ in \Agda{} and it behaves similarly to subtraction in many
 proofs.
 \begin{code}
   ∣n+m∣m⇒∣n : ∀ {i n m} → i ∣ n + m → i ∣ m → i ∣ n

@@ -10,11 +10,12 @@
 
 \begin{code}[hide]
   module Termination where
+  open import Relation.Nullary using (¬_)
   open import Relation.Nullary.Decidable using (False)
   open import Relation.Nullary.Negation using (contradiction)
   open import Data.Empty using (⊥)
   open import AKS.Nat using (ℕ; zero; suc; _*_; _<_; _≤_; lte; _≟_)
-  open import AKS.Nat using (+-comm; suc-injective-≡)
+  open import AKS.Nat using (+-comm; suc-injective-≡; n≮0)
   open import AKS.Binary using (𝔹⁺)
   open 𝔹⁺
   open import AKS.Nat.Divisibility using (_div_; Euclidean; Euclidean✓)
@@ -27,9 +28,9 @@
   open import Polynomial.Simple.AlmostCommutativeRing.Instances using (module Nat)
   open import Polynomial.Simple.Reflection using (solve)
   open Nat.Reflection using (∀⟨_⟩)
-  open import Data.List using ([]; _∷_)
+  open import Data.List using ([]; _∷_; List)
   open import Function using (_$_)
-\end{code}
+\end{code} % $
 \section{A Correctness Interlude}
 \label{sec:a-correctness-interlude}
 The previous chapter omitted a critical flaw in it's analysis. The code below is
@@ -149,15 +150,28 @@ $
 <_{sub}
 (\AgdaInductiveConstructor{suc} \, n, \, \AgdaInductiveConstructor{suc} \, m)
 $. \\
-
+\section{Well Founded Relations}
+\label{sec:well-founded-relations}
 An astute reader may have noticed a pattern. \Agda{} accepts your recursive
 definition if it can infer a structural \textit{well founded relation}
-\cite{soare}.
+\cite{soare}. A well founded relation is a binary relation $\prec$ that has no
+infinitely descending chains $\dots \prec x_k \prec \dots \prec x_1 \prec x_0$.
+For instance the strict ordering over the naturals is well founded
+as every chain will eventually reach the zero natural.
 \begin{align}
-  \label{eqn:wellfounded-linear}
+  \label{eqn:wellfounded-natural}
   0 < 1 < 2 < 3 < 4 < 5
 \end{align}
-
+The non strict ordering is not well founded as an infinite chain of the
+reflexivity axiom can be constructed.
+\begin{align}
+  \label{eqn:non-wellfounded-natural}
+  \dots \leq 0 \leq \dots \leq 0 \leq 0
+\end{align}
+Linear ordering lists do not capture the full structure of a well founded
+relation. A well founded relation often has multiple elements that could be
+appended to the chain. This idea is illustrated in the well founded tree
+rooted at 3 found in figure \ref{fig:wellfounded-tree}.
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}
@@ -178,20 +192,101 @@ definition if it can infer a structural \textit{well founded relation}
   \caption{A well founded tree }
   \label{fig:wellfounded-tree}
 \end{figure}
-
+These trees encapsulate the full structure of a well ordering relation.
+Therefore if we could express this tree as an \Agda{} datatype we could supply
+our own well ordering relation even when \Agda{} can not infer it. The final
+datatype that represents well founded trees is somewhat puzzling at first
+glance. So to introduce it we start with a sensible datatype and make small
+changes to the definition until we have reached the correct representation.
+These trees are general trees, trees that can have an arbitrary number
+of children. They are often called rose trees in functional programming
+literature. They make for a good starting datatype.
+\begin{code}[hide]
+  module Tree₁ where
+\end{code}
 \begin{code}
-  data Acc {A : Set} (_<_ : A → A → Set) (bound : A) : Set where
-    acc : (∀ {lower} → lower < bound → Acc _<_ lower)
-        → Acc _<_ bound
-
+    data RoseTree : Set where
+      Node : List RoseTree → RoseTree
+\end{code}
+We then apply a \textit{continuation passing style} \cite{harper} transformation to the
+recursive call. Instead of having a list of children we have a continuation that
+can be invoked with the index of the requested child.
+\begin{code}[hide]
+  module Tree₂ where
+\end{code}
+\begin{code}
+    data RoseTree : Set where
+      Node : (ℕ → RoseTree) → RoseTree
+\end{code}
+Unfortunately this makes our definition unusable as now every rosetree must have
+infinite size. From a game theotertic perspective, a consumer may request
+the first child of every node repetitively.
+\begin{code}
+    rosetree-uninhabited : RoseTree → ⊥
+    rosetree-uninhabited (Node children) = rosetree-uninhabited (children 0)
+\end{code}
+Any well founded tree is necessarily finite as each node always has a finite
+number of children ``less'' than itself. We can solve this by adding an upper
+bound and ensuring that any index is less than the bound.
+\begin{code}[hide]
+  module Tree₃ where
+\end{code}
+\begin{code}
+    data RoseTree (bound : ℕ) : Set where
+      Node : (∀ {lower : ℕ} → lower < bound → RoseTree lower)
+           → RoseTree bound
+\end{code}
+Nothing requires the bound to be naturals or for the relation to be
+$\AgdaFunction{\_<\_}$. By parameterizing the datatype by the relation we
+arrive at our finial definition. This is often called the accessibility
+predicate so we update the names accordingly.
+\begin{code}
+  data Acc {A : Set} (_≺_ : A → A → Set) (bound : A) : Set where
+    acc : (∀ {lower : A} → lower ≺ bound → Acc _≺_ lower)
+        → Acc _≺_ bound
+\end{code}
+Continuing with the game theoretic analysis proving a relation is well
+founded for a specific bound is a simple game. A game where the prover
+continually asks for a lower bound and wins when it is impossible for the
+other player to supply a lower bound. This game plays out below for a bound of $3$.
+\begin{code}
+  3-well-founded : Acc _<_ 3
+  3-well-founded = acc λ l₁<3 → acc λ l₂<l₁ → acc λ l₃<l₂ → acc λ l₄<l₃ →
+    contradiction l₄<l₃ (end l₁<3 l₂<l₁ l₃<l₂)
+\end{code}
+\begin{code}[hide]
+    where
+\end{code}
+\begin{code}
+    end : ∀ {l₁ l₂ l₃ l₄} → l₁ < 3 → l₂ < l₁ → l₃ < l₂ → ¬ (l₄ < l₃)
+    end {2} {1} {0} {l₄} l₁<3 l₂<l₁ l₃<l₂ l₄<l₃ = contradiction l₄<l₃ n≮0 
+\end{code}
+\section{Win Every Game}
+\label{sec:win-every-game}
+Now we turn to proving that any natural forms a rooted well formed tree under the
+strict ordering relation. Like most things in math this is much harder to
+accomplish in general then for specific examples. Specifically our choice of
+less than relation is poorly suited for this task. We will define an inductive
+ordering relation and show that our original definition of ordering is a
+subrelation of the inductive definition. Then if the inductive definition is
+well founded the subrelation will be as well. This last idea is shown below.
+\begin{code}
   subrelation
-      : ∀ {A : Set} {_<₁_ : A → A → Set} {_<₂_ : A → A → Set} {n}
-      → (∀ {a b} → a <₂ b → a <₁ b)
-      → Acc _<₁_ n
-      → Acc _<₂_ n
-  subrelation <₂⇒<₁ (acc down) =
-    acc λ x<₂n → subrelation <₂⇒<₁ (down (<₂⇒<₁ x<₂n))
-
+      : ∀ {A : Set} {_≺₁_ _≺₂_ : A → A → Set} {n}
+      → (∀ {a b} → a ≺₂ b → a ≺₁ b)
+      → Acc _≺₁_ n
+      → Acc _≺₂_ n
+  subrelation ≺₂⇒≺₁ (acc down) =
+    acc λ x≺₂n → subrelation ≺₂⇒≺₁ (down (≺₂⇒≺₁ x≺₂n))
+\end{code}
+Next we turn to the inductive ordering relation. The key idea behind this
+definition is that each $\AgdaInductiveConstructor{≤-step}$ constructor adds one
+to the right bound. The base case is the reflexivity axiom so the number of
+$\AgdaInductiveConstructor{≤-step}$ constructors is the distance between the
+left and right bound. The old definition internalizes this concept into the
+definition as the $k$ in
+$a \, \AgdaDatatype{≤} \, b = a \, \AgdaFunction{+} \, k \, \AgdaDatatype{≡} \, b$.
+\begin{code}
   data _≤ⁱ_ (n : ℕ) (m : ℕ) : Set where
     ≤-same : n ≡ m → n ≤ⁱ m
     ≤-step : ∀ {o} → suc o ≡ m → n ≤ⁱ o → n ≤ⁱ m
@@ -199,13 +294,17 @@ definition if it can infer a structural \textit{well founded relation}
   _<ⁱ_ : ℕ → ℕ → Set
   n <ⁱ m = suc n ≤ⁱ m
 
-  <ⁱ-well-founded : ∀ {n} → Acc _<ⁱ_ n
-  <ⁱ-count-down : ∀ {m n} → m <ⁱ n → Acc _<ⁱ_ m
-
-  <ⁱ-well-founded {n} = acc (λ x<ⁱn → <ⁱ-count-down x<ⁱn)
-  <ⁱ-count-down {m} {suc .m} (≤-same ≡-refl) = <ⁱ-well-founded {m}
-  <ⁱ-count-down {m} {suc n} (≤-step ≡-refl m≤n) = <ⁱ-count-down {m} {n} m≤n
-
+  2≤ⁱ4 : 2 ≤ⁱ 4
+  2≤ⁱ4 = ≤-step {o = 3} ≡-refl (≤-step {o = 2} ≡-refl (≤-same ≡-refl))
+\end{code}
+This concept also hints at how to show that the old definition is a subrelation
+of the inductive definition. Count $k$ down to $0$ adding a
+$\AgdaInductiveConstructor{≤-step}$. We first transform
+$a \, \AgdaFunction{+} \, k \, \AgdaDatatype{≡} \, b$ into
+$k \, \AgdaFunction{+} \, a \, \AgdaDatatype{≡} \, b$ as $\AgdaFunction{\_+\_}$
+is defined on the first argument. So it can simplify terms like
+$0 \, \AgdaFunction{+} \, a$ into $a$ automatically.
+\begin{code}
   ≤⇒≤ⁱ : ∀ {a b} → a ≤ b → a ≤ⁱ b
   ≤⇒≤ⁱ {a} {b} (lte k a+k≡b) = loop a b k $ begin
     k + a ≡⟨ +-comm k a ⟩ a + k ≡⟨ a+k≡b ⟩ b ∎
@@ -215,20 +314,51 @@ definition if it can infer a structural \textit{well founded relation}
       a ≡⟨⟩ 0 + a ≡⟨ 0+a≡b ⟩ b ∎
     loop a (suc b) (suc k) 1+k+a≡1+b = ≤-step ≡-refl $ loop a b k $ begin
       k + a ≡⟨ suc-injective-≡ 1+k+a≡1+b ⟩ b ∎
-
+\end{code}
+\begin{code}
   <⇒<ⁱ : ∀ {a b} → a < b → a <ⁱ b
   <⇒<ⁱ {a} {b} a<b = ≤⇒≤ⁱ {suc a} {b} a<b
-
+\end{code}
+Next we need to prove that any natural forms a rooted well founded tree under
+the inductively defined ordering. This requires a set of mutually recursive
+functions.
+\begin{code}
+  <ⁱ-well-founded : ∀ {n} → Acc _<ⁱ_ n
+  <ⁱ-count-down : ∀ {m n} → m <ⁱ n → Acc _<ⁱ_ m
+\end{code}
+The first accepts the ``player'' supplied proof that some number $m$
+is less than the bound. Then the second function counts $n$ down to $m$ until
+they are equal. Then it asks the player for a proof that there is some number
+smaller than $m$. Note that every case in $\AgdaFunction{<ⁱ-count-down}$ peals
+off exactly one $\AgdaFunction{suc}$ so \Agda{} is able to infer that the
+functions are structurally decreasing.
+\begin{code}
+  <ⁱ-well-founded {n} = acc (λ x<ⁱn → <ⁱ-count-down x<ⁱn)
+  <ⁱ-count-down {m} {suc .m} (≤-same ≡-refl) = <ⁱ-well-founded {m}
+  <ⁱ-count-down {m} {suc n} (≤-step ≡-refl m≤n) = <ⁱ-count-down {m} {n} m≤n
+\end{code}
+Lastly we bring all the puzzle pieces together and prove that our original
+definition of ordering is well founded.
+\begin{code}
   <-well-founded : ∀ {n} → Acc _<_ n
   <-well-founded {n} = subrelation <⇒<ⁱ <ⁱ-well-founded
 \end{code}
-
+\section{Lie No More}
+\label{sec:lie-no-more}
+Now we can return to our function that upcasts a natural number to a binary
+encoded number. In order to use the mechanism developed above we must first
+prove a lemma that integer division by $2$ is strictly less than the input.
+Thankfully this lemma is simple enough for an automated ring solver to prove.
 \begin{code}
   div-< : ∀ n q r {q≢0 : False (q ≟ 0)} → n ≡ r + 2 * q → q < n
 \end{code}
 \begin{code}[hide]
   div-< n (suc q) r ≡-refl = lte (q + r) (∀⟨ q ∷ r ∷ [] ⟩)
 \end{code}
+Next we define a helper function that has an accessibility predicate on the
+input. Eventually we lose the game as $\Floor{1 / 2} = 0$ and we can not call
+the helper function on $0$ by assumption. Thankfully this lines up perfectly
+with our desired base case.
 \begin{code}
   ⟦_,_⇑⟧ʰ : ∀ (n : ℕ) (acc : Acc _<_ n) {≢0 : False (n ≟ 0)} → 𝔹⁺
   ⟦ suc n , acc down ⇑⟧ʰ with suc n div 2
