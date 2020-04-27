@@ -184,7 +184,7 @@ module _
     gcdₕ : ∀ (n m : C) {m≉0 : m ≉ 0#} → Acc _<_ (∣ m ∣ {m≉0}) → C
     gcdₕ n m {m≉0} (acc downward) with modulus n m {m≉0}
     ... | 0≈ r≈0 = m
-    ... | 0≉ r≉0 r<m = gcdₕ m (n mod m) (downward _ r<m)
+    ... | 0≉ r≉0 r<m = gcdₕ m (n mod m) (downward r<m)
 
     gcd : C → C → C
     gcd n m with m ≈? 0#
@@ -208,7 +208,7 @@ module _
       loop : ∀ a b {b≉0} (rec : Acc _<_ (∣ b ∣ {b≉0})) → (gcdₕ a b rec ∣ a) × (gcdₕ a b rec ∣ b)
       loop a b {b≉0} (acc downward) with modulus a b {b≉0}
       ... | 0≈ r≈0 = ∣b∣a%b⇒∣a ∣-refl (∣-respʳ (sym r≈0) (b ∣0)) , ∣-refl
-      ... | 0≉ r≉0 r<m with loop b (a mod b) (downward _ r<m)
+      ... | 0≉ r≉0 r<m with loop b (a mod b) (downward r<m)
       ...   | gcd∣b , gcd∣a%b = ∣b∣a%b⇒∣a gcd∣b gcd∣a%b , gcd∣b
 
     ∣a∣b⇒∣a%b : ∀ {c a b} {b≉0 : b ≉ 0#} → c ∣ a → c ∣ b → c ∣ (a mod b) {b≉0}
@@ -237,7 +237,7 @@ module _
       loop : ∀ c a b {b≉0} (rec : Acc _<_ (∣ b ∣ {b≉0})) → c ∣ a → c ∣ b → c ∣ gcdₕ a b rec
       loop c a b {b≉0} (acc downward) c∣a c∣b with modulus a b {b≉0}
       ... | 0≈ r≈0 = c∣b
-      ... | 0≉ r≉0 r<m = loop c b (a mod b) (downward _ r<m) c∣b (∣a∣b⇒∣a%b c∣a c∣b)
+      ... | 0≉ r≉0 r<m = loop c b (a mod b) (downward r<m) c∣b (∣a∣b⇒∣a%b c∣a c∣b)
 
     gcd-isGCD : IsGCD gcd
     gcd-isGCD = record
@@ -304,8 +304,10 @@ module _
     ... | 0≉ r≉0 _  = contradiction [r≈0]₁ r≉0
 
     gcdₕ-step
-      : ∀ {d a b} {b≉0} {r≉0 : (a mod b) {b≉0} ≉ 0#} {r<m : ∣ a mod b ∣ {r≉0} < ∣ b ∣ {b≉0}} {downward}
-      → gcdₕ b (a mod b) (downward ∣ a mod b ∣ r<m) ≈ d → gcdₕ a b (acc downward) ≈ d
+      : ∀ {d a b} {b≉0} {r≉0 : (a mod b) {b≉0} ≉ 0#}
+          {r<m : ∣ a mod b ∣ {r≉0} < ∣ b ∣ {b≉0}}
+          {downward : ∀ {x} → x < ∣ b ∣ {b≉0} → Acc _<_ x}
+      → gcdₕ b (a mod b) (downward {∣ a mod b ∣} r<m) ≈ d → gcdₕ a b (acc downward) ≈ d
     gcdₕ-step {d} {a} {b} {b≉0} {[r≉0]₁} {[r<m]₁} gcdₕ[b,a%b]≈d with modulus a b {b≉0}
     ... | 0≈ r≈0 = contradiction r≈0 [r≉0]₁
     ... | 0≉ [r≉0]₂ [r<m]₂ rewrite ≉-irrelevant [r≉0]₁ [r≉0]₂ | <-irrelevant [r<m]₁ [r<m]₂ = gcdₕ[b,a%b]≈d
@@ -313,7 +315,7 @@ module _
     bézoutₕ : ∀ a b {b≉0} (rec : Acc _<_ (∣ b ∣ {b≉0})) → Bézoutₕ a b rec
     bézoutₕ a b {b≉0} (acc downward) with modulus a b {b≉0}
     ... | 0≈ r≈0 = lemmaₕ b (gcdₕ-base r≈0) (identity-sym identity-base)
-    ... | 0≉ r≉0 r<m with bézoutₕ b (a mod b) {r≉0} (downward _ r<m)
+    ... | 0≉ r≉0 r<m with bézoutₕ b (a mod b) {r≉0} (downward r<m)
     ...   | lemmaₕ d gcdₕ[b,a%b]≈d ident = lemmaₕ d (gcdₕ-step gcdₕ[b,a%b]≈d) (identity-step ident)
 
     data Bézout (a : C) (b : C) : Set (c ⊔ ℓ) where

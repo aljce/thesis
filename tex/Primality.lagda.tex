@@ -16,7 +16,7 @@ standard brute force primality algorithm.
   open import AKS.Nat using (ℕ; zero; suc; _+_; _∸_; _*_; _≤_; _<_; lte; _<?_; _≟_)
   open import AKS.Nat using (auto-≤; <⇒≱; n≮n; ≤-<-trans; m≤m+n; ≢⇒¬≟; suc-injective-≤; ≤-refl) renaming (n≤m⇒n<m⊎n≡m to n≤m⇒n<m∨n≡m)
   open import AKS.Nat using (<-irrefl; <-cmp; <-trans; n<1+n; 0<1+n)
-  open import AKS.Nat using (Acc; acc; <-well-founded; [_,_]; binary-search)
+  open import AKS.Nat using (Acc; acc; <-well-founded; Interval; [_,_∣_]; ⊂-well-founded; _⊂_; upward)
   open import Data.Nat.Properties using (*-identityˡ; *-comm; *-assoc; *-zeroʳ; *-distribʳ-∸; m+n∸n≡m)
   open import AKS.Nat.Divisibility using (_/_; Euclidean✓; _div_)
   open import Relation.Nullary using (¬_)
@@ -344,13 +344,21 @@ Notice how proving compositionality reduces to proving primality.
 \end{code}
 \section{A Decision Procedure}
 \label{sec:a-decision-procedure}
+As always we require a couple lemmas before we can get into the heart of the
+decision procedure. Firstly there is no prime less than $2$, this fact is almost
+baked into the definition. Secondly we prove that a number $n$ can not be both prime and
+composite. As the number is composite it has some prime factor but as the
+number is prime that divisor must be equal to itself. The factor is defined to
+be less than itself and we reach a contradiction.
 \begin{code}
   ¬prime<2 : ∀ p → p < 2 → ¬ (IsPrime p)
-  ¬prime<2 p p<2 (IsPrime✓ 1<p _) = contradiction 1<p (<⇒≱ p<2)
+  ¬prime<2 p p<2 (IsPrime✓ 2≤p _) = contradiction 2≤p (<⇒≱ p<2)
 \end{code}
 \begin{code}
   exclusive : ∀ {n} → IsPrime n → IsComposite n → ⊥
-  exclusive {n} (IsPrime✓ 1<n ∀i∣n⇒i≡n) (IsComposite✓ p p<n (IsPrime✓ 1<p _) p∣n)
+  exclusive {n}
+    (IsPrime✓ 1<n ∀i∣n⇒i≡n)
+    (IsComposite✓ p p<n (IsPrime✓ 1<p _) p∣n)
     = contradiction p<n p≮n
 \end{code}
 \begin{code}[hide]
@@ -360,31 +368,60 @@ Notice how proving compositionality reduces to proving primality.
     p≮n : ¬ (p < n)
     p≮n = <-irrefl (∀i∣n⇒i≡n 1<p p∣n)
 \end{code}
-\begin{code}
-  data Compositionality (n : ℕ) : Set where
-    Composite✓ : IsComposite n → Compositionality n
-    Prime✓ : (∀ {p} → p < n → IsPrime p → p ∤ n) → Compositionality n
-\end{code}
+As we are working in a proof relevant setting the types
+$\AgdaDatatype{IsComposite} \, n$ and
+$\AgdaFunction{¬} (\AgdaDatatype{IsPrime}\, n)$ do not carry the same amount of
+information. The first type knows exactly one factor of $n$ while the
+second type knows no factors. Therefore instead of writing a decision procedure
+for prime or not prime we write a decision procedure for prime or composite. The
+later can be easily transformed into the former as seen at the end of the
+chapter. Therefore we construct a type that can return a proof of primality or
+compositionality.
 \begin{code}
   data Primality (n : ℕ) : Set where
     Composite✓ : IsComposite n → Primality n
     Prime✓ : IsPrime n → Primality n
 \end{code}
+Unfortunately our final $\AgdaDatatype{IsPrime}$ type is difficult to construct.
+This is because the type has ``forgotten'' that every number less than itself
+can not divide itself. Luckily the original inconsistent definition of primality
+remembers the divisibility of all numbers less than itself. We can break the
+negative recursion by using the current definition of primality in the negative
+position. We create a new return type that has this definition inlined into
+itself. Thus the algorithm proceeds as follows. We test all prime divisors of
+$n$ and store them in $\AgdaDatatype{Compositionality}$ then we convert a
+$\AgdaDatatype{Compositionality}$ into a $\AgdaDatatype{Primality}$.
 \begin{code}
-  compositionalityⁱ : ∀ n → 1 < n → Acc _<_ n → Compositionality n
-  primalityⁱ : ∀ n → 1 < n → Acc _<_ n → Primality n
+  data Compositionality (n : ℕ) : Set where
+    Composite✓ : IsComposite n → Compositionality n
+    Prime✓ : (∀ {p} → p < n → IsPrime p → p ∤ n) → Compositionality n
+\end{code}
+In practice this algorithm is actually mutually recursive as in order to generate
+a $\AgdaDatatype{Compositionality}$ you need to generate smaller
+$\AgdaDatatype{IsPrime}$ proofs.
+\begin{code}
+  compositionality : ∀ n → 1 < n → Acc _<_ n → Compositionality n
+  primality : ∀ n → 1 < n → Acc _<_ n → Primality n
 \end{code}
 \begin{code}
-  compositionalityⁱ n 1<n (acc downward)
-    = loop 2 (from-yes (1 <? 2)) 1<n binary-search ¬p<2[p∤n]
+  compositionality n 1<n (acc downward)
+    = loop 2 (from-yes (1 <? 2)) 1<n ⊂-well-founded ¬p<2[p∤n]
 \end{code}
 \begin{code}[hide]
     where
 \end{code}
+We store these smaller primes in a list encoded with continuation passing style.
+The following code is an analog to the nil list case. As there are no primes
+less than $2$ this makes a good empty list.
 \begin{code}
     ¬p<2[p∤n] : ∀ {p} → p < 2 → IsPrime p → p ∤ n
     ¬p<2[p∤n] {p} p<2 p-isPrime _ = contradiction p-isPrime (¬prime<2 p p<2)
 \end{code}
+Next we need to construct an analog to append. If we have a list of prime
+divisibility up to but not including $x$ and a proof that $x$ does not
+divide $n$ we can construct a list of prime divisibility including $x$. This
+proof proceeds by comparing $p$ and $x$ using a three way trichotomous
+comparison.
 \begin{code}
     cons
       : ∀ {x}
@@ -396,25 +433,43 @@ Notice how proving compositionality reduces to proving primality.
     ... | tri≈ _ ≡-refl _ = contradiction p∣n (x-isPrime⇒x∤n p-isPrime)
     ... | tri> _ _ x<p = contradiction (suc-injective-≤ p<1+x) (<⇒≱ x<p)
 \end{code}
+Next we construct the main divisibility testing loop. We count upwards from
+$x = 2$
+until we reach $n$ using the accessibility predicate defined at the end of chapter
+\ref{chap:termination}. We recursively test the primality of $x$. If $x$ is
+composite then there is no reason to test divisibility as the prime factor of
+$x$ will have be tested previously in the loop. If $x$ is prime then we test if
+$x$ divides $n$ using the divisibility decision procedure defined earlier in the
+chapter. If $x$ divides $n$ then we immediately return with a proof that $n$ has
+a prime divisor. Otherwise we add $x$ into the list and recurse.
 \begin{code}
     loop
-      : ∀ x → 1 < x → x ≤ n → [ x , n ]
+      : ∀ x → 1 < x → (x≤n : x ≤ n) → Acc _⊂_ [ x , n ∣ x≤n ]
       → (∀ {p} → p < x → IsPrime p → p ∤ n)
       → Compositionality n
-    loop x 1<x x≤n (acc _ upward) ∀p<x⇒p∤n with n≤m⇒n<m∨n≡m x≤n
+    loop x 1<x x≤n (acc next) ∀p<x⇒p∤n with n≤m⇒n<m∨n≡m x≤n
     ... | inj₂ ≡-refl = Prime✓ ∀p<x⇒p∤n
-    ... | inj₁ x<n with primalityⁱ x 1<x (downward _ x<n)
-    ...   | Composite✓ x-isComposite = loop (1 + x) (<-trans 1<x n<1+n) x<n (upward ≤-refl x<n) ∀p<1+x⇒p∤n
-            where ∀p<1+x⇒p∤n = cons (λ x-isPrime _ → exclusive x-isPrime x-isComposite) ∀p<x⇒p∤n
+    ... | inj₁ x<n with primality x 1<x (downward x<n)
+    ...   | Composite✓ x-isComposite
+          = loop (1 + x) (<-trans 1<x n<1+n) x<n (next [1+x,n]⊂[x,n]) ∀p<1+x⇒p∤n
+            where
+            [1+x,n]⊂[x,n] : [ 1 + x , n ∣ x<n ] ⊂ [ x , n ∣ x≤n ]
+            [1+x,n]⊂[x,n] = upward n<1+n ≤-refl
+            ∀p<1+x⇒p∤n = cons (λ x-isPrime _ → exclusive x-isPrime x-isComposite) ∀p<x⇒p∤n
     ...   | Prime✓ x-isPrime with x ∣? n
     ...     | yes x∣n = Composite✓ (IsComposite✓ x x<n x-isPrime x∣n)
-    ...     | no ¬x∣n = loop (1 + x) (<-trans 1<x n<1+n) x<n (upward ≤-refl x<n) ∀p<1+x[p∤n]
-            where ∀p<1+x[p∤n] = cons (λ _ x∣n → ¬x∣n x∣n) ∀p<x⇒p∤n
+    ...     | no ¬x∣n = loop (1 + x) (<-trans 1<x n<1+n) x<n (next [1+x,n]⊂[x,n]) ∀p<1+x[p∤n]
+            where
+            [1+x,n]⊂[x,n] : [ 1 + x , n ∣ x<n ] ⊂ [ x , n ∣ x≤n ]
+            [1+x,n]⊂[x,n] = upward n<1+n ≤-refl
+            ∀p<1+x[p∤n] = cons (λ _ x∣n → ¬x∣n x∣n) ∀p<x⇒p∤n
 \end{code}
+Now we transform compositionalities into primalities. If the number is
+composite then we can simply return the same proof. Otherwise we need to
+transform our continuation passing style list into our final primality condition.
 \begin{code}
-  primalityⁱ n 1<n wf@(acc downward) with compositionalityⁱ n 1<n wf
+  primality n 1<n wf@(acc downward) with compositionality n 1<n wf
   ... | Composite✓ isComposite = Composite✓ isComposite
-    -- n is a composite so just return the proof of compositionality
   ... | Prime✓ ∀p<n⇒p∤n = Prime✓ (IsPrime✓ 1<n ∀i∣n⇒i≡n)
     -- All prime divisors less then n do not divide n therefore n is prime (#1)
 \end{code}
@@ -423,29 +478,32 @@ Notice how proving compositionality reduces to proving primality.
     n≢0 : n ≢ 0
     n≢0 n≡0 = <-irrefl (≡-sym n≡0) (<-trans 0<1+n 1<n)
 \end{code}
+To do this we must handle any possible divisor $i$ of $n$. Firstly we
+trichotomously compare $i$ and $n$. If $i$ is larger than $n$ we immediately run
+into a familiar contradiction. If $i$ is equal to $n$ then we are done and we
+return the proof that they are equal. Finally if $i$ is less than $n$ we
+recursively call our decision procedure on $i$. If $i$ is prime then we have
+reached a contradiction as we have a list of all the primes less than $n$ and
+they do not divide $n$. If $i$ is composite then it has a prime divisor that
+transitively divides $n$ and we have reached a contradiction.
 \begin{code}
     ∀i∣n⇒i≡n : ∀ {i} → 1 < i → i ∣ n → i ≡ n
     ∀i∣n⇒i≡n {i} 1<i i∣n with <-cmp i n
     ... | tri> _ _ n<i = contradiction (∣⇒≤ n≢0 i∣n) (<⇒≱ n<i)
-        -- i is larger than n so i divides n so i is less then or equal to n ⇒⇐
     ... | tri≈ _ i≡n _ = i≡n
-    ... | tri< i<n _ _ with primalityⁱ i 1<i (downward _ i<n)
+    ... | tri< i<n _ _ with primality i 1<i (downward i<n)
     ...   | Prime✓ i-isPrime
           = contradiction i∣n (∀p<n⇒p∤n i<n i-isPrime)
-          -- i is a prime divisor of n (#1) ⇒⇐
     ...   | Composite✓ (IsComposite✓ p p<i p-isPrime p∣i)
           = contradiction (∣-trans p∣i i∣n) (∀p<n⇒p∤n (<-trans p<i i<n) p-isPrime)
-          -- i is a composite number with a prime divisor therefore there exists a prime divisor of n (#1) ⇒⇐
 \end{code}
-\begin{code}
-  primality : ∀ n → 1 < n → Primality n
-  primality n 1<n = primalityⁱ n 1<n <-well-founded
-\end{code}
+After ensuring that our number is greater than $1$ we can invoke
+$\AgdaFunction{primality}$ and finish our primality decision procedure.
 \begin{code}
   prime? : ∀ n → Dec (IsPrime n)
   prime? n with 1 <? n
   ... | no ¬1<n = no λ { (IsPrime✓ 1<n _) → ¬1<n 1<n }
-  ... | yes 1<n with primality n 1<n
+  ... | yes 1<n with primality n 1<n <-well-founded
   ... | Prime✓ isPrime = yes isPrime
   ... | Composite✓ isComposite = no λ { isPrime → exclusive isPrime isComposite }
 \end{code}

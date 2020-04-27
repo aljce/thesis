@@ -7,7 +7,6 @@
 \usepackage{stmaryrd}
 \DeclarePairedDelimiter\Parens{\lparen}{\rparen}
 \DeclarePairedDelimiter\Floor{\lfloor}{\rfloor}
-
 \usepackage{gauss}
 
 % TODO: banish this evil
@@ -16,6 +15,7 @@
 \usepackage{subfiles}
 \usepackage{epigraph}
 \setlength{\epigraphwidth}{0.9\textwidth}
+\usepackage{xcolor}
 
 \usepackage{tikz}
 \usepackage{tikz-qtree}
@@ -89,6 +89,7 @@
 \newunicodechar{≱}{\ensuremath{\not\geq}}
 \newunicodechar{≮}{\ensuremath{\not<}}
 \newunicodechar{≺}{\ensuremath{\prec}}
+\newunicodechar{⊂}{\ensuremath{\subset}}
 \newunicodechar{∨}{\ensuremath{\wedge}}
 
 \newcommand{\Boolean}[0]{\AgdaDatatype{$\mathbb{B}$}}
@@ -103,6 +104,13 @@
 
 \newcommand{\CitationNeeded}[1]{{\color{blue} [citation needed: #1]}}
 
+\newcommand{\Line}[1]{%
+  % \hspace{-\arraycolsep}%
+  {\color{#1} \strut\vrule} % the `\vrule` is as high and deep as a strut
+  % \hspace{-\arraycolsep}%
+}
+
+
 \newenvironment{dedication}{
   \begin{center}
     \thispagestyle{empty}
@@ -115,7 +123,7 @@
 \setlength{\parindent}{0em}
 
 \title{A Replication of the Famous AKS Primality Decision Algorithm}
-\author{Alice J. McKean}
+\author{Kyle J. McKean}
 \date{May 2020}
 \division{Mathematical and Natural Sciences}
 \advisor{James D. Fix}
@@ -131,7 +139,7 @@
 \pagestyle{fancyplain}
 
 \begin{dedication}
-  To my family, I can't believe y'all stuck with me through all this
+  To my family, eternal love
 \end{dedication}
 
 \tableofcontents
@@ -141,7 +149,6 @@
 \subfile{Exponentiation}
 \subfile{Termination}
 \subfile{Primality}
-\subfile{Polynomials}
 \subfile{Conclusion}
 
 \appendix

@@ -12,7 +12,7 @@ module AKS.Primality.Properties where
 
 open import AKS.Nat using (ℕ; _+_; _≟_; _<_; _>_; _<?_; _≤_)
 open import AKS.Nat using (<-cmp; <-irrefl; <-trans; 0<1+n; ≤-antisym; 0≤n; suc-injective-≤; <⇒≤; ≢⇒¬≟; <⇒≱; n≤m⇒n<m⊎n≡m; ≤-refl; n<1+n)
-open import AKS.Nat using (Acc; acc; <-well-founded; [_,_]; binary-search)
+open import AKS.Nat using (Acc; acc; <-well-founded; _⊂_; Interval; [_,_∣_]; ⊂-well-founded; upward)
 open import AKS.Nat.GCD
   using (_∣_; _∤_; _∣?_; gcd; bézout; lemma; Identity; gcd[a,b]∣a; gcd[a,b]∣b; 0∣n⇒n≈0; ∣-respˡ; ∣⇒≤; ∣-trans)
   renaming (_⊥_ to _coprime_)
@@ -54,7 +54,7 @@ compositionalityⁱ : ∀ n → 1 < n → Acc _<_ n → Compositionality n
 primalityⁱ : ∀ n → 1 < n → Acc _<_ n → Primality n
 
 compositionalityⁱ n 1<n (acc downward)
-  = loop 2 (from-yes (1 <? 2)) 1<n binary-search ¬p<2[p∤n]
+  = loop 2 (from-yes (1 <? 2)) 1<n ⊂-well-founded ¬p<2[p∤n]
   where
   ¬p<2[p∤n] : ∀ {p} → p < 2 → IsPrime p → p ∤ n
   ¬p<2[p∤n] {p} p<2 p-isPrime _ = contradiction p-isPrime (¬prime<2 p p<2)
@@ -68,18 +68,25 @@ compositionalityⁱ n 1<n (acc downward)
   ... | tri≈ _ refl _ = contradiction p∣n (x-isPrime⇒x∤n p-isPrime)
   ... | tri> _ _ x<p = contradiction (suc-injective-≤ p<1+x) (<⇒≱ x<p)
   loop
-    : ∀ x → 1 < x → x ≤ n → [ x , n ]
+    : ∀ x → 1 < x → (x≤n : x ≤ n) → Acc _⊂_ [ x , n ∣ x≤n ]
     → (∀ {p} → p < x → IsPrime p → p ∤ n)
     → Compositionality n
-  loop x 1<x x≤n (acc _ upward) ∀p<x[p∤n] with n≤m⇒n<m⊎n≡m x≤n
-  ... | inj₂ refl = Prime✓ ∀p<x[p∤n]
-  ... | inj₁ x<n with primalityⁱ x 1<x (downward _ x<n)
-  ...   | Composite✓ x-isComposite = loop (1 + x) (<-trans 1<x n<1+n) x<n (upward ≤-refl x<n) ∀p<1+x[p∤n]
-          where ∀p<1+x[p∤n] = cons (λ x-isPrime _ → exclusive x-isPrime x-isComposite) ∀p<x[p∤n]
+  loop x 1<x x≤n (acc next) ∀p<x⇒p∤n with n≤m⇒n<m⊎n≡m x≤n
+  ... | inj₂ refl = Prime✓ ∀p<x⇒p∤n
+  ... | inj₁ x<n with primalityⁱ x 1<x (downward x<n)
+  ...   | Composite✓ x-isComposite = loop (1 + x) (<-trans 1<x n<1+n) x<n (next [1+x,n]⊂[x,n]) ∀p<1+x⇒p∤n
+          where
+          [1+x,n]⊂[x,n] : [ 1 + x , n ∣ x<n ] ⊂ [ x , n ∣ x≤n ]
+          [1+x,n]⊂[x,n] = upward n<1+n ≤-refl
+          ∀p<1+x⇒p∤n = cons (λ x-isPrime _ → exclusive x-isPrime x-isComposite) ∀p<x⇒p∤n
   ...   | Prime✓ x-isPrime with x ∣? n
   ...     | yes x∣n = Composite✓ (IsComposite✓ x x<n x-isPrime x∣n)
-  ...     | no ¬x∣n = loop (1 + x) (<-trans 1<x n<1+n) x<n (upward ≤-refl x<n) ∀p<1+x[p∤n]
-          where ∀p<1+x[p∤n] = cons (λ _ x∣n → ¬x∣n x∣n) ∀p<x[p∤n]
+  ...     | no ¬x∣n = loop (1 + x) (<-trans 1<x n<1+n) x<n (next [1+x,n]⊂[x,n]) ∀p<1+x[p∤n]
+          where
+          [1+x,n]⊂[x,n] : [ 1 + x , n ∣ x<n ] ⊂ [ x , n ∣ x≤n ]
+          [1+x,n]⊂[x,n] = upward n<1+n ≤-refl
+          ∀p<1+x[p∤n] = cons (λ _ x∣n → ¬x∣n x∣n) ∀p<x⇒p∤n
+
 
 primalityⁱ n 1<n wf@(acc downward) with compositionalityⁱ n 1<n wf
 ... | Composite✓ isComposite = Composite✓ isComposite
@@ -94,7 +101,7 @@ primalityⁱ n 1<n wf@(acc downward) with compositionalityⁱ n 1<n wf
   ... | tri> _ _ n<i = contradiction (∣⇒≤ {n≢0 = ≢⇒¬≟ n≢0} i∣n) (<⇒≱ n<i)
       -- i is larger than n so i divides n so i is less then or equal to n ⇒⇐
   ... | tri≈ _ i≡n _ = i≡n
-  ... | tri< i<n _ _ with primalityⁱ i 1<i (downward _ i<n)
+  ... | tri< i<n _ _ with primalityⁱ i 1<i (downward i<n)
   ...   | Prime✓ i-isPrime
         = contradiction i∣n (∀p<n[p∤n] i<n i-isPrime)
         -- i is a prime divisor of n (#1) ⇒⇐
@@ -119,8 +126,8 @@ composite? n with 1 <? n
 ... | Prime✓ isPrime = no λ { isComposite → exclusive isPrime isComposite }
 ... | Composite✓ isComposite = yes isComposite
 
-13-isPrime : IsPrime 13
-13-isPrime = from-yes (prime? 13)
+-- 13-isPrime : IsPrime 13
+-- 13-isPrime = from-yes (prime? 13)
 
-24-isComposite : IsComposite 24
-24-isComposite = from-yes (composite? 24)
+-- 24-isComposite : IsComposite 24
+-- 24-isComposite = from-yes (composite? 24)

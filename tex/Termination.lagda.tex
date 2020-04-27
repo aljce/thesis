@@ -14,8 +14,9 @@
   open import Relation.Nullary.Decidable using (False)
   open import Relation.Nullary.Negation using (contradiction)
   open import Data.Empty using (⊥)
-  open import AKS.Nat using (ℕ; zero; suc; _*_; _<_; _≤_; lte; _≟_)
-  open import AKS.Nat using (+-comm; suc-injective-≡; n≮0)
+  open import AKS.Nat using (ℕ; zero; suc; _∸_; _*_; _<_; _≤_; lte; _≟_)
+  open import AKS.Nat using (+-comm; suc-injective-≡; n≮0; 0≤n; n<1+n; ≤-refl) renaming (n≤m⇒n<m⊎n≡m to n≤m⇒n<m∨n≡m)
+  open import Data.Sum using () renaming (inj₁ to or₁; inj₂ to or₂)
   open import AKS.Binary using (𝔹⁺)
   open 𝔹⁺
   open import AKS.Nat.Divisibility using (_div_; Euclidean; Euclidean✓)
@@ -30,6 +31,7 @@
   open Nat.Reflection using (∀⟨_⟩)
   open import Data.List using ([]; _∷_; List)
   open import Function using (_$_)
+  open import AKS.Unsafe using (BOTTOM)
 \end{code} % $
 \section{A Correctness Interlude}
 \label{sec:a-correctness-interlude}
@@ -270,14 +272,17 @@ less than relation is poorly suited for this task. We will define an inductive
 ordering relation and show that our original definition of ordering is a
 subrelation of the inductive definition. Then if the inductive definition is
 well founded the subrelation will be as well. This last idea is shown below.
+\begin{code}[hide]
+  module Sub₁ where
+\end{code}
 \begin{code}
-  subrelation
-      : ∀ {A : Set} {_≺₁_ _≺₂_ : A → A → Set} {n}
-      → (∀ {a b} → a ≺₂ b → a ≺₁ b)
-      → Acc _≺₁_ n
-      → Acc _≺₂_ n
-  subrelation ≺₂⇒≺₁ (acc down) =
-    acc λ x≺₂n → subrelation ≺₂⇒≺₁ (down (≺₂⇒≺₁ x≺₂n))
+    subrelation
+        : ∀ {A : Set} {_≺₁_ _≺₂_ : A → A → Set} {n}
+        → (∀ {a b} → a ≺₂ b → a ≺₁ b)
+        → Acc _≺₁_ n
+        → Acc _≺₂_ n
+    subrelation ≺₂⇒≺₁ (acc down) =
+      acc λ x≺₂n → subrelation ≺₂⇒≺₁ (down (≺₂⇒≺₁ x≺₂n))
 \end{code}
 Next we turn to the inductive ordering relation. The key idea behind this
 definition is that each $\AgdaInductiveConstructor{≤-step}$ constructor adds one
@@ -287,15 +292,15 @@ left and right bound. The old definition internalizes this concept into the
 definition as the $k$ in
 $a \, \AgdaDatatype{≤} \, b = a \, \AgdaFunction{+} \, k \, \AgdaDatatype{≡} \, b$.
 \begin{code}
-  data _≤ⁱ_ (n : ℕ) (m : ℕ) : Set where
-    ≤-same : n ≡ m → n ≤ⁱ m
-    ≤-step : ∀ {o} → suc o ≡ m → n ≤ⁱ o → n ≤ⁱ m
+    data _≤ⁱ_ (n : ℕ) (m : ℕ) : Set where
+      ≤-same : n ≡ m → n ≤ⁱ m
+      ≤-step : ∀ {o} → suc o ≡ m → n ≤ⁱ o → n ≤ⁱ m
 
-  _<ⁱ_ : ℕ → ℕ → Set
-  n <ⁱ m = suc n ≤ⁱ m
+    _<ⁱ_ : ℕ → ℕ → Set
+    n <ⁱ m = suc n ≤ⁱ m
 
-  2≤ⁱ4 : 2 ≤ⁱ 4
-  2≤ⁱ4 = ≤-step {o = 3} ≡-refl (≤-step {o = 2} ≡-refl (≤-same ≡-refl))
+    2≤ⁱ4 : 2 ≤ⁱ 4
+    2≤ⁱ4 = ≤-step {o = 3} ≡-refl (≤-step {o = 2} ≡-refl (≤-same ≡-refl))
 \end{code}
 This concept also hints at how to show that the old definition is a subrelation
 of the inductive definition. Count $k$ down to $0$ adding a
@@ -305,26 +310,26 @@ $k \, \AgdaFunction{+} \, a \, \AgdaDatatype{≡} \, b$ as $\AgdaFunction{\_+\_}
 is defined on the first argument. So it can simplify terms like
 $0 \, \AgdaFunction{+} \, a$ into $a$ automatically.
 \begin{code}
-  ≤⇒≤ⁱ : ∀ {a b} → a ≤ b → a ≤ⁱ b
-  ≤⇒≤ⁱ {a} {b} (lte k a+k≡b) = loop a b k $ begin
-    k + a ≡⟨ +-comm k a ⟩ a + k ≡⟨ a+k≡b ⟩ b ∎
-    where
-    loop : ∀ a b k → k + a ≡ b → a ≤ⁱ b
-    loop a b zero 0+a≡b = ≤-same $ begin
-      a ≡⟨⟩ 0 + a ≡⟨ 0+a≡b ⟩ b ∎
-    loop a (suc b) (suc k) 1+k+a≡1+b = ≤-step ≡-refl $ loop a b k $ begin
-      k + a ≡⟨ suc-injective-≡ 1+k+a≡1+b ⟩ b ∎
+    ≤⇒≤ⁱ : ∀ {a b} → a ≤ b → a ≤ⁱ b
+    ≤⇒≤ⁱ {a} {b} (lte k a+k≡b) = loop a b k $ begin
+      k + a ≡⟨ +-comm k a ⟩ a + k ≡⟨ a+k≡b ⟩ b ∎
+      where
+      loop : ∀ a b k → k + a ≡ b → a ≤ⁱ b
+      loop a b zero 0+a≡b = ≤-same $ begin
+        a ≡⟨⟩ 0 + a ≡⟨ 0+a≡b ⟩ b ∎
+      loop a (suc b) (suc k) 1+k+a≡1+b = ≤-step ≡-refl $ loop a b k $ begin
+        k + a ≡⟨ suc-injective-≡ 1+k+a≡1+b ⟩ b ∎
 \end{code}
 \begin{code}
-  <⇒<ⁱ : ∀ {a b} → a < b → a <ⁱ b
-  <⇒<ⁱ {a} {b} a<b = ≤⇒≤ⁱ {suc a} {b} a<b
+    <⇒<ⁱ : ∀ {a b} → a < b → a <ⁱ b
+    <⇒<ⁱ {a} {b} a<b = ≤⇒≤ⁱ {suc a} {b} a<b
 \end{code}
 Next we need to prove that any natural forms a rooted well founded tree under
 the inductively defined ordering. This requires a set of mutually recursive
 functions.
 \begin{code}
-  <ⁱ-well-founded : ∀ {n} → Acc _<ⁱ_ n
-  <ⁱ-count-down : ∀ {m n} → m <ⁱ n → Acc _<ⁱ_ m
+    <ⁱ-well-founded : ∀ {n} → Acc _<ⁱ_ n
+    <ⁱ-count-down : ∀ {m n} → m <ⁱ n → Acc _<ⁱ_ m
 \end{code}
 The first accepts the ``player'' supplied proof that some number $m$
 is less than the bound. Then the second function counts $n$ down to $m$ until
@@ -333,15 +338,18 @@ smaller than $m$. Note that every case in $\AgdaFunction{<ⁱ-count-down}$ peals
 off exactly one $\AgdaFunction{suc}$ so \Agda{} is able to infer that the
 functions are structurally decreasing.
 \begin{code}
-  <ⁱ-well-founded {n} = acc (λ x<ⁱn → <ⁱ-count-down x<ⁱn)
-  <ⁱ-count-down {m} {suc .m} (≤-same ≡-refl) = <ⁱ-well-founded {m}
-  <ⁱ-count-down {m} {suc n} (≤-step ≡-refl m≤n) = <ⁱ-count-down {m} {n} m≤n
+    <ⁱ-well-founded {n} = acc (λ x<ⁱn → <ⁱ-count-down x<ⁱn)
+    <ⁱ-count-down {m} {suc .m} (≤-same ≡-refl) = <ⁱ-well-founded {m}
+    <ⁱ-count-down {m} {suc n} (≤-step ≡-refl m≤n) = <ⁱ-count-down {m} {n} m≤n
 \end{code}
 Lastly we bring all the puzzle pieces together and prove that our original
 definition of ordering is well founded.
 \begin{code}
-  <-well-founded : ∀ {n} → Acc _<_ n
-  <-well-founded {n} = subrelation <⇒<ⁱ <ⁱ-well-founded
+    <-well-founded : ∀ {n} → Acc _<_ n
+    <-well-founded {n} = subrelation <⇒<ⁱ <ⁱ-well-founded
+\end{code}
+\begin{code}[hide]
+  open Sub₁ using (<-well-founded)
 \end{code}
 \section{Lie No More}
 \label{sec:lie-no-more}
@@ -368,6 +376,140 @@ with our desired base case.
 
   ⟦_⇑⟧⁺ : ∀ (n : ℕ) {≢0 : False (n ≟ 0)} → 𝔹⁺
   ⟦ suc n ⇑⟧⁺ = ⟦ suc n , <-well-founded ⇑⟧ʰ
+\end{code}
+\section{Binary Search}
+\label{sec:binary-search}
+Consider the following binary search for the value $10$ in the array
+$
+\rowarrowsep=-2pt
+\begin{gmatrix}[b]
+  1 & 5 & 8 & 10 & 11 & 20
+\end{gmatrix}
+$ depicted in equation \ref{eqn:binary-search}. The search starts with the bounds of the entire array
+$\textcolor{blue}{[} 0, 5 \textcolor{blue}{]}$.
+Then it updates the interval to the left half of the array
+$\textcolor{green}{[} 3, 5 \textcolor{green}{]}$.
+It finally narrows in on the correct answer the interval
+$\textcolor{red}{[} 3, 3 \textcolor{red}{]}$.
+As with all the examples described in this chapter this
+algorithm terminates because the intervals are decreasing under a well
+founded relation, strict interval inclusion.
+\begin{align}
+  \label{eqn:binary-search}
+  \begin{gmatrix}[b]
+    \hspace{0.4em} \Line{blue} &
+    1 &
+    5 &
+    8 &
+    \Line{green} \hspace{0.4em} \Line{red} &
+    10 &
+    \Line{red} &
+    11 &
+    20 &
+    \Line{green} \hspace{0.4em} \Line{blue} \hspace{0.4em}
+  \end{gmatrix}
+\end{align}
+An interval $i_2$ strictly includes
+an interval $i_1$ if $i_1$ is a proper subset of $i_2$. If the set is finite
+then this relation is clearly well founded. Unfortunately working with sets is
+tricky in a type theory. So we limit our definition of an
+interval to sets of naturals. Then our intervals are uniquely represented by
+their infimum (lower bound) and supremum (upper bound).
+\begin{code}
+  record Interval : Set where
+    constructor [_,_∣_]
+    field
+      inf : ℕ
+      sup : ℕ
+      inf≤sup : inf ≤ sup
+  open Interval
+\end{code}
+Now we have two bounds to manipulate so there are two possible ways to create an
+interval smaller than another. Firstly to lower the supremum and secondly to
+raise the infimum.
+\begin{code}
+  data _⊂_ (i₁ : Interval) (i₂ : Interval) : Set where
+    downward : inf i₂ ≤ inf i₁ → sup i₁ < sup i₂ → i₁ ⊂ i₂
+    upward : inf i₂ < inf i₁ → sup i₁ ≤ sup i₂ → i₁ ⊂ i₂
+\end{code}
+Often authors prove termination for their binary search algorithm by instead
+thinking about how the distance between the left and right bound decreases. We
+adopt this technique to show that interval inclusion is a subrelation of
+$\AgdaFunction{\_<\_}$. Although its not technically a subrelation but a
+subrelation generated by the function $\AgdaFunction{width}$.
+\begin{code}
+  width : Interval → ℕ
+  width i = sup i ∸ inf i
+
+  ⊂⇒< : ∀ {i₁ i₂} → i₁ ⊂ i₂ → width i₁ < width i₂
+\end{code}
+\begin{code}[hide]
+  open import AKS.Unsafe using (trustMe)
+
+  ∸-monoˡ-< : ∀ {l₁ h₁ l₂ h₂} → l₁ ≤ h₁ → l₂ ≤ h₂ → l₂ ≤ l₁ → h₁ < h₂ → h₁ ∸ l₁ < h₂ ∸ l₂
+  ∸-monoˡ-< {l₁} {h₁} {l₂} {h₂} l₁≤h₁ l₂≤h₂ l₂≤l₁ h₁<h₂ = lte ((h₂ ∸ l₂) ∸ suc (h₁ ∸ l₁)) trustMe
+
+  ∸-monoʳ-< : ∀ {l₁ h₁ l₂ h₂} → l₁ ≤ h₁ → l₂ ≤ h₂ → l₂ < l₁ → h₁ ≤ h₂ → h₁ ∸ l₁ < h₂ ∸ l₂
+  ∸-monoʳ-< {l₁} {h₁} {l₂} {h₂} l₁≤h₁ l₂≤h₂ l₂<l₁ h₁≤h₂ = lte ((h₂ ∸ l₂) ∸ suc (h₁ ∸ l₁)) trustMe
+
+  ⊂⇒< {[ inf-i₁ , sup-i₁ ∣ inf-i₁≤sup-i₁ ]} {[ inf-i₂ , sup-i₂ ∣ inf-i₂≤sup-i₂ ]} (downward inf-i₂≤inf-i₁ sup-i₁<sup-i₂)
+    = ∸-monoˡ-< inf-i₁≤sup-i₁ inf-i₂≤sup-i₂ inf-i₂≤inf-i₁ sup-i₁<sup-i₂
+  ⊂⇒< {[ inf-i₁ , sup-i₁ ∣ inf-i₁≤sup-i₁ ]} {[ inf-i₂ , sup-i₂ ∣ inf-i₂≤sup-i₂ ]} (upward inf-i₂<inf-i₁ sup-i₁≤sup-i₂)
+    = ∸-monoʳ-< inf-i₁≤sup-i₁ inf-i₂≤sup-i₂ inf-i₂<inf-i₁ sup-i₁≤sup-i₂
+  -- ⊂⇒< = BOTTOM
+\end{code}
+As the types of our elements are different we need to generalize
+$\AgdaFunction{subrelation}$. We add a function to covert between the types.
+Technically the function is a \textit{functor} \cite{awodey}
+from the \textit{category} with $\AgdaFunction{\_≺₂\_}$ as morphisms to the
+category with $\AgdaFunction{\_≺₁\_}$ as morphisms.
+\begin{code}
+  subrelation
+      : ∀ {A : Set} {B : Set}
+          {_≺₁_ : A → A → Set}
+          {_≺₂_ : B → B → Set}
+          {f : B → A}
+          {n : B}
+      → (∀ {x y} → x ≺₂ y → f x ≺₁ f y)
+      → Acc _≺₁_ (f n)
+      → Acc _≺₂_ n
+\end{code}
+\begin{code}[hide]
+  subrelation ≺₂⇒≺₁ (acc down) =
+    acc λ x≺₂n → subrelation ≺₂⇒≺₁ (down (≺₂⇒≺₁ x≺₂n))
+\end{code}
+Although we will not be implementing binary search in this thesis, this concept
+will prove useful as it allows us to write terminating code that counts up to
+some fixed value.
+\begin{code}
+  ⊂-well-founded : ∀ {i} → Acc _⊂_ i
+  ⊂-well-founded = subrelation ⊂⇒< <-well-founded
+
+  count-up-to : ℕ → List ℕ
+  count-up-to n = loop 0 0≤n ⊂-well-founded
+\end{code}
+\begin{code}[hide]
+    where
+\end{code}
+Counting up is simply always choosing to tighten the left bound of the interval.
+Eventually the user reaches the upper bound and interval becomes $[ n, n ]$.
+This interval can not be shortened and the recursion must terminate.
+\begin{code}
+    loop : ∀ (x : ℕ) (x≤n : x ≤ n) (acc : Acc _⊂_ [ x , n ∣ x≤n ]) → List ℕ
+    loop x x≤n (acc next) with n≤m⇒n<m∨n≡m x≤n
+    ... | or₂ x≡n = x ∷ []
+    ... | or₁ x<n = x ∷ loop (1 + x) x<n (next [1+x,n]⊂[x,n])
+\end{code}
+\begin{code}[hide]
+      where
+\end{code}
+\begin{code}
+      [1+x,n]⊂[x,n] : [ 1 + x , n ∣ x<n ] ⊂ [ x , n ∣ x≤n ]
+      [1+x,n]⊂[x,n] = upward n<1+n ≤-refl
+\end{code}
+\begin{code}
+  zero-to-three : count-up-to 3 ≡ 0 ∷ 1 ∷ 2 ∷ 3 ∷ []
+  zero-to-three = ≡-refl
 \end{code}
 
 \end{document}

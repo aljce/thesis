@@ -47,9 +47,9 @@ private
 
 ⟦_⇑_⟧ʰ : ∀ n → Acc _<_ n → ∀ {≢0 : False (n ≟ 0)} → 𝔹⁺
 ⟦ suc n ⇑ acc downward ⟧ʰ with suc n div 2
-... | Euclidean✓ (suc q) 0 refl r<m = ⟦ suc q ⇑ downward _ lemma₁ ⟧ʰ 0ᵇ
+... | Euclidean✓ (suc q) 0 refl r<m = ⟦ suc q ⇑ downward lemma₁ ⟧ʰ 0ᵇ
 ... | Euclidean✓ zero 1 refl r<m = 𝕓1ᵇ
-... | Euclidean✓ (suc q) 1 refl r<m = ⟦ suc q ⇑ downward _ lemma₂ ⟧ʰ 1ᵇ
+... | Euclidean✓ (suc q) 1 refl r<m = ⟦ suc q ⇑ downward lemma₂ ⟧ʰ 1ᵇ
 
 ⟦_⇑⟧⁺ : ℕ⁺ → 𝔹⁺
 ⟦ ℕ+ n ⇑⟧⁺ = ⟦ suc n ⇑ <-well-founded ⟧ʰ
@@ -64,9 +64,9 @@ private
   where
   ℕ⁺→𝔹⁺→ℕ : ∀ (n : ℕ) (rec : Acc _<_ n) {≢0 : False (n ≟ 0)} → ⟦ ⟦ n ⇑ rec ⟧ʰ {≢0} ⇓⟧⁺ ≡ n
   ℕ⁺→𝔹⁺→ℕ (suc n) (acc downward) with suc n div 2
-  ... | Euclidean✓ (suc q) 0 refl r<m rewrite ℕ⁺→𝔹⁺→ℕ (suc q) (downward _ lemma₁) {tt} = ∀⟨ q ∷ [] ⟩
+  ... | Euclidean✓ (suc q) 0 refl r<m rewrite ℕ⁺→𝔹⁺→ℕ (suc q) (downward lemma₁) {tt} = ∀⟨ q ∷ [] ⟩
   ... | Euclidean✓ zero 1 refl r<m = refl
-  ... | Euclidean✓ (suc q) 1 refl r<m rewrite ℕ⁺→𝔹⁺→ℕ (suc q) (downward _ lemma₂) {tt} = ∀⟨ q ∷ [] ⟩
+  ... | Euclidean✓ (suc q) 1 refl r<m rewrite ℕ⁺→𝔹⁺→ℕ (suc q) (downward lemma₂) {tt} = ∀⟨ q ∷ [] ⟩
 
 ⌈log₂_⌉⁺ : 𝔹⁺ → ℕ
 ⌈log₂ 𝕓1ᵇ ⌉⁺ = 1
