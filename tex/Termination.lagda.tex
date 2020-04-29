@@ -35,14 +35,14 @@
 \end{code} % $
 \section{A Correctness Interlude}
 \label{sec:a-correctness-interlude}
-The previous chapter omitted a critical flaw in it's analysis. The code below is
+The previous chapter omitted a critical flaw in its analysis. The code below is
 rejected by the \Agda{} compiler. The compiler's \textit{termination checker} \cite{agda}
-fails as \Agda{} can not infer that the result of non zero integer division by
+fails as \Agda{} can not infer that the result of non-zero integer division by
 two always returns an integer strictly smaller than the input. The termination
-checker ensures than every function is total or in other
-words the termination checker disallows infinite loops. This termination proof
-is obvious but termination proofs can quickly become complex. Famously checking
-termination, commonly called the halting problem is undecidable. 
+checker ensures than every function is total. In other words,
+the termination checker disallows infinite loops. This termination proof
+is obvious but termination proofs can quickly become complex. In general checking
+termination, commonly called the halting problem, is undecidable. 
 \begin{code}[hide]
   module Bad₁ where
     {-# TERMINATING #-}
@@ -56,7 +56,7 @@ termination, commonly called the halting problem is undecidable.
 \end{code}
 This checker is a keystone of the correctness of the logic of \Agda{}. Consider
 the following function with a similar call graph. Instead of the input
-decreasing to some base case it doubles every recursive call. This function can
+decreasing to some base case it doubles with every recursive call. This function can
 be used to prove falsehood, thus a logic with unconstrained recursion is
 inconsistent.
 \begin{code}[hide]
@@ -84,17 +84,17 @@ because false is true''.
 \end{code}
 Thankfully none of these false expressions are accepted by the \Agda{} compiler.
 This begs the question how does \Agda{} determine which recursive functions to
-accept. How can it solve the halting problem? The answer is unsurprisingly it
-does not solve the halting problem. Instead the compiler only accepts recursive
+accept? Unfortunately the \Agda{} compiler can not solve the halting problem so
+it must be restrictive. The compiler only accepts recursive
 calls that are \textit{structurally decreasing}, a small
 subset of the set of recursive functions. A recursive call is structurally
 decreasing if the call occurs on a strict sub expression \cite{agda}. The
-expression $\AgdaInductiveConstructor{suc} \, n$ is a strict sub expression of
+expression $\AgdaInductiveConstructor{suc} \, n$ is a strict sub-expression of
 $\AgdaInductiveConstructor{suc} \,
   (\AgdaInductiveConstructor{suc} \,
     (\AgdaInductiveConstructor{suc} \, n))
 $
-but $\AgdaInductiveConstructor{suc} \, n$ is not a strict sub expression of
+but $\AgdaInductiveConstructor{suc} \, n$ is not a strict sub-expression of
 $\AgdaInductiveConstructor{suc} \, n$.
 Addition, our first example of recursion, is acceptable as
 $n <_{sub} \AgdaInductiveConstructor{suc} \, n$.
@@ -109,7 +109,7 @@ $n <_{sub} \AgdaInductiveConstructor{suc} \, n$.
 \begin{code}[hide]
   open import AKS.Nat using (_+_)
 \end{code}
-The following inductive definition of Fibonacci
+The following inductive definition of the Fibonacci function
 has structurally decreasing calls as
 $\AgdaInductiveConstructor{suc} \, n <_{sub} \AgdaInductiveConstructor{suc} \, (\AgdaInductiveConstructor{suc} \, n)$
 and
@@ -123,8 +123,9 @@ $n <_{sub} \AgdaInductiveConstructor{suc} \, (\AgdaInductiveConstructor{suc} \, 
 So far all the recursive functions described have been
 \textit{primitive recursive} \cite{soare}. This is a large class but the set of
 structurally decreasing functions is larger than the set of primitive
-recursive functions. The Ackerrmann function is the conical example of a non
-primitive recursive function. \begin{code}
+recursive functions. The Ackerrmann function is the canonical example of
+function which is not primitive recursive.
+\begin{code}
   ack : ℕ → ℕ → ℕ
   ack zero m = suc m
   ack (suc n) zero = ack n (suc zero)
@@ -152,27 +153,27 @@ $
 <_{sub}
 (\AgdaInductiveConstructor{suc} \, n, \, \AgdaInductiveConstructor{suc} \, m)
 $. \\
-\section{Well Founded Relations}
+\section{Well-Founded Relations}
 \label{sec:well-founded-relations}
 An astute reader may have noticed a pattern. \Agda{} accepts your recursive
-definition if it can infer a structural \textit{well founded relation}
-\cite{soare}. A well founded relation is a binary relation $\prec$ that has no
+definition if it can infer a structural \textit{well-founded relation}
+\cite{soare}. A well-founded relation is a binary relation $\prec$ that has no
 infinitely descending chains $\dots \prec x_k \prec \dots \prec x_1 \prec x_0$.
-For instance the strict ordering over the naturals is well founded
+For instance the strict ordering over the naturals is well-founded
 as every chain will eventually reach the zero natural.
 \begin{align}
   \label{eqn:wellfounded-natural}
   0 < 1 < 2 < 3 < 4 < 5
 \end{align}
-The non strict ordering is not well founded as an infinite chain of the
+The non strict ordering is not well-founded as an infinite chain of the
 reflexivity axiom can be constructed.
 \begin{align}
   \label{eqn:non-wellfounded-natural}
   \dots \leq 0 \leq \dots \leq 0 \leq 0
 \end{align}
-Linear ordering lists do not capture the full structure of a well founded
-relation. A well founded relation often has multiple elements that could be
-appended to the chain. This idea is illustrated in the well founded tree
+Unfortunately these relation chains do not capture the full structure of well-founded
+relations. A well-founded relation often has multiple elements that could be
+appended to the chain. This idea is illustrated in the well-founded tree
 rooted at 3 found in figure \ref{fig:wellfounded-tree}.
 \begin{figure}[h]
   \centering
@@ -191,13 +192,13 @@ rooted at 3 found in figure \ref{fig:wellfounded-tree}.
       ]
     ]
   \end{tikzpicture}
-  \caption{A well founded tree }
+  \caption{A well-founded tree }
   \label{fig:wellfounded-tree}
 \end{figure}
-These trees encapsulate the full structure of a well ordering relation.
+These trees encapsulate the full structure of a well-ordering relation.
 Therefore if we could express this tree as an \Agda{} datatype we could supply
-our own well ordering relation even when \Agda{} can not infer it. The final
-datatype that represents well founded trees is somewhat puzzling at first
+our own well-ordering relation even when \Agda{} can not infer it. The final
+datatype that represents well-founded trees is somewhat puzzling at first
 glance. So to introduce it we start with a sensible datatype and make small
 changes to the definition until we have reached the correct representation.
 These trees are general trees, trees that can have an arbitrary number
@@ -220,7 +221,7 @@ can be invoked with the index of the requested child.
     data RoseTree : Set where
       Node : (ℕ → RoseTree) → RoseTree
 \end{code}
-Unfortunately this makes our definition unusable as now every rosetree must have
+Unfortunately this makes our definition unusable as now every rose tree must have
 infinite size. From a game theotertic perspective, a consumer may request
 the first child of every node repetitively.
 \begin{code}
@@ -238,8 +239,9 @@ bound and ensuring that any index is less than the bound.
       Node : (∀ {lower : ℕ} → lower < bound → RoseTree lower)
            → RoseTree bound
 \end{code}
-Nothing requires the bound to be naturals or for the relation to be
-$\AgdaFunction{\_<\_}$. By parameterizing the datatype by the relation we
+Note that the definition above does not make use of any properties specific to
+natural numbers. The definition simply requires a binary relation.
+By parameterizing the datatype by the relation we
 arrive at our finial definition. This is often called the accessibility
 predicate so we update the names accordingly.
 \begin{code}
@@ -247,8 +249,8 @@ predicate so we update the names accordingly.
     acc : (∀ {lower : A} → lower ≺ bound → Acc _≺_ lower)
         → Acc _≺_ bound
 \end{code}
-Continuing with the game theoretic analysis proving a relation is well
-founded for a specific bound is a simple game. A game where the prover
+Continuing with the game theoretic analysis proving a relation is well-founded
+for a specific bound is a simple game. A game where the prover
 continually asks for a lower bound and wins when it is impossible for the
 other player to supply a lower bound. This game plays out below for a bound of $3$.
 \begin{code}
@@ -265,13 +267,14 @@ other player to supply a lower bound. This game plays out below for a bound of $
 \end{code}
 \section{Win Every Game}
 \label{sec:win-every-game}
-Now we turn to proving that any natural forms a rooted well formed tree under the
-strict ordering relation. Like most things in math this is much harder to
-accomplish in general then for specific examples. Specifically our choice of
+Now we turn to proving that any natural forms a rooted well-founded tree under the
+strict ordering relation. Usually proving a property holds for any $n$ is harder
+then proving that property holds for specific $n$. This concept applies to
+proving that every natural is well-founded. Specifically our choice of
 less than relation is poorly suited for this task. We will define an inductive
 ordering relation and show that our original definition of ordering is a
-subrelation of the inductive definition. Then if the inductive definition is
-well founded the subrelation will be as well. This last idea is shown below.
+subrelation of the inductive-definition. Then if the inductive definition is
+well-founded the subrelation will be as well. This last idea is shown below.
 \begin{code}[hide]
   module Sub₁ where
 \end{code}
@@ -324,7 +327,7 @@ $0 \, \AgdaFunction{+} \, a$ into $a$ automatically.
     <⇒<ⁱ : ∀ {a b} → a < b → a <ⁱ b
     <⇒<ⁱ {a} {b} a<b = ≤⇒≤ⁱ {suc a} {b} a<b
 \end{code}
-Next we need to prove that any natural forms a rooted well founded tree under
+Next we need to prove that any natural forms a rooted well-founded tree under
 the inductively defined ordering. This requires a set of mutually recursive
 functions.
 \begin{code}
@@ -392,8 +395,8 @@ $\textcolor{green}{[} 3, 5 \textcolor{green}{]}$.
 It finally narrows in on the correct answer the interval
 $\textcolor{red}{[} 3, 3 \textcolor{red}{]}$.
 As with all the examples described in this chapter this
-algorithm terminates because the intervals are decreasing under a well
-founded relation, strict interval inclusion.
+algorithm terminates because the intervals are decreasing under a well-founded
+relation, strict interval inclusion.
 \begin{align}
   \label{eqn:binary-search}
   \begin{gmatrix}[b]
@@ -435,7 +438,7 @@ raise the infimum.
 Often authors prove termination for their binary search algorithm by instead
 thinking about how the distance between the left and right bound decreases. We
 adopt this technique to show that interval inclusion is a subrelation of
-$\AgdaFunction{\_<\_}$. Although its not technically a subrelation but a
+$\AgdaFunction{\_<\_}$. Although it is not technically a subrelation. It is a
 subrelation generated by the function $\AgdaFunction{width}$.
 \begin{code}
   width : Interval → ℕ

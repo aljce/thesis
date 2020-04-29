@@ -253,7 +253,7 @@ call in negative position.
   false : ⊥
   false = Bad-false Bad-true
 \end{code}
-Note how similar $\AgdaFunction{false}$ is to the famous non terminating omega
+Note how similar $\AgdaFunction{false}$ is to the non-terminating omega
 combinator shown in \ref{eqn:omega}. The only difference is the required
 wrapping and unwrapping of $\AgdaDatatype{Bad}$ values. Unlike the type
 $\AgdaDatatype{Bad}$, the type $\AgdaDatatype{IsPrime}$ given above is actually a safe
@@ -265,8 +265,8 @@ outside the scope of this thesis.
 \end{align}
 We can remove the recursion by considering when a number can divide a prime. If
 some number divides a prime then that number is either $1$ or the prime itself.
-This leads to a non recursive definition of primality. A natural number is prime
-when it is greater than $1$ and it's only divisors are $1$ and itself.
+This leads to a non-recursive definition of primality. A natural number is prime
+when it is greater than $1$ and its only divisors are $1$ and itself.
 \begin{code}[hide]
   module Primality₂ where
     infixr 3 _or_
@@ -420,8 +420,7 @@ less than $2$ this makes a good empty list.
 Next we need to construct an analog to append. If we have a list of prime
 divisibility up to but not including $x$ and a proof that $x$ does not
 divide $n$ we can construct a list of prime divisibility including $x$. This
-proof proceeds by comparing $p$ and $x$ using a three way trichotomous
-comparison.
+proof proceeds by comparing $p$ and $x$ using a trichotomous comparison.
 \begin{code}
     cons
       : ∀ {x}
@@ -471,7 +470,6 @@ transform our continuation passing style list into our final primality condition
   primality n 1<n wf@(acc downward) with compositionality n 1<n wf
   ... | Composite✓ isComposite = Composite✓ isComposite
   ... | Prime✓ ∀p<n⇒p∤n = Prime✓ (IsPrime✓ 1<n ∀i∣n⇒i≡n)
-    -- All prime divisors less then n do not divide n therefore n is prime (#1)
 \end{code}
 \begin{code}[hide]
     where

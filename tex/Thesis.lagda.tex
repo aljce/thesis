@@ -9,9 +9,6 @@
 \DeclarePairedDelimiter\Floor{\lfloor}{\rfloor}
 \usepackage{gauss}
 
-% TODO: banish this evil
-\usepackage{lipsum}
-
 \usepackage{subfiles}
 \usepackage{epigraph}
 \setlength{\epigraphwidth}{0.9\textwidth}
@@ -19,6 +16,9 @@
 
 \usepackage{tikz}
 \usepackage{tikz-qtree}
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
 \usepackage{url}
 \usepackage{hyperref}
@@ -104,11 +104,9 @@
 
 \newcommand{\CitationNeeded}[1]{{\color{blue} [citation needed: #1]}}
 
-\newcommand{\Line}[1]{%
-  {\color{#1} \strut\vrule}
-}
+\newcommand{\Line}[1]{{\color{#1} \strut\vrule}}
 
-\setlength{\parindent}{0em}
+\setlength{\parindent}{0pt}
 
 \title{A Replication of the AKS Primality Decision Algorithm}
 \author{Alice J. McKean}
@@ -133,8 +131,8 @@ and supporting me through this journey.
 \chapter*{Abstract}
 In this thesis we explore formalizing the AKS primality decision algorithm in
 the \Agda{} proof assistant. We begin with a discussion of the AKS algorithm, an
-algorithm that determines if a given input is prime or composite. This algorithm
-will guide the development of basic number theory in the \Agda{} programming
+algorithm that determines if a given input is prime or composite in polynomial time.
+This algorithm will guide the development of basic number theory in the \Agda{} programming
 language. This language is a dependently typed formal logic capable of ensuring
 the correctness of mathematical statements. In this mathematical assembly we
 prove the correctness of the exponentiation by squaring algorithm. Then we

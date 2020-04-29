@@ -6,4 +6,38 @@
 \chaptermark{Introduction}
 \markboth{Introduction}{Introduction}
 
+\begin{algorithm}[H]
+  \caption{The AKS Primality Decision Algorithm}
+  \label{fig:prime-slow}
+  \begin{algorithmic}
+    \Function{IsPrime}{$n$}
+    \State $r \leftarrow 2$
+    \While{true}
+      \If{$gcd(r, n) = 1$}
+        \State \textbf{return} NO
+      \EndIf
+      \State $q \leftarrow$ largest prime factor of $r - 1$
+      \If{$q \geq 2 \sqrt{r} \, \Lg{n} + 2$ and
+          $n^{(r - 1) / q} \not\equiv 1 \text{ mod } r$}
+        \State \textbf{break}
+      \EndIf
+      \State $r \leftarrow$ next prime after $r$
+    \EndWhile
+    \For{$a \leftarrow 1$ \textbf{to} $\Floor[\big]{2 \sqrt{r} \, \Lg{n}} + 1$}
+      \If{$(x - a)^n \not\equiv (x^n - a) \text{ mod } (x^r - 1) \text{ in } \mathbb{Z}_n[x]$}
+        \State \textbf{return} NO
+      \EndIf
+    \EndFor
+    \If{$n$ is a perfect power}
+      \State \textbf{return} NO
+    \Else
+      \State \textbf{return} YES
+    \EndIf
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+
+% defined well typed
+% define setoid
 \end{document}

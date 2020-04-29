@@ -6,6 +6,49 @@
 \chaptermark{Conclusion}
 \markboth{Conclusion}{Conclusion}
 
-\lipsum[5-7]
+This thesis described a selection of number theoretic concepts required for the
+formalization and implementation of the AKS primality decision algorithm in the
+\Agda{} proof assistant. We began with a high level overview of the AKS
+algorithm. This overview outlined the necessary mathematical concepts that would
+be required to implement AKS in a proof assistant. As the \Agda{} proof
+assistant does not have the mathematical lexicon of the average human number
+theorist this list of theorems was quite large. As this is an undergraduate time
+limited thesis, we choose to explicate a select few from this list. \\
+
+In Chapter \ref{chap:exponentiation} we iteratively developed an exponentiation
+algorithm that runs in logarithmic time relative to the exponent. This algorithm
+can exponentiate any base as long as the base forms a commutative monoid under
+its multiplication operation. After this we proved that our exponentiation
+algorithm was equal to the standard grade school method of computing
+exponentials. This algorithm appears in the AKS algorithm multiple times and
+importantly the type of the base changes in each location necessitating the
+ability to exponentiate arbitrary commutative monoids. \\
+
+Next in Chapter \ref{chap:termination} we investigated how \Agda{} is able to
+ensure non-looping behavior or in other words reject circular definitions. We
+remarked on the strength of Agda's termination checker, the code that rejects
+potentially looping programs. We discovered that \Agda{} can tell if a program
+is soundly defined if it can infer a well-founded relation for its inputs. As
+\Agda{} does not always succeed in this inference we then built machinery to
+provide \Agda{} with our own well-founded relation. This allows us to express
+complex recursive algorithms without the fear of non-termination. \\
+
+Lastly we codified the correct representation of a
+decision procedure in a proof relevant setting. As AKS is a decision procedure
+getting this correct is paramount. We then developed a decision procedure for
+the divisibility relation common in number theory. The ability to test if one
+number divides another was immediately useful. As we ended the chapter with a
+brute force primality decision procedure. This is a critical sub-component of the
+AKS algorithm as AKS requires a list of ``small'' primes to test the input
+against. \\
+
+Unfortunately we did not develop every required component to prove the
+correctness of AKS but we estimate at least 75\% of the required components are
+completed. Some of the developed but not described components are as follows, a
+gcd function that works over an arbitrary euclidean domain, a polynomial
+datatype that forms a euclidean domain, a modular ring datatype, and many more.
+All of these formulations are available publicly in the github repo
+\url{https://github.com/mckeankylej/thesis}. With more work we believe the
+correctness of AKS can be fully formalized.
 
 \end{document}

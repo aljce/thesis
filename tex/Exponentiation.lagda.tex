@@ -38,7 +38,7 @@ students often learn that exponentiation is ``repeated'' multiplication. This
 thought is made more precise below:
 \begin{align}
   \label{eqn:exp-first-idea}
-  x^n = \underbrace{x \times x \times \dots \times x}_{n \text{ multiplications}}
+  x^n = \underbrace{x \times x \times \dots \times x}_{n - 1 \text{ multiplications}}
 \end{align}
 The equation above lacks parentheses, arbitrarily assigning right precedence
 the equation becomes:
@@ -103,9 +103,9 @@ using a base of complex numbers as the naturals, integers, and reals are all
 subclasses of $\mathbb{C}$. This solution has two problems, firstly subtyping
 (the type theoretic analog of subclassing) is an open problem in a language like
 \Agda{} \cite{algebraic-subtyping}. Secondly there are types which are not
-subclasses of $\mathbb{C}$ that we would like to exponentiate. A famous example
-from linear algebra, the nth entry of the Fibonacci sequence can be found by
-raising a certain matrix to the nth power \cite{linear-algebra}.
+subclasses of $\mathbb{C}$ that we would like to exponentiate. A notable example
+from linear algebra, the $n$th entry of the Fibonacci sequence can be found by
+raising a certain matrix to the $n$th power \cite{linear-algebra}.
 \begin{align}
   \label{eqn:fib-example}
   \rowarrowsep=-2pt
@@ -121,13 +121,14 @@ raising a certain matrix to the nth power \cite{linear-algebra}.
   \end{gmatrix}
   }^n
 \end{align}
-In the coming chapters we will need to exponentiate non number types so we need
+In the coming chapters we will need to exponentiate non-number types so we need
 to step back and generalize our base. In the previous section the proofs
 required almost no properties of multiplication. The proofs required an
 associative binary operation equipped with an identity element. Those
 constraints basically define a monoid. A quick sanity check shows that all the
 types listed above form a monoid under their respective multiplication
 operators. \\
+
 We can generalize our definition by creating a module that takes any monoid.
 \begin{code}[hide]
   open import Algebra using (Monoid; CommutativeMonoid)
@@ -184,8 +185,8 @@ proof generating function $\AgdaFunction{∙-congˡ}$.
 \end{code}
 Another core law of exponentiation is the fact that exponentiation distributes
 over multiplication or in our case the binary operator
-$(x \cdot y)^n = x^n \cdot y^n$. Unfortunately this law is false over non
-commutative monoids. For instance the free monoid, commonly called the list
+$(x \cdot y)^n = x^n \cdot y^n$. Unfortunately this law is false over
+non-commutative monoids. For instance the free monoid, commonly called the list
 data structure \cite{awodey}, is a counterexample to this law:
 \begin{align}
   \label{eqn:dist-counterexample}
@@ -199,7 +200,7 @@ data structure \cite{awodey}, is a counterexample to this law:
 This means we need to strength our assumptions and work with commutative
 monoids. As every commutative monoid is a monoid all our previous work holds
 true, and this can be witnessed by passing the correct modules around.
-Note that we now have access to the comm axiom, the proof that the
+Note that we now have access to the $\AgdaFunction{comm}$ axiom, the proof that the
 binary operator is commutative. 
 \begin{code}
   module Exponentiation₂ {c ℓ} (M : CommutativeMonoid c ℓ) where
@@ -235,25 +236,27 @@ reassociating the terms in reverse.
 \end{code}
 We end this section by analyzing the run time of this algorithm. The run time
 can be represented by this simple recurrence. Assume that the binary operation
-runs in $\BigO{f(n)}$ time.
+runs in $\BigO{1}$ time\footnote
+{In general this assumption is false but we
+  will use this algorithm to exponentiate modular rings.
+}.
 \begin{align}
   \label{eqn:slow-recurrence}
   \begin{split}
     T(0) &= \BigO{1} \\
-    T(n) &= T(n - 1) + \BigO{f(n)}
+    T(n) &= T(n - 1) + \BigO{1}
   \end{split}
 \end{align}
-This recurrence clearly solves to $T(n) = \BigO{n f(n)}$. This linear result obscures
+This recurrence clearly solves to $T(n) = \BigO{n}$. This linear result obscures
 the exponential run time of this algorithm. The key to realize this is to ask
 ``What does n represent in that recurrance?'' It represents the full integer not
 the length of the integer's binary representation. This insight shows that an inductively
 defined exponential algorithm will run exponentially slower then run time of the
-binary operation. This assumes the binary operation runs in logarithmic time
-$f(n) = \Lg{n}^c$.
+binary operation.
 \section{Exponential Speedup}
 \label{sec:exponential-speedup}
-The solution to this exponential problem can be found by analayzing exponentials
-of exponentials. In the following equation assume $n$ is a power of two $n = 2^\ell$:
+The solution to this exponential problem can be found by raising a base to
+powers of 2. In the following equation assume $n$ is a power of two $n = 2^\ell$:
 \begin{align}
   \label{eqn:squaring-even}
   x^n = x^{2^{\, \ell}}
@@ -268,12 +271,10 @@ algorithm is modeled by the recurrence given below.
   \label{eqn:power-of-two-recurrance}
   \begin{split}
     T(0) &= \BigO{1} \\
-    T(n) &= T(n / 2) + \BigO{f(n)}
+    T(n) &= T(n / 2) + \BigO{1}
   \end{split}
 \end{align}
-When $f(n) = \Lg{n}^c$ the recurrence can be solved by the master method
-% TODO: citation going off margin
-\cite{clrs} to yield a complexity of $T(n) = \BigO{\Lg{n}^{c + 1}}$. This is an
+The well known recurrence yields a complexity of $T(n) = \BigO{\Lg{n}}$. This is an
 exponential improvement. Unfortunately this algorithm only works correctly for
 powers of two. It's important to realize why this algorithm only works correctly
 for powers of two. Note that equation \ref{eqn:squaring-even} requires n to be
@@ -305,13 +306,13 @@ This leads straight into a similar cased based recurrence.
     T(0) &= \BigO{1} \\
     T(n) &=
     \begin{cases}
-      T(n / 2) + \BigO{f(n)} & n \text{ is even} \\
-      T(n / 2) + 2 \BigO{f(n)} & n \text{ is odd} \\
+      T(n / 2) + \BigO{1} & n \text{ is even} \\
+      T(n / 2) + 2 \BigO{1} & n \text{ is odd} \\
   \end{cases}
   \end{split}
 \end{align}
 The cases in this recurrence collapse together as the constant $2$ folds into
-the big o term $\BigO{f(n)}$. This fact makes this recurrence equal to
+the big o term $\BigO{1}$. This fact makes this recurrence equal to
 \ref{eqn:power-of-two-recurrance} and so they have equal run time.
 \section{A Binary Digression}
 \label{sec:a-binary-digression}
@@ -319,23 +320,25 @@ We could attempt to translate definition \ref{eqn:squaring-def-division} directl
 \Agda{}. While this is possible the definition obstructs proof writing as
 checking for parity and integer division are non trivial constructions in
 \Agda{}. Instead we can apply a couple of well known tricks in the world
-of bitwise programming. Firstly division by two is the same as bit shift right
-by 1.
+of bitwise programming. Firstly division by two is the same as bit shift right ($\gg$)
+by 1. In the following code $n_i$ represents the $i$th bit of $n$ and
+$n_{\ell - 1} n_{\ell - 2} \dots n_{1} n_{0}$ represents the bitstring of $n$.
 \begin{align}
-  n / 2  &=  \Parens[\big]{n_{\ell - 1} n_{\ell - 2} \dots n_{1} n_{0}} / 2 \\
-  {}     &=  \Parens[\big]{2^{\ell - 1}n_{\ell - 1} + 2^{\ell - 2} n_{\ell - 2} + \dots + 2^1 n_1 + 2^0 n_0} / 2 \\
-  {}     &=  \Parens[\big]{2^{\ell - 1}n_{\ell - 1}} / 2
-           + \Parens[\big]{2^{\ell - 2} n_{\ell - 2}} / 2
-           + \dots
-           + \Parens[\big]{2^1 n_1} / 2
-           + \Parens[\big]{2^0 n_0} / 2 \\
-  {}     &=  2^{\ell - 2}n_{\ell - 1}
-           + 2^{\ell - 3} n_{\ell - 2}
-           + \dots
-           + 2^0 n_1 \\
-  {}     &= n_{\ell - 2} n_{\ell - 3} \dots n_{1} = n \gg 1
+  \Floor{n / 2}
+  {} &= \Floor[\big]{\Parens[\big]{n_{\ell - 1} n_{\ell - 2} \dots n_{1} n_{0}} / 2} \\
+  {} &= \Floor[\big]{\Parens[\big]{2^{\ell - 1}n_{\ell - 1} + 2^{\ell - 2} n_{\ell - 2} + \dots + 2^1 n_1 + 2^0 n_0} / 2} \\
+  {} &= \Floor[\big]{\Parens[\big]{2^{\ell - 1}n_{\ell - 1}} / 2}
+      + \Floor[\big]{\Parens[\big]{2^{\ell - 2} n_{\ell - 2}} / 2}
+      + \dots
+      + \Floor[\big]{\Parens[\big]{2^1 n_1} / 2}
+      + \Floor[\big]{\Parens[\big]{2^0 n_0} / 2} \\
+  {} &= 2^{\ell - 2}n_{\ell - 1}
+      + 2^{\ell - 3} n_{\ell - 2}
+      + \dots
+      + 2^0 n_1 \\
+  {} &= n_{\ell - 2} n_{\ell - 3} \dots n_{1} = n \gg 1
 \end{align}
-The term $\Parens[\big]{2^0 n_0} / 2$ disappears because the numerator is less
+The term $\Floor[\big]{\Parens[\big]{2^0 n_0} / 2}$ disappears because the numerator is less
 than $2$, a quirk of integer division. By a similar analysis shown above the
 parity of an integer can be determined by the first bit of the integer's binary
 representation. If the first bit is set then the integer is odd. These two
@@ -412,8 +415,8 @@ in the following sections.
   evaluation-test = ≡-refl
 \end{code}
 In order to develop a way to upcast naturals to our binary represenation we
-need to introduce an axiomamtic method of computing integer division. In order
-to use the results of integer division a user usually requires both the quotient
+need to introduce an formal specification of integer division. In order
+to make use of integer division we usually require both the quotient
 and remainder so we create a type that bundles these results together. This type
 also contains a proof of correctness of the division algorithm along with a
 proof that the remainder is less than the divisor.
@@ -488,7 +491,7 @@ the body of the proof.
 In this section we redefine our exponential inline with
 \ref{eqn:squaring-def-shift}. Then we prove that the fast exponential is
 equivalent to the inductively defined exponential up to setoid equality. In
-order to do this we need to rename the old exponential and all it's associated
+order to do this we need to rename the old exponential and all its associated
 proofs. To accomplish this we tac an (i)nductive onto all the old functions and proofs.
 \begin{code}
   module Exponentiation₃ {c ℓ} (M : CommutativeMonoid c ℓ) where
