@@ -105,25 +105,13 @@
 \newcommand{\CitationNeeded}[1]{{\color{blue} [citation needed: #1]}}
 
 \newcommand{\Line}[1]{%
-  % \hspace{-\arraycolsep}%
-  {\color{#1} \strut\vrule} % the `\vrule` is as high and deep as a strut
-  % \hspace{-\arraycolsep}%
-}
-
-
-\newenvironment{dedication}{
-  \begin{center}
-    \thispagestyle{empty}
-    \vspace*{\fill}
-}{
-    \vspace*{\fill}
-  \end{center}
+  {\color{#1} \strut\vrule}
 }
 
 \setlength{\parindent}{0em}
 
-\title{A Replication of the Famous AKS Primality Decision Algorithm}
-\author{Kyle J. McKean}
+\title{A Replication of the AKS Primality Decision Algorithm}
+\author{Alice J. McKean}
 \date{May 2020}
 \division{Mathematical and Natural Sciences}
 \advisor{James D. Fix}
@@ -135,17 +123,35 @@
 \frontmatter
 \pagestyle{empty}
 
-\mainmatter
-\pagestyle{fancyplain}
+\chapter*{Acknowledgments}
+Jim, I'm so grateful for your sage advice and unyielding patience. You routinely
+knew exactly what needed to be said. \\
 
-\begin{dedication}
-  To my family, eternal love
-\end{dedication}
+Friends, you know who you are, thank you for listening to my rambling ravings
+and supporting me through this journey.
+
+\chapter*{Abstract}
+In this thesis we explore formalizing the AKS primality decision algorithm in
+the \Agda{} proof assistant. We begin with a discussion of the AKS algorithm, an
+algorithm that determines if a given input is prime or composite. This algorithm
+will guide the development of basic number theory in the \Agda{} programming
+language. This language is a dependently typed formal logic capable of ensuring
+the correctness of mathematical statements. In this mathematical assembly we
+prove the correctness of the exponentiation by squaring algorithm. Then we
+explore the nature of recursive algorithms by convincing \Agda{} that their
+recursion is well founded and terminating. Lastly we provide a fully
+formalized brute force primality decision procedure.
+
+\chapter*{Dedication}
+\textit{To my family, eternal love}
 
 \tableofcontents
 
-\subfile{Abstract}
+\mainmatter
+\pagestyle{fancyplain}
+
 \subfile{Introduction}
+\subfile{AgdaBriefly}
 \subfile{Exponentiation}
 \subfile{Termination}
 \subfile{Primality}

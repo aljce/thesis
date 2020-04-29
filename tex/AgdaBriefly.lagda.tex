@@ -1,0 +1,225 @@
+\documentclass[./Thesis.tex]{subfiles}
+\begin{document}
+
+\chapter{Agda Briefly}
+\label{chap:agda-briefly}
+
+\epigraph{
+  The world of mathematics is becoming very large, the complexity of
+  mathematics is becoming very high, and there is a danger of an
+  accumulation of mistakes.
+}{Vladimir Voevodsky \cite{voevodsky-quote}}
+
+The goal of this chapter is two-fold. The main goal is to introduce the reader
+to Agda and it's style of dependently typed proofs. The secondary goal is to
+introduce the reader to the syntax and proof styles used in this thesis. Luckily
+these goals are complementary so we will tackle them simultaneously.
+
+\section{Functions and Datatypes}
+\label{sec:functions-and-datatypes}
+
+The code snipit below defines the standard boolean datatype ($\mathbb{Z}/[2]$).
+The keyword \AgdaKeyword{data} allows users to define their own types.
+You can think about the type \Set as the type of all small types.
+The following lines introduce constants that have type $\Boolean$.
+This example also highlights that names in Agda need not be ASCII identifiers.
+They can be arbitrary unicode strings.
+\begin{code}
+  data 𝔹 : Set where
+    false : 𝔹
+    true  : 𝔹
+
+  not : 𝔹 → 𝔹
+  not false = true
+  not true  = false
+
+  example : 𝔹
+  example = not false
+\end{code}
+The function $\AgdaFunction{not}$ is defined by case analysis and follows
+the standard mathematical definition closely. Functions in agda must be
+total. They must cover every possible value in their domain.
+The function defined above clearly satisfies this condition. \\
+Agda supports mixfix syntax for defining names (datatypes and functions).
+As shown below anywhere an underscore is given an argument should be supplied.
+\CitationNeeded{Agda}
+\begin{code}
+  if_then_else_ : ∀ {A : Set} → 𝔹 → A → A → A
+  if true  then x else y = x
+  if false then x else y = y
+\end{code}
+The $\AgdaFunction{if\_then\_else\_}$ function introduces two novel
+concepts in agda, dependent types and implicit arguments. The figure below
+introduces a simple dependent type. The type of $\AgdaFunction{id₁}$ comes
+in two parts. The type of the second half $A → A$ depends on the type of the first $∀ (A : \Set) →$.
+In mathematics universal instantiation is often an axiom but in Agda you instantiate the
+forall in the same way as you would any Agda function. The example
+$\AgdaFunction{id₁-example₁}$ demonstrates instantiation in Agda.
+\begin{code}
+  id₁ : ∀ (A : Set) → A → A
+  id₁ A x = x
+
+  id₁-example₁ : 𝔹
+  id₁-example₁ = id₁ 𝔹 true
+\end{code}
+The following code demonstrates an implicit dependent type. This functions the
+same as above except you do not need to specify the first argument. Agda will
+perform unification to infer the type. This can be seen in
+$\AgdaFunction{id₂-example₁}$ where $A = \Boolean$ as
+$\AgdaInductiveConstructor{true} : \Boolean$. The other examples show that you
+can still explicitly instantiate the implicit forall. This is quite useful for
+when the type is ambiguous or Agda's unifier fails.
+\begin{code}
+  id₂ : ∀ {A : Set} → A → A
+  id₂ {A} x = x
+
+  id₂-example₁ : 𝔹
+  id₂-example₁ = id₂ true
+
+  id₂-example₂ : 𝔹
+  id₂-example₂ = id₂ {𝔹} true
+
+  id₂-example₃ : 𝔹
+  id₂-example₃ = id₂ {A = 𝔹} true
+\end{code}
+
+% \begin{code}
+%   infixr 2 _∷_
+%   data List (A : Set) : Set where
+%     []  : List A
+%     _∷_ : A → List A → List A
+
+%   list-example : List 𝔹
+%   list-example = true ∷ false ∷ true ∷ []
+
+%   map : ∀ {A B : Set} → (A → B) → List A → List B
+%   map f [] = []
+%   map f (x ∷ xs) = f x ∷ map f xs
+
+%   list-example₂ : List 𝔹
+%   list-example₂ = map not list-example
+% \end{code}
+
+% \begin{code}
+%   data _≡_ {A : Set} : A → A → Set where
+%     refl : ∀ {x : A} → x ≡ x
+
+%   simple : (if true then false else true) ≡ false
+%   simple = refl
+
+%   not-involution : ∀ (b : 𝔹) → not (not b) ≡ b
+%   not-involution false = refl
+%   not-involution true = refl
+% \end{code}
+
+% \begin{code}
+%   Symmetric : ∀ {A : Set} → (A → A → Set) → Set
+%   Symmetric _R_ = ∀ {x y} → x R y → y R x
+
+%   sym : ∀ {A : Set} → Symmetric {A = A} _≡_
+%   sym {A} {x} {.x} refl = refl
+
+%   Transitive : ∀ {A : Set} → (A → A → Set) → Set
+%   Transitive _R_ = ∀ {x y z} → x R y → y R z → x R z
+
+%   trans : ∀ {A : Set} → Transitive {A = A} _≡_
+%   trans {A} {x} {.x} {.x} refl refl = refl
+
+%   cong : ∀ {A B : Set} (f : A → B) {x y : A} → x ≡ y → f x ≡ f y
+%   cong {A} {B} f {x} {.x} refl = refl
+% \end{code}
+
+% \section{Natural Numbers}
+% \label{sec:natural-numbers}
+
+% The natural numbers, in their simplicity, offer a clean path to explore the
+% foundations of mathematics. As noted 
+
+% \begin{code}
+%   infix  1 begin_
+%   begin_ : ∀ {A : Set} {x y : A} → x ≡ y → x ≡ y
+%   begin x≡y = x≡y
+
+%   infix  3 _∎
+%   _∎ : ∀ {A : Set} (x : A) → x ≡ x
+%   x ∎ = refl
+
+%   infixr 2 _≡⟨_⟩_
+%   _≡⟨_⟩_ : ∀ {A : Set} (x : A) {y z : A} → x ≡ y → y ≡ z → x ≡ z
+%   x ≡⟨ x≡y ⟩ y≡z = trans x≡y y≡z
+% \end{code}
+
+% \begin{code}
+%   data ℕ : Set where
+%     zero : ℕ
+%     suc  : ℕ → ℕ
+
+%   isZero : ℕ → 𝔹
+%   isZero zero = true
+%   isZero (suc n) = false
+
+%   infixl 7 _+_
+%   _+_ : ℕ → ℕ → ℕ
+%   zero + n = n
+%   suc n + m = suc (n + m)
+
+%   Associative : ∀ {A : Set} → (A → A → A) → Set
+%   Associative {A} _∙_ = ∀ (x y z : A) → (x ∙ (y ∙ z)) ≡ ((x ∙ y) ∙ z)
+
+%   record IsSemigroup {A : Set} (_∙_ : A → A → A) : Set where
+%     field
+%       ∙-assoc : Associative _∙_
+
+%   +-assoc : Associative _+_
+%   +-assoc zero y z = refl
+%   +-assoc (suc x) y z = begin
+%     suc x + (y + z)   ≡⟨ refl ⟩
+%     suc (x + (y + z)) ≡⟨ cong suc (+-assoc x y z) ⟩
+%     suc ((x + y) + z) ≡⟨ refl ⟩
+%     (suc (x + y) + z) ≡⟨ refl ⟩
+%     (suc x + y) + z   ∎
+
+%   +-isSemigroup : IsSemigroup _+_
+%   +-isSemigroup = record { ∙-assoc = +-assoc }
+
+%   record _×_ (A : Set) (B : Set) : Set where
+%     constructor _,_
+%     field
+%       fst : A
+%       snd : B
+
+%   LeftIdentity : ∀ {A : Set} → A → (A → A → A) → Set _
+%   LeftIdentity {A} ε _∙_ = ∀ (x : A) → (ε ∙ x) ≡ x
+
+%   RightIdentity : ∀ {A : Set} → A → (A → A → A) → Set _
+%   RightIdentity {A} ε _∙_ = ∀ (x : A) → (x ∙ ε) ≡ x
+
+%   Identity : ∀ {A : Set} → A → (A → A → A) → Set _
+%   Identity ε ∙ = (LeftIdentity ε ∙) × (RightIdentity ε ∙)
+
+%   record IsMonoid {A : Set} (ε : A) (_∙_ : A → A → A) : Set where
+%     field
+%       ∙-isSemigroup : IsSemigroup _∙_
+%       ∙-identity : Identity ε _∙_
+
+%   +-identityˡ : LeftIdentity zero _+_
+%   +-identityˡ x = refl
+
+%   +-identityʳ : RightIdentity zero _+_
+%   +-identityʳ zero = refl
+%   +-identityʳ (suc x) = begin
+%     (suc x + zero) ≡⟨ refl ⟩
+%     suc (x + zero) ≡⟨ cong suc (+-identityʳ x) ⟩
+%     suc x          ∎
+    
+%   +-identity : Identity zero _+_
+%   +-identity = ( +-identityˡ , +-identityʳ )
+
+%   +-isMonoid : IsMonoid zero _+_
+%   +-isMonoid = record { ∙-isSemigroup = +-isSemigroup ; ∙-identity = +-identity }
+% \end{code}
+
+% \begin{code}
+% \end{code}
+
+\end{document}
