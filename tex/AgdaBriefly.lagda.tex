@@ -18,12 +18,21 @@ these goals are complementary so we will tackle them simultaneously.
 \section{Functions and Datatypes}
 \label{sec:functions-and-datatypes}
 
-The code snipit below defines the standard boolean datatype ($\mathbb{Z}/[2]$).
+The code snippet below defines the standard boolean datatype ($\mathbb{Z}/[2]$).
 The keyword \AgdaKeyword{data} allows users to define their own types.
-You can think about the type \Set as the type of all small types.
-The following lines introduce constants that have type $\Boolean$.
+You can think about the type $\AgdaPrimitiveType{Set}$ as the type of all types\footnotemark.
+The following lines introduce the common names for boolean values while
+expressing that they are of type boolean.
 This example also highlights that names in Agda need not be ASCII identifiers.
-They can be arbitrary unicode strings.
+They can be arbitrary unicode strings namely $\AgdaDatatype{𝔹}$.
+\footnotetext{
+  This allows for a type theoretic analog of Russell's
+  Paradox. In actuality
+  $\AgdaPrimitiveType{Set}_{n} : \AgdaPrimitiveType{Set}_{n + 1}$
+  but as everything in this thesis lives in
+  $\AgdaPrimitiveType{Set}_0 = \AgdaPrimitiveType{Set}$
+  we can ignore this complexity.
+}
 \begin{code}
   data 𝔹 : Set where
     false : 𝔹
@@ -33,108 +42,294 @@ They can be arbitrary unicode strings.
   not false = true
   not true  = false
 
-  example : 𝔹
-  example = not false
+  not-example : 𝔹
+  not-example = not false
 \end{code}
 The function $\AgdaFunction{not}$ is defined by case analysis and follows
-the standard mathematical definition closely. Functions in agda must be
-total. They must cover every possible value in their domain.
-The function defined above clearly satisfies this condition. \\
-Agda supports mixfix syntax for defining names (datatypes and functions).
-As shown below anywhere an underscore is given an argument should be supplied.
-\CitationNeeded{Agda}
-\begin{code}
-  if_then_else_ : ∀ {A : Set} → 𝔹 → A → A → A
-  if true  then x else y = x
-  if false then x else y = y
+the standard mathematical definition closely. Functions in \Agda{} must be
+total. In other words, they must cover every possible value in their domain.
+The function defined above clearly satisfies this condition. Note that function
+application, as seen in $\AgdaFunction{not-example}$ is simply an empty space
+separating the function and its argument. This convention first appeared in
+Alonzo Church's \textit{lambda calculus} and as \Agda{} is an
+extension of the lambda calculus the convention carries over. Investigating the
+lambda calculus is a thesis worthy exercise and in the past many reed theses
+have attempted this challenge. In our case we refer the interested reader to the
+following sources \cite{harper} \cite{hott-book}. This being said we consider the
+lambda calculus to be a formalism of the abstract mapping notation common when
+describing functions in mathematics. Note the following similarities between the
+mathematical notation and the lambda notation described in \ref{eqn:mapping}.
+\begin{align}
+  \label{eqn:mapping}
+  x \mapsto x^2 \equiv λ x \, → \, x^2
+\end{align}
+\Agda{} supports arbitrary lambda expressions and we can use this fact to define
+the identity function for booleans in lambda notation.
+\begin{code}[hide]
+  module Identity₁ where
 \end{code}
-The $\AgdaFunction{if\_then\_else\_}$ function introduces two novel
-concepts in agda, dependent types and implicit arguments. The figure below
-introduces a simple dependent type. The type of $\AgdaFunction{id₁}$ comes
-in two parts. The type of the second half $A → A$ depends on the type of the first $∀ (A : \Set) →$.
-In mathematics universal instantiation is often an axiom but in Agda you instantiate the
-forall in the same way as you would any Agda function. The example
-$\AgdaFunction{id₁-example₁}$ demonstrates instantiation in Agda.
 \begin{code}
-  id₁ : ∀ (A : Set) → A → A
-  id₁ A x = x
-
-  id₁-example₁ : 𝔹
-  id₁-example₁ = id₁ 𝔹 true
+    id : 𝔹 → 𝔹
+    id = λ x → x
 \end{code}
-The following code demonstrates an implicit dependent type. This functions the
-same as above except you do not need to specify the first argument. Agda will
-perform unification to infer the type. This can be seen in
-$\AgdaFunction{id₂-example₁}$ where $A = \Boolean$ as
-$\AgdaInductiveConstructor{true} : \Boolean$. The other examples show that you
-can still explicitly instantiate the implicit forall. This is quite useful for
-when the type is ambiguous or Agda's unifier fails.
+The following identity function is definitionally equal to the lambda function
+described above as every function in \Agda{} is desugared to the lambda calculus.
+\begin{code}[hide]
+  module Identity₂ where
+\end{code}
 \begin{code}
-  id₂ : ∀ {A : Set} → A → A
-  id₂ {A} x = x
+    id : 𝔹 → 𝔹
+    id x = x
+\end{code}
+The astute reader may find the definitions above suspicious. Why is the identity
+function defined with a domain and codomain of the booleans? Does \Agda{}
+require a programmer to create a new identity function for every type?
+Thankfully \Agda{} adopts a solution pervasive to mathematics, universal
+quantification.
+\begin{code}[hide]
+  module Identity₃ where
+\end{code}
+\begin{code}
+    id : ∀ (A : Set) → A → A
+    id A x = x
 
-  id₂-example₁ : 𝔹
-  id₂-example₁ = id₂ true
+    id-𝔹 : 𝔹 → 𝔹
+    id-𝔹 = id 𝔹
+\end{code}
+The general identity function depicted above introduces two new concepts.
+It introduces universal quantification, or type theoretically, dependent types.
+A dependent type comes in two parts. The type of the second half $A \, → \, A$ depends
+on the input of the first $∀ (A : \AgdaPrimitiveType{Set}) →$. This is powerful
+innovation and we will come to see that it drastically increases language expressivity.
+It also introduces function currying. This concept allows multi-argument
+functions to be encoded as functions that return functions.
+\begin{align}
+  \label{eqn:currying}
+  (x, y) \mapsto x^2 + y^2 \equiv λ x \, → λ y \, → \, x^2 + y^2
+\end{align}
+Every function in \Agda{} is automatically curried so the identity function
+described above is definitionally equal to the following function.
+\begin{code}[hide]
+  module Identity₄ where
+\end{code}
+\begin{code}
+    id : ∀ (A : Set) → A → A
+    id = λ A → λ x → x
+\end{code}
+Notice how the dependent type behaves similar to normal function types.
+This is because all function types in \Agda{} are actually dependently typed.
+The syntax $A \, → \, B$ is just syntactic sugar for a dependent type that ignores
+the type of the input $(\_ : A) \, → \, B$. Lastly we make specifying the type
+of the input optional as \Agda{} can almost always infer that type. Note that we
+can still specify the type as seen in $\AgdaFunction{id-example₂}$ and
+$\AgdaFunction{id-example₃}$
+\begin{code}[hide]
+  module Identity₅ where
+\end{code}
+\begin{code}
+    id : ∀ {A : Set} → A → A
+    id {A} x = x
 
-  id₂-example₂ : 𝔹
-  id₂-example₂ = id₂ {𝔹} true
+    id-example₁ : 𝔹
+    id-example₁ = id true
 
-  id₂-example₃ : 𝔹
-  id₂-example₃ = id₂ {A = 𝔹} true
+    id-example₂ : 𝔹
+    id-example₂ = id {𝔹} true
+
+    id-example₃ : 𝔹
+    id-example₃ = id {A = 𝔹} true
+\end{code}
+\section{Baby's First Proofs}
+\label{sec:first-proofs}
+In order to prove interesting mathematical statements we first need a notion of
+equality. The following code defines a datatype that represents equality. The
+first line informs \Agda{} that equality is a binary relation over an arbitrary
+type. The datatype only has a single constructor which requires that the left
+hand side is the ``same'' as the right hand side. Thus the constructor is named
+$\AgdaInductiveConstructor{≡-refl}$ as these constraints make the constructor
+similar to the reflexivity axiom of equivalence classes.
+\begin{code}[hide]
+  module Equality where
+\end{code}
+\begin{code}
+    data _≡_ {A : Set} : A → A → Set where
+      ≡-refl : ∀ {x : A} → x ≡ x
+\end{code}
+In practice the left hand side and right hand side need not be the exact same
+code. They do need to simplify to the same value. In the following code
+$\AgdaFunction{not} \, \AgdaInductiveConstructor{true}$ simplifies to
+$\AgdaInductiveConstructor{false}$ so the reflexivity constructor is allowed.
+\begin{code}
+    simple : not true ≡ false
+    simple = ≡-refl
+\end{code}
+These concepts guide the following proof where we prove that $\AgdaFunction{not}$ is an
+involution. The proof proceeds by cases, when the input is
+$\AgdaInductiveConstructor{false}$ the expression
+$\AgdaFunction{not} \,
+(\AgdaFunction{not} \, \AgdaInductiveConstructor{false})$
+simplifies to $\AgdaInductiveConstructor{false}$ via repeated applications of
+the definition of $\AgdaFunction{not}$. The process proceeds symmetrically when the input is
+$\AgdaInductiveConstructor{true}$. Note that the case split is required as
+$\AgdaFunction{not}$ does not simplify for arbitrary booleans. This is unlike
+the identity function which would simplify for any input.
+\begin{code}
+    not-involution : ∀ (b : 𝔹) → not (not b) ≡ b
+    not-involution false = ≡-refl
+    not-involution true = ≡-refl
+\end{code}
+\section{Natural Numbers}
+\label{sec:natural-numbers}
+The set of mathematical statements provable with only finite constructions is
+significantly smaller than the set of all provable mathematical statements.
+Thankfully \Agda{} can express many infinite constructions\footnotemark{}.
+Infinite constructions are defined by an \textit{inductively defined datatype}
+\cite{agda}.
+In the following code we define the simplest inductively defined datatype, the Peano
+natural numbers. This definition is similar to our definition of the booleans
+but the $\AgdaInductiveConstructor{suc}$ constructor recursively
+contains another natural.
+\footnotetext{It can easily construct any ordinal less than
+  $\varepsilon_0$ and with effort can express larger ordinals.
+  \cite{ordinals}
+}
+\begin{code}[hide]
+  module Naturals where
+    open import Relation.Binary.PropositionalEquality
+      using (_≡_; _≢_; module ≡-Reasoning)
+      renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong; cong₂ to ≡-cong₂)
+    open ≡-Reasoning
+\end{code}
+\begin{code}
+    data ℕ : Set where
+      zero : ℕ
+      suc  : ℕ → ℕ
+
+    three : ℕ
+    three = suc (suc (suc zero))
+\end{code}
+We can consume these naturals by \textit{pattern matching} \cite{agda}. In the
+following example the variable $m$ is bound by pattern matching and is equal to
+the input $n$ minus one. This is because we are ``pealing'' off one successor
+constructor.
+\begin{code}
+    isZero : ℕ → 𝔹
+    isZero zero = true
+    isZero (suc m) = false
+\end{code}
+\begin{code}[hide]
+    infixl 7 _+_
+\end{code}
+The example above is not a compelling use of natural numbers. The code sample
+below defines addition on Peano naturals a more compelling use. As our definition was inductively
+defined any non trivial operation on naturals must be inductively defined as
+well.
+\begin{code}
+    _+_ : ℕ → ℕ → ℕ
+    zero + n = n
+    suc n + m = suc (n + m)
+\end{code}
+The function name above was defined with mixfix syntax. This is a syntax unique
+to \Agda{} that allows for the construction of complex mathematical operators. A
+valid name may be interspersed with underscores. At every underscore \Agda{}
+expects a user to supply one argument. Addition is a binary operator so we
+supply one underscore on either side of the addition symbol. \\
+
+This is a proof assistant so lets prove a simple property of the naturals,
+namely that addition is associative. In order to do this we need a definition of
+associativity. The following definition is a function that takes
+an arbitrary binary operation and returns a specification of associativity for
+that binary operation. Note that even arguments can be defined with mixfix.
+\begin{code}
+    Associative : ∀ {A : Set} → (A → A → A) → Set
+    Associative {A} _∙_ = ∀ (x y z : A) → (x ∙ (y ∙ z)) ≡ ((x ∙ y) ∙ z)
+\end{code}
+The actual proof begins by cases. When the
+first argument is zero, $\AgdaInductiveConstructor{zero} + (y + z)$ and
+$(\AgdaInductiveConstructor{zero} + y) + z$ both simplify to $y + z$
+definitionally. Thus we can invoke reflexivity. The second case is more
+complicated and is proved using equational reasoning combinators. The first
+combinator $\AgdaFunction{\_≡⟨⟩\_}$ can only be used when the two lines are
+definitionally equal to each other. This is the reflexivity axiom in disguise.
+The next combinator we use is $\AgdaFunction{\_≡⟨\_⟩\_}$ and it allows us to
+supply a proof that the first line equals the second.
+We invoke the inductive hypothesis and wrap a
+$\AgdaInductiveConstructor{suc}$ around the result. This is allowable as our
+equality type is congruent over any function.
+Lastly we push the $\AgdaInductiveConstructor{suc}$
+inside the term. This is the second line in the definition of addition applied
+in reverse.
+\begin{code}
+    +-assoc : Associative _+_
+    +-assoc zero y z = ≡-refl
+    +-assoc (suc x) y z = begin
+      suc x + (y + z)   ≡⟨⟩
+      suc (x + (y + z)) ≡⟨ ≡-cong suc (+-assoc x y z) ⟩
+      suc ((x + y) + z) ≡⟨⟩
+      (suc (x + y) + z) ≡⟨⟩
+      (suc x + y) + z   ∎
+\end{code}
+\section{Record Types}
+\label{sec:record-types}
+We introduce one last critical construct, the record construction. A record is
+very similar to a datatype but there are some differences. Most importantly
+records have only one constructor so they can not be used to define any of the
+datatype given above. Unlike datatypes, records contain a list of named fields.
+We define a record type that bundles together all the proofs required for a
+binary operator to be a semigroup. In this case their is only one constraint
+namely associativity. \\
+\begin{code}
+    record IsSemigroup {A : Set} (_∙_ : A → A → A) : Set where
+      constructor IsSemigroup✓
+      field
+        ∙-assoc : Associative _∙_
+\end{code}
+We prove that $\AgdaFunction{\_+\_}$ is a semigroup but supplying every
+field of the $\AgdaDatatype{IsSemigroup}$ record.
+\begin{code}
+    +-isSemigroup : IsSemigroup _+_
+    +-isSemigroup = IsSemigroup✓ +-assoc
+\end{code}
+Importantly the type of fields can depend on the value of fields previously in
+the list. This allows us to define the less than or equal to relation $n \leq m$
+as $\exists k. \, n + k = m$. The reason fields act similarly to exists
+that when we construct a record we ``forget'' everything specific to the value
+except the requirements specified by the fields.
+\begin{code}
+    record _≤_ (n : ℕ) (m : ℕ) : Set where
+      constructor lte
+      field
+        k : ℕ
+        pf : n + k ≡ m
 \end{code}
 
 % \begin{code}
-%   infixr 2 _∷_
-%   data List (A : Set) : Set where
-%     []  : List A
-%     _∷_ : A → List A → List A
+%   Reflexive : ∀ {A : Set} → (A → A → Set) → Set
+%   Reflexive _R_ = ∀ {x} → x R x
 
-%   list-example : List 𝔹
-%   list-example = true ∷ false ∷ true ∷ []
-
-%   map : ∀ {A B : Set} → (A → B) → List A → List B
-%   map f [] = []
-%   map f (x ∷ xs) = f x ∷ map f xs
-
-%   list-example₂ : List 𝔹
-%   list-example₂ = map not list-example
+%   ≡-reflexive : ∀ {A : Set} → Reflexive {A = A} _≡_
+%   ≡-reflexive = ≡-refl
 % \end{code}
-
-% \begin{code}
-%   data _≡_ {A : Set} : A → A → Set where
-%     refl : ∀ {x : A} → x ≡ x
-
-%   simple : (if true then false else true) ≡ false
-%   simple = refl
-
-%   not-involution : ∀ (b : 𝔹) → not (not b) ≡ b
-%   not-involution false = refl
-%   not-involution true = refl
-% \end{code}
-
 % \begin{code}
 %   Symmetric : ∀ {A : Set} → (A → A → Set) → Set
 %   Symmetric _R_ = ∀ {x y} → x R y → y R x
 
-%   sym : ∀ {A : Set} → Symmetric {A = A} _≡_
-%   sym {A} {x} {.x} refl = refl
-
+%   ≡-sym : ∀ {A : Set} → Symmetric {A = A} _≡_
+%   ≡-sym {A} {x} {.x} ≡-refl = ≡-refl
+% \end{code}
+% Agda supports mixfix syntax for defining names (datatypes, functions, and arguments).
+% As shown below anywhere an underscore is given an argument should be supplied.
+% \begin{code}
 %   Transitive : ∀ {A : Set} → (A → A → Set) → Set
 %   Transitive _R_ = ∀ {x y z} → x R y → y R z → x R z
 
-%   trans : ∀ {A : Set} → Transitive {A = A} _≡_
-%   trans {A} {x} {.x} {.x} refl refl = refl
-
-%   cong : ∀ {A B : Set} (f : A → B) {x y : A} → x ≡ y → f x ≡ f y
-%   cong {A} {B} f {x} {.x} refl = refl
+%   ≡-trans : ∀ {A : Set} → Transitive {A = A} _≡_
+%   ≡-trans {A} {x} {.x} {.x} ≡-refl ≡-refl = ≡-refl
 % \end{code}
-
-% \section{Natural Numbers}
-% \label{sec:natural-numbers}
-
-% The natural numbers, in their simplicity, offer a clean path to explore the
-% foundations of mathematics. As noted 
-
+% \begin{code}
+%   ≡-cong : ∀ {A B : Set} (f : A → B) {x y : A} → x ≡ y → f x ≡ f y
+%   ≡-cong {A} {B} f {x} {.x} ≡-refl = ≡-refl
+% \end{code}
 % \begin{code}
 %   infix  1 begin_
 %   begin_ : ∀ {A : Set} {x y : A} → x ≡ y → x ≡ y
@@ -142,84 +337,16 @@ when the type is ambiguous or Agda's unifier fails.
 
 %   infix  3 _∎
 %   _∎ : ∀ {A : Set} (x : A) → x ≡ x
-%   x ∎ = refl
+%   x ∎ = ≡-refl
 
 %   infixr 2 _≡⟨_⟩_
 %   _≡⟨_⟩_ : ∀ {A : Set} (x : A) {y z : A} → x ≡ y → y ≡ z → x ≡ z
-%   x ≡⟨ x≡y ⟩ y≡z = trans x≡y y≡z
+%   x ≡⟨ x≡y ⟩ y≡z = ≡-trans x≡y y≡z
+
+%   infixr 2 _≡⟨⟩_
+%   _≡⟨⟩_ : ∀ {A : Set} {y : A} (x : A) → x ≡ y → x ≡ y
+%   x ≡⟨⟩ ≡-refl = ≡-refl
 % \end{code}
 
-% \begin{code}
-%   data ℕ : Set where
-%     zero : ℕ
-%     suc  : ℕ → ℕ
-
-%   isZero : ℕ → 𝔹
-%   isZero zero = true
-%   isZero (suc n) = false
-
-%   infixl 7 _+_
-%   _+_ : ℕ → ℕ → ℕ
-%   zero + n = n
-%   suc n + m = suc (n + m)
-
-%   Associative : ∀ {A : Set} → (A → A → A) → Set
-%   Associative {A} _∙_ = ∀ (x y z : A) → (x ∙ (y ∙ z)) ≡ ((x ∙ y) ∙ z)
-
-%   record IsSemigroup {A : Set} (_∙_ : A → A → A) : Set where
-%     field
-%       ∙-assoc : Associative _∙_
-
-%   +-assoc : Associative _+_
-%   +-assoc zero y z = refl
-%   +-assoc (suc x) y z = begin
-%     suc x + (y + z)   ≡⟨ refl ⟩
-%     suc (x + (y + z)) ≡⟨ cong suc (+-assoc x y z) ⟩
-%     suc ((x + y) + z) ≡⟨ refl ⟩
-%     (suc (x + y) + z) ≡⟨ refl ⟩
-%     (suc x + y) + z   ∎
-
-%   +-isSemigroup : IsSemigroup _+_
-%   +-isSemigroup = record { ∙-assoc = +-assoc }
-
-%   record _×_ (A : Set) (B : Set) : Set where
-%     constructor _,_
-%     field
-%       fst : A
-%       snd : B
-
-%   LeftIdentity : ∀ {A : Set} → A → (A → A → A) → Set _
-%   LeftIdentity {A} ε _∙_ = ∀ (x : A) → (ε ∙ x) ≡ x
-
-%   RightIdentity : ∀ {A : Set} → A → (A → A → A) → Set _
-%   RightIdentity {A} ε _∙_ = ∀ (x : A) → (x ∙ ε) ≡ x
-
-%   Identity : ∀ {A : Set} → A → (A → A → A) → Set _
-%   Identity ε ∙ = (LeftIdentity ε ∙) × (RightIdentity ε ∙)
-
-%   record IsMonoid {A : Set} (ε : A) (_∙_ : A → A → A) : Set where
-%     field
-%       ∙-isSemigroup : IsSemigroup _∙_
-%       ∙-identity : Identity ε _∙_
-
-%   +-identityˡ : LeftIdentity zero _+_
-%   +-identityˡ x = refl
-
-%   +-identityʳ : RightIdentity zero _+_
-%   +-identityʳ zero = refl
-%   +-identityʳ (suc x) = begin
-%     (suc x + zero) ≡⟨ refl ⟩
-%     suc (x + zero) ≡⟨ cong suc (+-identityʳ x) ⟩
-%     suc x          ∎
-    
-%   +-identity : Identity zero _+_
-%   +-identity = ( +-identityˡ , +-identityʳ )
-
-%   +-isMonoid : IsMonoid zero _+_
-%   +-isMonoid = record { ∙-isSemigroup = +-isSemigroup ; ∙-identity = +-identity }
-% \end{code}
-
-% \begin{code}
-% \end{code}
 
 \end{document}

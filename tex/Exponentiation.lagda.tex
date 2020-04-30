@@ -359,7 +359,7 @@ our own binary number type. Note that at every level of recursion we only need
 to inspect the last element of the bitstring. Then we drop that element.
 Thus if we store the binary number as a snoc list we can perform the
 required operations in $\BigO{1}$. A snoc list is a purely functional linked
-list that supports append/uncons operations from the back of the list in
+list that supports push/pop operations from the back of the list in
 $\BigO{1}$ time \cite{okasaki}. The figure below is a snoc list encoding of the
 number $10$.
 \begin{align}
@@ -485,7 +485,6 @@ the body of the proof.
 \begin{code}[hide]
   ℕ→𝔹→ℕ n = trustMe
 \end{code}
-
 \section{Mutally Recursive Proofs}
 \label{sec:mutally-recursive-proofs}
 In this section we redefine our exponential inline with
@@ -593,6 +592,5 @@ This proof has more use that pure correctness. If we ever need to prove a
 property of exponentials we can prove that fact with the inductive definition.
 Then we can apply this proof to get a version of that property that works on
 fast exponentiation for free.
-
 
 \end{document}
