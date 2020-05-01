@@ -1,10 +1,9 @@
 \documentclass[./Thesis.tex]{subfiles}
 \begin{document}
 
-\chapter*{Introduction}
-\addcontentsline{toc}{chapter}{Introduction}
-\chaptermark{Introduction}
-\markboth{Introduction}{Introduction}
+\chapter{Introduction}
+\label{chap:Introduction}
+\section{AKS}
 
 \begin{algorithm}[H]
   \caption{The AKS Primality Decision Algorithm}
@@ -36,8 +35,120 @@
     \EndFunction
   \end{algorithmic}
 \end{algorithm}
-
-
 % defined well typed
 % define setoid
+% talk about the limitations of agda
+\section{Type Theory}
+In the rest of this Chapter we provide an informal motivation of Type Theory for a reader
+familiar with the standard foundations of mathematics, Set Theory. Our proof
+assistant \Agda{} is a proof assistant based on Type Theory. For readers that
+desire a more formal specification of Type Theory we recommend the following
+sources: a topological perspective \cite{hott-book}, a categorical perspective
+\cite{nlab}, and a programming language theory perspective \cite{harper}.
+\subsection{History}
+\label{sec:history}
+Type Theory was created by Bertrand Russell as an alternate foundation for
+mathematics in order to, quash the plethora of
+paradoxes plaguing Set Theory at the turn of the century. The paradoxes
+where eventually resolved and type theory faded into obscurity. It resurfaced in
+the 1940's when Alonzo Church applied it to his \textit{lambda calculus}. This
+application began a reassurance in which multiple authors steadily improved the
+expressivity of Type Theory. This culminated with Per Martin-L\"{o}f's
+dependent, intuitionistic type theory often called
+\textit{Martin-L\"{o}f Type Theory} \cite{martin-lof}.
+This theory is considered by many as the foundations of the field. The
+programming language \Agda{} that we will come to know in this thesis is a
+variant of his Type Theory. This being said the field is vast and there are many
+Type Theories created with wildly different axioms and properties in mind.
+\subsection{The Typing Relation}
+\label{sec:typing-relation}
+The primitive concept underlying Type Theory is the \textit{typing relation},
+namely a \textit{term} $a$ has \textit{type} $A$ written $a : A$. In the
+language of Set Theory this would represent ``a is an element of the set A''
+denoted $a \in A$. Despite these similarities types differ from sets in many
+ways. For instance the perfectly valid set
+$\{ \, \text{true}, \, 0, \, \emptyset \, \}$
+is inexpressible in Type Theory as types are ``homogeneous''. More importantly
+there is not an equivalent concept of a non-membership ($\notin$) in most Type
+Theories. Instead we say $2$ does not have type boolean or we say $2$ is not
+well typed as a boolean. Thus while its sensible to ask the set theoretic question
+``Is $a$ a member of $A$ for some pre-existing objects $a$ and $A$?''. Type
+theoretically we are not permitted to consider objects without their type and
+every object has a type from creation. For instance we can define the booleans
+($𝔹$) as two constants $\text{true} : 𝔹$ and $\text{false} : 𝔹$.
+\subsection{Propositions as Types}
+In reality Set Theory is actually a dual theory. There is a base theory called
+first order logic in which a collection of axioms are developed that describe
+the structure of sets. So Set Theory is really the study of these two
+interleaved theories. Type Theory is its own logic which collapses the two
+levels into one. The two basic elements of Set Theory, logical propositions and
+sets thus also collapse together. They collapse together into types and
+propositions become manipulatable objects. For instance
+a function $f$ is injective if the following proposition is true.
+\begin{align}
+  \text{for any } x, y \text{ if } f(x) = f(y) \text{ then } x = y
+\end{align}
+We can represent this proposition type theoretically with the following
+expression. 
+\begin{equation}
+  \label{eqn:injective}
+  \text{Injective}(f : A \to B) :\equiv \prod_{x : A} \prod_{y : A} \, f(x) \equiv_B f(y) \to x \equiv_A y
+\end{equation}
+Now in order to prove some function $f$ is injective we simply construct a proof
+that has the type specified above, for instance $p : \text{Injective}(f)$.
+Thus proving a proposition is simply finding an element of some type.
+Also note that proofs are values and so they can be
+manipulated like any other value. This concept is called
+\textit{proof relevance} and it is essential to Type Theory and this thesis.
+\subsection{Intuitionistic Logic}
+In this section we investigate the deep consequences of proof relevance.
+Consider the Collatz conjecture, concerning the sequence that follows, start with some
+integer $n$ and add $n$ to the sequence. If $n$ is even then divide by two
+otherwise multiply $n$ by $3$ and add $1$. The result of this computation is the
+next element of the sequence. Repeat the process above. The conjecture is
+that for any starting value $n$ the sequence eventually reaches $1$. This
+conjecture is a well known unsolved problem in mathematics and as such the truth
+value of the proposition is unknown. Now consider the following proposition
+often called the law of the excluded middle.
+\begin{align}
+  \label{eqn:set-LEM}
+  \text{for any proposition } p \text{ either } p \text{ or } \neg p
+\end{align}
+We can transform this proposition into Type Theory just as we have before. Note
+that propositions are types so we can easily quantify over every proposition by
+quantifying over every type.
+\begin{align}
+  \label{eqn:set-LEM}
+  \text{LEM} :\equiv \prod_{p  : \text{Type}} p \vee \neg p
+\end{align}
+In Set Theory the law of the excluded middle is assumed as an axiom of first
+order logic. Presumably Type Theorists could assume it as well and there would
+be some value $\text{lem} : \text{LEM}$ representing the axiom. This axiom behaves weirdly
+with proof relevance in mind. Consider using this axiom to construct a proof
+that the Collatz conjecture is true or false. We simply instantiate $p$ to our
+type theoretic encoding of the Collatz conjecture. Thus if we inspect this proof
+term we can learn if the Collatz conjecture is true or false. As solving math
+problems is not this easy we must not assume the law of the excluded middle.
+This variant of logic is called \textit{intuitionistic logic}. \\
+
+This being said the law of the excluded middle appears often
+and is a useful axiom. Thankfully the axiom is often provable when you choose a
+specific $p$. Imagine instantiating $p$ with the proposition
+$n \equiv_{\mathbb{N}} m$ for some $n$ and $m$.
+The resulting type is described below.
+\begin{align}
+  \label{eqn:nat-dec}
+  \text{Equals?} :\equiv (n \equiv_{\mathbb{N}} m) \vee \neg (n \equiv_{\mathbb{N}} m)
+\end{align}
+This is the type of our first decision procedure. A value of this type would
+prove that the two numbers are equal or prove that the two numbers are unequal.
+Finding a value of this type is as simple as describing a decision procedure.
+Simply count $n$ and $m$ down by $1$. If both numbers reach $0$ at the same time
+return that they are equal otherwise return that they are unequal. \\
+
+Keep in mind that assuming the law of the excluded middle also invalidates the
+entire purpose of this thesis. We can define a proposition that represents
+primality (and in fact we do in Chapter \ref{chap:primality}) apply the law of
+the excluded middle to this type and now we have a term that ``computes''
+primality.
 \end{document}
