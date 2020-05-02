@@ -38,7 +38,7 @@
 The previous chapter omitted a critical flaw in its analysis. The code below is
 rejected by the \Agda{} compiler. The compiler's \textit{termination checker} \cite{agda}
 fails as \Agda{} can not infer that the result of non-zero integer division by
-two always returns an integer strictly smaller than the input. The termination
+$2$ always returns an integer strictly smaller than the input. The termination
 checker ensures than every function is total. In other words,
 the termination checker disallows infinite loops. This termination proof
 is obvious but termination proofs can quickly become complex. In general checking
@@ -71,7 +71,7 @@ inconsistent.
     false : ⊥
     false = increasing 0
 \end{code}
-In fact the example above can be simplified in the following code. In English
+In fact, the example above can be simplified in the code below. In English
 this code expresses the famous fallacy of circular reasoning ``false is true
 because false is true''.
 \begin{code}[hide]
@@ -93,7 +93,7 @@ expression $\AgdaInductiveConstructor{suc} \, n$ is a strict sub-expression of
 $\AgdaInductiveConstructor{suc} \,
   (\AgdaInductiveConstructor{suc} \,
     (\AgdaInductiveConstructor{suc} \, n))
-$
+$,
 but $\AgdaInductiveConstructor{suc} \, n$ is not a strict sub-expression of
 $\AgdaInductiveConstructor{suc} \, n$.
 Addition, our first example of recursion, is acceptable as
@@ -121,7 +121,7 @@ $n <_{sub} \AgdaInductiveConstructor{suc} \, (\AgdaInductiveConstructor{suc} \, 
   fib (suc (suc n)) = fib (suc n) + fib n
 \end{code}
 So far all the recursive functions described have been
-\textit{primitive recursive} \cite{soare}. This is a large class but the set of
+\textit{primitive recursive} \cite{soare}. This is a large class, but the set of
 structurally decreasing functions is larger than the set of primitive
 recursive functions. The Ackerrmann function is the canonical example of
 function which is not primitive recursive.
@@ -160,18 +160,18 @@ definition if it can infer a structural \textit{well-founded relation}
 \cite{soare}. A well-founded relation is a binary relation $\prec$ that has no
 infinitely descending chains $\dots \prec x_k \prec \dots \prec x_1 \prec x_0$.
 For instance the strict ordering over the naturals is well-founded
-as every chain will eventually reach the zero natural.
+as every chain will eventually reach $0$.
 \begin{align}
   \label{eqn:wellfounded-natural}
   0 < 1 < 2 < 3 < 4 < 5
 \end{align}
-The non strict ordering is not well-founded as an infinite chain of the
+The non-strict ordering is not well-founded as an infinite chain of the
 reflexivity axiom can be constructed.
 \begin{align}
   \label{eqn:non-wellfounded-natural}
   \dots \leq 0 \leq \dots \leq 0 \leq 0
 \end{align}
-Unfortunately these relation chains do not capture the full structure of well-founded
+Unfortunately, these relation chains do not capture the full structure of well-founded
 relations. A well-founded relation often has multiple elements that could be
 appended to the chain. This idea is illustrated in the well-founded tree
 rooted at 3 found in figure \ref{fig:wellfounded-tree}.
@@ -196,7 +196,7 @@ rooted at 3 found in figure \ref{fig:wellfounded-tree}.
   \label{fig:wellfounded-tree}
 \end{figure}
 These trees encapsulate the full structure of a well-ordering relation.
-Therefore if we could express this tree as an \Agda{} datatype we could supply
+Therefore, if we could express this tree as an \Agda{} datatype, we could supply
 our own well-ordering relation even when \Agda{} can not infer it. The final
 datatype that represents well-founded trees is somewhat puzzling at first
 glance. So to introduce it we start with a sensible datatype and make small
@@ -221,8 +221,8 @@ can be invoked with the index of the requested child.
     data RoseTree : Set where
       Node : (ℕ → RoseTree) → RoseTree
 \end{code}
-Unfortunately this makes our definition unusable as now every rose tree must have
-infinite size. From a game theotertic perspective, a consumer may request
+Unfortunately, this makes our definition unusable as now every rose tree must have
+infinite size. From a \textit{game theotertic} perspective, a consumer may request
 the first child of every node repetitively.
 \begin{code}
     rosetree-uninhabited : RoseTree → ⊥
@@ -417,7 +417,7 @@ an interval $i_1$ if $i_1$ is a proper subset of $i_2$. If the set is finite
 then this relation is clearly well founded. Unfortunately working with sets is
 tricky in a type theory. So we limit our definition of an
 interval to sets of naturals. Then our intervals are uniquely represented by
-their infimum (lower bound) and supremum (upper bound).
+their \textit{infimum} (lower bound) and \textit{supremum} (upper bound).
 \begin{code}
   record Interval : Set where
     constructor [_,_∣_]
@@ -496,7 +496,7 @@ some fixed value.
 \end{code}
 Counting up is simply always choosing to tighten the left bound of the interval.
 Eventually the user reaches the upper bound and interval becomes $[ n, n ]$.
-This interval can not be shortened and the recursion must terminate.
+This interval can not be shortened and the recursion terminates as shown below.
 \begin{code}
     loop : ∀ (x : ℕ) (x≤n : x ≤ n) (acc : Acc _⊂_ [ x , n ∣ x≤n ]) → List ℕ
     loop x x≤n (acc next) with n≤m⇒n<m∨n≡m x≤n

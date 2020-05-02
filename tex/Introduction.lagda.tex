@@ -55,7 +55,7 @@ testing. In 1983, the authors Adleman, Pomerance, and Rumely created the first
 unconditional deterministic sub-exponential primality test with a run-time of
 $\BigO{\Lg{n}^{c \, \text{lg} \, \text{lg} \, \text{lg} \, n}}$ \cite{apr}. \\
 
-The string of accomplished authors shows both the difficulty and importance of this
+This string of accomplished authors shows both the difficulty and importance of this
 problem. Thus it was big news when Manindra Agrawal, Neeraj Kayal,and Nitin
 Saxena announced that they had created a unconditional deterministic
 primality test that runs in polynomial time $\BigO{\Lg{n}^{15/2}}$ \cite{aks}.
@@ -70,21 +70,21 @@ recreating a previously reported experiment. Usually the goal of a replication
 is to verify the correctness of the data and conclusions of the previous
 experiment. In a similar vein, if we implement AKS in \Agda{} and \Agda{}
 accepts our implementation then we will have verified the correctness of the AKS
-paper. \\
-
-Unfortunately this is no small task as \Agda{} does not know any number theory.
+paper. Unfortunately this is no small task as \Agda{} does not know any number theory.
 We will then have to formulate every piece of number theory and more generally
 mathematics used in the AKS paper. Specifically we will have to formalize these
-concepts in the \Agda{} proof assistant. In this thesis we will illustrate only
+concepts in the \Agda{} proof assistant. \\
+
+In this thesis we will illustrate only
 a selection of these concepts as this is a undergraduate time limited thesis.
 This being said we estimate to have completed formalizing 75\% of the required
 concepts and this work can be found in the following git repository
 \url{https://github.com/mckeankylej/thesis}. The required and completed concepts
-include but are not limited to a gcd function that works over an arbitrary
+include but are not limited to a GCD function that works over an arbitrary
 euclidean domain, a polynomial datatype that forms a euclidean domain,
 a modular ring datatype, a proven correct exponentiation by squaring algorithm,
 and a brute force primality test. In this thesis we will specifically cover the
-last two concepts in great detail. \\
+last two concepts. \\
 
 In order to explain the intricacies of these constructions we must first
 introduce the reader to the \Agda{} proof assistant and we accomplish this in
@@ -92,7 +92,7 @@ Chapter \ref{chap:agda-briefly}. Then we move on to describe an exponentiation
 by squaring algorithm written \Agda{}. This algorithm is required multiple times
 in AKS. It constitutes the very last step of the algorithm in which the input
 must be tested to ensure it is not a perfect power \cite{smid}. After this in
-Chapter \ref{chap:termination} we take a brief aside in order to discuss how
+Chapter \ref{chap:termination}, we take a brief aside in order to discuss how
 \Agda{} ensures the correctness of recursive programs. Finally in Chapter
 \ref{chap:primality} we create a brute force primality test in \Agda{}. The AKS
 algorithm requires a list of ``small'' primes so this algorithm will be used to
@@ -133,11 +133,11 @@ Theories. Instead we say $2$ does not have type boolean or we say $2$ is not
 well typed as a boolean. Thus while its sensible to ask the set theoretic question
 ``Is $a$ a member of $A$ for some pre-existing objects $a$ and $A$?''. Type
 theoretically we are not permitted to consider objects without their type and
-every object has a type from creation. For instance we can define the booleans
+every object has a type from creation. For instance, we can define the booleans
 ($𝔹$) as two constants $\text{true} : 𝔹$ and $\text{false} : 𝔹$.
 \subsection{Propositions as Types}
 In reality Set Theory is actually a dual theory. There is a base theory called
-first order logic in which a collection of axioms are developed that describe
+First Order Logic in which a collection of axioms are developed that describe
 the structure of sets. So Set Theory is really the study of these two
 interleaved theories. Type Theory is its own logic which collapses the two
 levels into one. The two basic elements of Set Theory, logical propositions and
@@ -153,7 +153,7 @@ expression.
   \label{eqn:injective}
   \text{Injective}(f : A \to B) :\equiv \prod_{x : A} \prod_{y : A} \, f(x) \equiv_B f(y) \to x \equiv_A y
 \end{equation}
-Now in order to prove some function $f$ is injective we simply construct a proof
+Now in order to prove some function $f$ is injective, we simply construct a proof
 that has the type specified above, for instance $p : \text{Injective}(f)$.
 Thus proving a proposition is simply finding an element of some type.
 Also note that proofs are values and so they can be
@@ -162,7 +162,7 @@ manipulated like any other value. This concept is called
 \subsection{Intuitionistic Logic}
 In this section we investigate the deep consequences of proof relevance.
 Consider the Collatz conjecture, concerning the sequence that follows, start with some
-integer $n$ and add $n$ to the sequence. If $n$ is even then divide by two
+integer $n$ and add $n$ to the sequence. If $n$ is even then divide by $2$
 otherwise multiply $n$ by $3$ and add $1$. The result of this computation is the
 next element of the sequence. Repeat the process above. The conjecture is
 that for any starting value $n$ the sequence eventually reaches $1$. This
@@ -187,11 +187,11 @@ with proof relevance in mind. Consider using this axiom to construct a proof
 that the Collatz conjecture is true or false. We simply instantiate $p$ to our
 type theoretic encoding of the Collatz conjecture. Thus if we inspect this proof
 term we can learn if the Collatz conjecture is true or false. As solving math
-problems is not this easy we must not assume the law of the excluded middle.
+problems is not this easy, we must not assume the law of the excluded middle.
 This variant of logic is called \textit{intuitionistic logic}. \\
 
 This being said the law of the excluded middle appears often
-and is a useful axiom. Thankfully the axiom is often provable when you choose a
+and is a useful axiom. Thankfully this axiom is often provable when you choose a
 specific $p$. Imagine instantiating $p$ with the proposition
 $n \equiv_{\mathbb{N}} m$ for some $n$ and $m$.
 The resulting type is described below.

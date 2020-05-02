@@ -11,8 +11,8 @@
 }{Vladimir Voevodsky \cite{voevodsky-quote}}
 
 The goal of this chapter is two-fold. The main goal is to introduce the reader
-to Agda and it's style of dependently typed proofs. The secondary goal is to
-introduce the reader to the syntax and proof styles used in this thesis. Luckily
+to Agda and its style of dependently typed proofs. The secondary goal is to
+introduce the reader to the syntax and proof styles used in this thesis. Luckily,
 these goals are complementary so we will tackle them simultaneously.
 
 \section{Functions and Datatypes}
@@ -53,15 +53,15 @@ application, as seen in $\AgdaFunction{not-example}$ is simply an empty space
 separating the function and its argument. This convention first appeared in
 Alonzo Church's \textit{lambda calculus} and as \Agda{} is an
 extension of the lambda calculus the convention carries over. Investigating the
-lambda calculus is a thesis worthy exercise and in the past many reed theses
-have attempted this challenge. In our case we refer the interested reader to the
+lambda calculus is a thesis worthy exercise and in the past many Reed theses
+have attempted this challenge. In our case, we refer the interested reader to the
 following sources \cite{harper} \cite{hott-book}. This being said we consider the
 lambda calculus to be a formalism of the abstract mapping notation common when
 describing functions in mathematics. Note the following similarities between the
 mathematical notation and the lambda notation described in \ref{eqn:mapping}.
 \begin{align}
   \label{eqn:mapping}
-  x \mapsto x^2 \equiv λ x \, → \, x^2
+  x \mapsto x^2 \text{ is the same as } λ x \, → \, x^2
 \end{align}
 \Agda{} supports arbitrary lambda expressions and we can use this fact to define
 the identity function for booleans in lambda notation.
@@ -84,7 +84,7 @@ described above as every function in \Agda{} is desugared to the lambda calculus
 The astute reader may find the definitions above suspicious. Why is the identity
 function defined with a domain and codomain of the booleans? Does \Agda{}
 require a programmer to create a new identity function for every type?
-Thankfully \Agda{} adopts a solution pervasive to mathematics, universal
+Thankfully, \Agda{} adopts a solution pervasive to mathematics, universal
 quantification.
 \begin{code}[hide]
   module Identity₃ where
@@ -116,9 +116,9 @@ described above is definitionally equal to the following function.
     id : ∀ (A : Set) → A → A
     id = λ A → λ x → x
 \end{code}
-Notice how the dependent type behaves similar to normal function types.
+Notice how the dependent type behaves similarly to normal function types.
 This is because all function types in \Agda{} are actually dependently typed.
-The syntax $A \, → \, B$ is just syntactic sugar for a dependent type that ignores
+The syntax $A \, → \, B$ is just \textit{syntactic sugar} for a dependent type that ignores
 the type of the input $(\_ : A) \, → \, B$. Lastly we make specifying the type
 of the input optional as \Agda{} can almost always infer that type. Note that we
 can still specify the type as seen in $\AgdaFunction{id-example₂}$ and
@@ -220,7 +220,8 @@ constructor.
 \begin{code}[hide]
     infixl 7 _+_
 \end{code}
-The example above is not a compelling use of natural numbers. The code sample
+The example above is not a compelling use of natural numbers as it does not
+require any properties unique to the natural numbers. The code sample
 below defines addition on Peano naturals a more compelling use. As our definition was inductively
 defined any non trivial operation on naturals must be inductively defined as
 well.
@@ -229,7 +230,7 @@ well.
     zero + n = n
     suc n + m = suc (n + m)
 \end{code}
-The function name above was defined with mixfix syntax. This is a syntax unique
+The previous function name was defined with mixfix syntax. This is a syntax unique
 to \Agda{} that allows for the construction of complex mathematical operators. A
 valid name may be interspersed with underscores. At every underscore \Agda{}
 expects a user to supply one argument. Addition is a binary operator so we
@@ -276,7 +277,7 @@ very similar to a datatype but there are some differences. Most importantly
 records have only one constructor so they can not be used to define any of the
 datatype given above. Unlike datatypes, records contain a list of named fields.
 We define a record type that bundles together all the proofs required for a
-binary operator to be a semigroup. In this case their is only one constraint
+binary operator to be a semigroup. In this case there is only one constraint
 namely associativity. \\
 \begin{code}
     record IsSemigroup {A : Set} (_∙_ : A → A → A) : Set where

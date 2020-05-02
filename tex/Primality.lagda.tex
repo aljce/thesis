@@ -71,8 +71,8 @@ divisibility relation is transitive.
     q₂ * (q₁ * x) ≡⟨ ≡-sym (*-assoc q₂ q₁ x) ⟩
     (q₂ * q₁) * x ∎
 \end{code} % $
-As \Agda{} is a proof relevant logic every proof of divisibility materializes
-similarly. The user simply specifies what natural to multiply the divisor by to
+As \Agda{} is a proof relevant logic, every proof of divisibility materializes
+similarly. The user simply specifies what number to multiply the divisor by to
 get the dividend. Then they supply a proof that the two numbers do indeed multiply
 to the dividend. It the following proof we assume a divisibility relation is
 true. We ``consume'' the divisibility relation.
@@ -126,7 +126,7 @@ inequalities. This lemma occurs multiple times in the following sections and
 chapters. The key idea is that if $n$ divides $m$ then it must be less than or
 equal to $m$ in order to be a factor. Technically this is false when $m = 0$ as
 every number divides $0$. So we just assume $m \neq 0$. This proof illustrates
-the importance of choosing your definitions correctly. Using the definition
+the importance of choosing definitions correctly. Using the definition
 $\exists k. \, n + k = m$ of $n \leq m$ makes this proof almost trivial. An
 inductive definition of $n \leq m$ would complicate this proof by a large measure.
 \begin{code}
@@ -215,7 +215,7 @@ This illustrates the contradiction and the decision procedure is complete.
 \section{Investigating Definitions}
 \label{sec:investigating-definitions}
 There are many isomorphic definitions of primality. Unfortunately not all
-definitions are equal in the eyes of \Agda{}. For instance consider the
+definitions are equal in the eyes of \Agda{}. For instance, consider the
 following definition, ``A prime number is a natural number greater than $1$ that
 has no prime divisors smaller then itself.''. This definition translates
 directly into \Agda{} as shown below.
@@ -253,8 +253,8 @@ call in negative position.
   false : ⊥
   false = Bad-false Bad-true
 \end{code}
-Note how similar $\AgdaFunction{false}$ is to the non-terminating omega
-combinator shown in \ref{eqn:omega}. The only difference is the required
+Note how similar $\AgdaFunction{false}$ is to the non-terminating
+\textit{omega combinator} shown in \ref{eqn:omega}. The only difference is the required
 wrapping and unwrapping of $\AgdaDatatype{Bad}$ values. Unlike the type
 $\AgdaDatatype{Bad}$, the type $\AgdaDatatype{IsPrime}$ given above is actually a safe
 use of negative recursion. Convincing \Agda{} of this fact is quite hard and
@@ -279,7 +279,7 @@ when it is greater than $1$ and its only divisors are $1$ and itself.
         1<p : 1 < p
         ∀i∣p[i≡p] : ∀ {i} → i ∣ p → i ≡ 1 or i ≡ p
 \end{code}
-The definition above is usable but in the following sections most of the proofs
+The definition above is usable, but in the following sections most of the proofs
 will know $1 < i$ for relevant instantiations of $i$. Thus the definition
 generates many superfluous cases where the user must show $i = 1$ is impossible.
 So we bake the fact that $i$ must be greater than $1$ into the definition. This
@@ -323,8 +323,8 @@ input of the form $4 + i$ will not divide $3$ as it will be too large.
 \end{code}
 This rote work does outline a decision procedure for primality of a number $n$. Test every
 number between $2$ and $n - 1$ for divisibility with $n$. If any of the numbers
-divide $n$ return false, but that begs the question ``What does falsehood
-represent in this instance?''. In this case it implies that the number is a
+divide $n$ return false, but what does falsehood represent in this instance?
+In this case it implies that the number is a
 composite. So we define another predicate $\AgdaDatatype{IsComposite}$. A number
 is composite if it has a smaller prime factor. Note every composite number is
 guaranteed by the fundamental theorem of arithmetic to have a a prime factor. 
@@ -345,9 +345,9 @@ Notice how proving compositionality reduces to proving primality.
 \section{A Decision Procedure}
 \label{sec:a-decision-procedure}
 As always we require a couple lemmas before we can get into the heart of the
-decision procedure. Firstly there is no prime less than $2$, this fact is almost
-baked into the definition. Secondly we prove that a number $n$ can not be both prime and
-composite. As the number is composite it has some prime factor but as the
+decision procedure. First there is no prime less than $2$, this fact is almost
+baked into the definition. Second we prove that a number $n$ can not be both prime and
+composite. As the number is composite it has some prime factor, but as the
 number is prime that divisor must be equal to itself. The factor is defined to
 be less than itself and we reach a contradiction.
 \begin{code}
@@ -368,13 +368,13 @@ be less than itself and we reach a contradiction.
     p≮n : ¬ (p < n)
     p≮n = <-irrefl (∀i∣n⇒i≡n 1<p p∣n)
 \end{code}
-As we are working in a proof relevant setting the types
+As we are working in a proof relevant setting, the types
 $\AgdaDatatype{IsComposite} \, n$ and
 $\AgdaFunction{¬} (\AgdaDatatype{IsPrime}\, n)$ do not carry the same amount of
 information. The first type knows exactly one factor of $n$ while the
 second type knows no factors. Therefore instead of writing a decision procedure
-for prime or not prime we write a decision procedure for prime or composite. The
-later can be easily transformed into the former as seen at the end of the
+for prime or not prime, we write a decision procedure for prime or composite. The
+later can be easily transformed into the former as will be shown at the end of the
 chapter. Therefore we construct a type that can return a proof of primality or
 compositionality.
 \begin{code}
@@ -412,14 +412,14 @@ $\AgdaDatatype{IsPrime}$ proofs.
 \end{code}
 We store these smaller primes in a list encoded with continuation passing style.
 The following code is an analog to the nil list case. As there are no primes
-less than $2$ this makes a good empty list.
+less than $2$, this makes a good empty list.
 \begin{code}
     ¬p<2[p∤n] : ∀ {p} → p < 2 → IsPrime p → p ∤ n
     ¬p<2[p∤n] {p} p<2 p-isPrime _ = contradiction p-isPrime (¬prime<2 p p<2)
 \end{code}
 Next we need to construct an analog to append. If we have a list of prime
 divisibility up to but not including $x$ and a proof that $x$ does not
-divide $n$ we can construct a list of prime divisibility including $x$. This
+divide $n$. Then we can construct a list of prime divisibility including $x$. This
 proof proceeds by comparing $p$ and $x$ using a trichotomous comparison.
 \begin{code}
     cons
@@ -432,12 +432,12 @@ proof proceeds by comparing $p$ and $x$ using a trichotomous comparison.
     ... | tri≈ _ ≡-refl _ = contradiction p∣n (x-isPrime⇒x∤n p-isPrime)
     ... | tri> _ _ x<p = contradiction (suc-injective-≤ p<1+x) (<⇒≱ x<p)
 \end{code}
-Next we construct the main divisibility testing loop. We count upwards from
+Following this proof, we construct the main divisibility testing loop. We count upwards from
 $x = 2$
 until we reach $n$ using the accessibility predicate defined at the end of chapter
 \ref{chap:termination}. We recursively test the primality of $x$. If $x$ is
 composite then there is no reason to test divisibility as the prime factor of
-$x$ will have be tested previously in the loop. If $x$ is prime then we test if
+$x$ will have been tested previously in the loop. If $x$ is prime then we test if
 $x$ divides $n$ using the divisibility decision procedure defined earlier in the
 chapter. If $x$ divides $n$ then we immediately return with a proof that $n$ has
 a prime divisor. Otherwise we add $x$ into the list and recurse.
@@ -476,10 +476,10 @@ transform our continuation passing style list into our final primality condition
     n≢0 : n ≢ 0
     n≢0 n≡0 = <-irrefl (≡-sym n≡0) (<-trans 0<1+n 1<n)
 \end{code}
-To do this we must handle any possible divisor $i$ of $n$. Firstly we
+To do this we must handle any possible divisor $i$ of $n$. First we
 trichotomously compare $i$ and $n$. If $i$ is larger than $n$ we immediately run
 into a familiar contradiction. If $i$ is equal to $n$ then we are done and we
-return the proof that they are equal. Finally if $i$ is less than $n$ we
+return the proof that they are equal, and if $i$ is less than $n$ we
 recursively call our decision procedure on $i$. If $i$ is prime then we have
 reached a contradiction as we have a list of all the primes less than $n$ and
 they do not divide $n$. If $i$ is composite then it has a prime divisor that
@@ -495,7 +495,7 @@ transitively divides $n$ and we have reached a contradiction.
     ...   | Composite✓ (IsComposite✓ p p<i p-isPrime p∣i)
           = contradiction (∣-trans p∣i i∣n) (∀p<n⇒p∤n (<-trans p<i i<n) p-isPrime)
 \end{code}
-After ensuring that our number is greater than $1$ we can invoke
+After ensuring that our number is greater than $1$, we can invoke
 $\AgdaFunction{primality}$ and finish our primality decision procedure.
 \begin{code}
   prime? : ∀ n → Dec (IsPrime n)

@@ -14,9 +14,9 @@
 }
 
 In this chapter we will investigate formalizing exponentiation and the
-algorithms to compute it. As \Agda{} is a proof theoretic language these things
+algorithms to compute it. As \Agda{} is a proof relevant language, these things
 are one and the same \cite{hott-book}.
-
+% TODO: Rewrite
 \section{Inductive Definitions}
 \label{sec:inductive-definitions}
 
@@ -46,9 +46,9 @@ the equation becomes:
   \label{eqn:exp-second-idea}
   x^n = x \times (x \times (x \times \dots (x \times x) \dots ))
 \end{align}
-This leads to an obvious inductive definition to compute $x^n$ just multply $x$
+This leads to an obvious inductive definition to compute $x^n$ just multiply $x$
 by $x^{n -1}$ with a base case of $x^0 = 1$. This definition cleanly bakes a law
-of exponents $x^{1+n} = x^1 \times x^n = x \times x^n$ into the definition. This
+of exponents $x^{1+n} = x^1 \times x^n = x \times x^n$ into itself. This
 idea is formalized below. \\
 
 \begin{code}[hide]
@@ -63,15 +63,15 @@ idea is formalized below. \\
 \end{code} \\
 
 We demonstrate the correctness of this definition by proving one of the
-fundemental laws of exponentiation,
+fundamental laws of exponentiation,
 the exponentiational homomorphism $x^{n + m} = x^n x^m$.
 \begin{code}
     ^-homo : ∀ x n m → x ^ (n + m) ≡ x ^ n * x ^ m
 \end{code}
-The type above just makes the quantifiers explict. The base case below
-is more intresting. We first simplify and unwrap the definitons then
-tac a $1$ onto the exponential. This is allowable as $1$ is the
-multpliciative unit. Finally we rewrap definitions, notice that
+The type above just makes the quantifiers explicit. The base case below
+is more interesting. We first simplify and unwrap the definitions then
+tack a $1$ onto the exponential. This is allowable as $1$ is the
+multiplicative unit. Finally we re-wrap definitions, notice that
 $x \string^{} \, 0$ is defined to be $1$ so the simplifier can work in reverse.
 \begin{code}
     ^-homo x zero m = begin
@@ -130,6 +130,10 @@ types listed above form a monoid under their respective multiplication
 operators. \\
 
 We can generalize our definition by creating a module that takes any monoid.
+Our monoid laws are proven over an arbitrary \textit{setoid}. A setoid is a
+packaging of some type $C$ and an equivalence class $\AgdaFunction{\_≈\_}$ over
+that type. For instance the
+naturals form a setoid with $\AgdaFunction{\_≡\_}$ as the equivalence class.
 \begin{code}[hide]
   open import Algebra using (Monoid; CommutativeMonoid)
   open import Relation.Binary using (Setoid)
@@ -172,7 +176,7 @@ reflected in the combinator used to string the proof steps together.
       x ^ 0 ∙ x ^ m ∎
 \end{code}
 Not all functions are congruent over an arbitrary setoid, so you need to prove
-congruence for specific functions. Luckily by definition all monodial binary
+congruence for specific functions. Luckily by definition, all monodial binary
 operations are congruent. This fact is witnessed by the
 proof generating function $\AgdaFunction{∙-congˡ}$.
 \begin{code}
@@ -198,10 +202,10 @@ data structure \cite{awodey}, is a counterexample to this law:
      = [1, 1] \, \diamond \, [2, 2]
      = [1]^2 \, \diamond \, [2]^2
 \end{align}
-This means we need to strength our assumptions and work with commutative
+This means we need to strengthen our assumptions and work with commutative
 monoids. As every commutative monoid is a monoid all our previous work holds
 true, and this can be witnessed by passing the correct modules around.
-Note that we now have access to the $\AgdaFunction{comm}$ axiom, the proof that the
+Note that we now have access to the $\AgdaFunction{comm}$ property, a proof that the
 binary operator is commutative. 
 \begin{code}
   module Exponentiation₂ {c ℓ} (M : CommutativeMonoid c ℓ) where
@@ -249,15 +253,15 @@ runs in $\BigO{1}$ time\footnote
   \end{split}
 \end{align}
 This recurrence clearly solves to $T(n) = \BigO{n}$. This linear result obscures
-the exponential run time of this algorithm. The key to realize this is to ask
-``What does n represent in that recurrance?'' It represents the full integer not
+the exponential run-time of this algorithm. The key to realize this is to ask
+``What does $n$ represent in that recurrence?'' It represents the full integer, not
 the length of the integer's binary representation. This insight shows that an inductively
-defined exponential algorithm will run exponentially slower then run time of the
+defined exponential algorithm will run exponentially slower then the run-time of the
 binary operation.
 \section{Exponential Speedup}
 \label{sec:exponential-speedup}
 The solution to this exponential problem can be found by raising a base to
-powers of 2. In the following equation assume $n$ is a power of two $n = 2^\ell$:
+powers of two. In the following equation assume $n$ is a power of two $n = 2^\ell$:
 \begin{align}
   \label{eqn:squaring-even}
   x^n = x^{2^{\, \ell}}
@@ -277,11 +281,10 @@ algorithm is modeled by the recurrence given below.
 \end{align}
 The well known recurrence yields a complexity of $T(n) = \BigO{\Lg{n}}$. This is an
 exponential improvement. Unfortunately this algorithm only works correctly for
-powers of two. It's important to realize why this algorithm only works correctly
-for powers of two. Note that equation \ref{eqn:squaring-even} requires n to be
+powers of two. This is because equation \ref{eqn:squaring-even} requires n to be
 even. The defining feature of powers of two is that they are all even,
 disregarding $1$. So if we can find a parallel equation to equation
-\ref{eqn:squaring-even} for odd numbers we will be able to exponentiate any power
+\ref{eqn:squaring-even} for odd numbers, we will be able to exponentiate any power
 quickly.
 \begin{align}
   \label{eqn:squaring-odd}
@@ -313,15 +316,15 @@ This leads straight into a similar cased based recurrence.
   \end{split}
 \end{align}
 The cases in this recurrence collapse together as the constant $2$ folds into
-the big o term $\BigO{1}$. This fact makes this recurrence equal to
+the big-o term $\BigO{1}$. This fact makes this recurrence equal to
 \ref{eqn:power-of-two-recurrance} and so they have equal run time.
 \section{A Binary Digression}
 \label{sec:a-binary-digression}
 We could attempt to translate definition \ref{eqn:squaring-def-division} directly to
-\Agda{}. While this is possible the definition obstructs proof writing as
-checking for parity and integer division are non trivial constructions in
+\Agda{}. While this is possible, the definition obstructs proof writing as
+checking for parity and integer division are non-trivial constructions in
 \Agda{}. Instead we can apply a couple of well known tricks in the world
-of bitwise programming. Firstly division by two is the same as bit shift right ($\gg$)
+of bitwise programming. First division by two is the same as bit shift right ($\gg$)
 by 1. In the following code $n_i$ represents the $i$th bit of $n$ and
 $n_{\ell - 1} n_{\ell - 2} \dots n_{1} n_{0}$ represents the bitstring of $n$.
 \begin{align}
@@ -357,7 +360,7 @@ tricks allow us to rewrite our definition in terms \Agda{} will like.
 \end{align}
 \Agda{} does not come with bitwise operator primitives so we will need to build
 our own binary number type. Note that at every level of recursion we only need
-to inspect the last element of the bitstring. Then we drop that element.
+to inspect the last element of the bitstring, so can we drop that element.
 Thus if we store the binary number as a snoc list we can perform the
 required operations in $\BigO{1}$. A snoc list is a purely functional linked
 list that supports push/pop operations from the back of the list in
@@ -396,7 +399,7 @@ constructor.
 \end{code}
 The following code defines a function to reify a binary encoded natural number
 into \Agda{} primitive naturals. We define a helper function to multiply a number
-by two. We could have used the term $2 * n$ but the simplifier transforms that
+by $2$. We could have used the term $2 * n$ but the simplifier transforms that
 expression into $n + (n + 0)$. This expression unnecessarily complicates proofs
 in the following sections.
 \begin{code}
@@ -415,7 +418,7 @@ in the following sections.
   evaluation-test : ⟦ + 𝕓1ᵇ 0ᵇ 1ᵇ 0ᵇ ⇓⟧ ≡ 10
   evaluation-test = ≡-refl
 \end{code}
-In order to develop a way to upcast naturals to our binary represenation we
+In order to develop a way to upcast naturals to our binary representation we
 need to introduce an formal specification of integer division. In order
 to make use of integer division we usually require both the quotient
 and remainder so we create a type that bundles these results together. This type
@@ -432,11 +435,11 @@ proof that the remainder is less than the divisor.
 \end{code}
 The code above is just a type, we also require a function that produces the type
 for a given dividend and divisor. We must ensure that the divisor is not equal
-to zero, to do this we introduce two new concepts. A boolean function
+to $0$, to do this we introduce two new concepts. A boolean function
 $\AgdaFunction{\_≟\_}$ which returns true if the two inputs are equal. As well
 as a type which is only inhabited if a boolean function returns
 $\AgdaDatatype{false}$. These two concepts combine to require that any user of
-the $\AgdaFunction{\_div\_}$ proves that the divisor is not equal to zero. The
+the $\AgdaFunction{\_div\_}$ proves that the divisor is not equal to $0$. The
 actual implementation of this function is omitted as it makes use of complicated
 primitive functions provided by \Agda{}.
 \begin{code}[hide]
@@ -453,14 +456,14 @@ primitive functions provided by \Agda{}.
     div-proof rewrite *-comm (suc m) (n / suc m) = m≡m%n+[m/n]*n n m
 \end{code}
 Now we can write a function that reifies non zero naturals into our binary
-representation. We begin by dividing the input by two. Note that we can
+representation. We begin by dividing the input by $2$. Note that we can
 determine the parity of the input by observing the remainder after dividing by
-two. In the case where the remainder is $0$ we know the input is even so we
+$2$. In the case where the remainder is $0$ we know the input is even so we
 recurse adding a $\AgdaInductiveConstructor{0ᵇ}$ to the result. \Agda{} infers
-that the quotient must be greater then zero as the input is greater then zero.
+that the quotient must be greater than $0$ as the input is greater than $0$.
 When the remainder is equal to $1$ the quotient could be $0$ so we perform a
-case analysis. If the quotient is zero we introduce our base case of
-$\AgdaInductiveConstructor{𝕓1ᵇ}$ otherwise we recurse and add
+case analysis. If the quotient is $0$, we introduce our base case of
+$\AgdaInductiveConstructor{𝕓1ᵇ}$, otherwise we recurse and add
 $\AgdaInductiveConstructor{1ᵇ}$ to the result as the input was odd.
 \begin{code}[hide]
   {-# TERMINATING #-}
@@ -476,7 +479,7 @@ $\AgdaInductiveConstructor{1ᵇ}$ to the result as the input was odd.
   ⟦ zero ⇑⟧ = 𝕓0ᵇ
   ⟦ suc n ⇑⟧ = + ⟦ suc n ⇑⟧⁺
 \end{code}
-Lastly we need a proof that $\AgdaFunction{⟦\_⇓⟧}$ and $\AgdaFunction{⟦\_⇑⟧}$
+Lastly, we need a proof that $\AgdaFunction{⟦\_⇓⟧}$ and $\AgdaFunction{⟦\_⇑⟧}$
 form an isomorphism. After applying the inductive hypothesis the proof
 can be offloaded to an automated ring solver. For this reason we exclude
 the body of the proof.
@@ -492,7 +495,7 @@ In this section we redefine our exponential inline with
 \ref{eqn:squaring-def-shift}. Then we prove that the fast exponential is
 equivalent to the inductively defined exponential up to setoid equality. In
 order to do this we need to rename the old exponential and all its associated
-proofs. To accomplish this we tac an (i)nductive onto all the old functions and proofs.
+proofs. To accomplish this we tack an (i)nductive onto all the old functions and proofs.
 \begin{code}
   module Exponentiation₃ {c ℓ} (M : CommutativeMonoid c ℓ) where
     open Exponentiation₂ M
@@ -589,7 +592,7 @@ single $x$ on the outside of the proof.
             x ^ⁱ (1 + 2* ⟦ b ⇓⟧⁺) ≡⟨⟩
             x ^ⁱ ⟦ b 1ᵇ ⇓⟧⁺       ∎
 \end{code}
-This proof has more use that pure correctness. If we ever need to prove a
+Beyond the correctness of the algorithm, this proof has many uses. If we ever need to prove a
 property of exponentials we can prove that fact with the inductive definition.
 Then we can apply this proof to get a version of that property that works on
 fast exponentiation for free.
