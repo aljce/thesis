@@ -3,41 +3,100 @@
 
 \chapter{Introduction}
 \label{chap:Introduction}
-\section{AKS}
+Imagine a world where teachers assigning proof filled math homework need not
+grade that homework or a world where journals need not peer review their
+submissions. This is a world \textit{proof assistants} attempt to bring about. A world
+where computers can ensure the correctness of mathematics. This thesis is in
+part an exploration of a specific proof assistant, \Agda{} \cite{agda}. As we
+will come to see \Agda{} contains an impressive capability for mathematical
+abstraction and can come to understand arbitrarily complex proofs. Unfortunately
+it does not come without drawbacks. We find it useful to consider \Agda{} as an
+infinitely intelligent toddler. An actor that knows nothing until it is taught
+and requires convincing at every step. This is because \Agda{} does not have any
+specific mathematics built into itself and that it does not perform any
+\textit{proof search}. It simply accepts or rejects a given proof. As proof
+assistants are useless without something to prove we turn to the other half of
+this thesis, investigating prime numbers. \\
 
-\begin{algorithm}[H]
-  \caption{The AKS Primality Decision Algorithm}
-  \label{fig:prime-slow}
-  \begin{algorithmic}
-    \Function{IsPrime}{$n$}
-    \State $r \leftarrow 2$
-    \While{true}
-      \If{$gcd(r, n) = 1$}
-        \State \textbf{return} NO
-      \EndIf
-      \State $q \leftarrow$ largest prime factor of $r - 1$
-      \If{$q \geq 2 \sqrt{r} \, \Lg{n} + 2$ and
-          $n^{(r - 1) / q} \not\equiv 1 \text{ mod } r$}
-        \State \textbf{break}
-      \EndIf
-      \State $r \leftarrow$ next prime after $r$
-    \EndWhile
-    \For{$a \leftarrow 1$ \textbf{to} $\Floor[\big]{2 \sqrt{r} \, \Lg{n}} + 1$}
-      \If{$(x - a)^n \not\equiv (x^n - a) \text{ mod } (x^r - 1) \text{ in } \mathbb{Z}_n[x]$}
-        \State \textbf{return} NO
-      \EndIf
-    \EndFor
-    \If{$n$ is a perfect power}
-      \State \textbf{return} NO
-    \Else
-      \State \textbf{return} YES
-    \EndIf
-    \EndFunction
-  \end{algorithmic}
-\end{algorithm}
-% defined well typed
-% define setoid
-% talk about the limitations of agda
+Prime numbers are of great interest to mathematicians and computer scientists
+the world over. They form the backbone of a variety of fields of mathematics and
+underpin the correctness of many real-world cryptographic protocols. In this
+thesis we will explore formalizing primality tests, or algorithms that determine
+if a given input $n$ is prime. These tests and their speed are critical to the
+implementation of the cryptographic protocols mentioned above. Specifically the RSA
+cryptosystem, which is a vital component of the world wide web, requires these
+tests \cite{rsa}.
+\section{Primality Tests}
+There are many different primality tests and many authors choose to characterize
+these tests along three dimensions. These dimensions are as follows
+\textit{computational complexity} (how fast the algorithm runs),
+\textit{determinism} (if the algorithm makes use of probabilistic primitive
+operations), and \textit{conditionality} (if the algorithm requires unproven
+conjectures in its proof of correctness or speed). Let us first consider the
+brute force primality test. The algorithm determines the primality of a given
+input $n$ by testing every number $m$ less than $n$ to see if $m$ divides $n$.
+If no numbers divides $n$ then $n$ is prime. This test is both deterministic and
+unconditional but suffers one major flaw, its computational complexity is
+$\BigO{n}$. At first glance this does not seem bad but for any real world prime
+this becomes untenable. For instance say we tried to test the primality of any
+prime used in RSA. These primes hover around $2^{4096}$ in size and even at a
+rate of 10 billion divisibility checks a second it would take $100$ times the
+length of the universe to finish. Thus a computational complexity that is
+polynomial in the size of the input $\BigO{\Lg{n}^c}$ is desired. \\
+
+In 1975, a deterministic polynomial time primality test was designed by Miller.
+Unfortunately this test required the
+\textit{Extended Riemann Hypothesis} a famous unproven conjecture \cite{miller}.
+Thus the Miller primality test is considered conditional. A similar
+unconditional primality test was later developed by Rabin but the algorithm was
+probabilistic \cite{rabin}. Interestingly the probability of failure for this
+algorithm is quite low so many still use this test for real world primality
+testing. In 1983, the authors Adleman, Pomerance, and Rumely created the first
+unconditional deterministic sub-exponential primality test with a run-time of
+$\BigO{\Lg{n}^{c \, \text{lg} \, \text{lg} \, \text{lg} \, n}}$ \cite{apr}. \\
+
+The string of accomplished authors shows both the difficulty and importance of this
+problem. Thus it was big news when Manindra Agrawal, Neeraj Kayal,and Nitin
+Saxena announced that they had created a unconditional deterministic
+primality test that runs in polynomial time $\BigO{\Lg{n}^{15/2}}$ \cite{aks}.
+This accomplishment is especially impressive considering that the last two
+authors where undergraduate researches at the time of publication (2002). The
+last names of these authors are abbreviated to yield the name of this algorithm,
+AKS. The correctness proof of this algorithm is comparably simpler to all the
+previous algorithms listed above, requiring only undergraduate levels of number
+theory. This property makes AKS a great candidate for a ``replication'' in
+\Agda{}. Replications are common in various scientific fields and amount to
+recreating a previously reported experiment. Usually the goal of a replication
+is to verify the correctness of the data and conclusions of the previous
+experiment. In a similar vein, if we implement AKS in \Agda{} and \Agda{}
+accepts our implementation then we will have verified the correctness of the AKS
+paper. \\
+
+Unfortunately this is no small task as \Agda{} does not know any number theory.
+We will then have to formulate every piece of number theory and more generally
+mathematics used in the AKS paper. Specifically we will have to formalize these
+concepts in the \Agda{} proof assistant. In this thesis we will illustrate only
+a selection of these concepts as this is a undergraduate time limited thesis.
+This being said we estimate to have completed formalizing 75\% of the required
+concepts and this work can be found in the following git repository
+\url{https://github.com/mckeankylej/thesis}. The required and completed concepts
+include but are not limited to a gcd function that works over an arbitrary
+euclidean domain, a polynomial datatype that forms a euclidean domain,
+a modular ring datatype, a proven correct exponentiation by squaring algorithm,
+and a brute force primality test. In this thesis we will specifically cover the
+last two concepts in great detail. \\
+
+In order to explain the intricacies of these constructions we must first
+introduce the reader to the \Agda{} proof assistant and we accomplish this in
+Chapter \ref{chap:agda-briefly}. Then we move on to describe an exponentiation
+by squaring algorithm written \Agda{}. This algorithm is required multiple times
+in AKS. It constitutes the very last step of the algorithm in which the input
+must be tested to ensure it is not a perfect power \cite{smid}. After this in
+Chapter \ref{chap:termination} we take a brief aside in order to discuss how
+\Agda{} ensures the correctness of recursive programs. Finally in Chapter
+\ref{chap:primality} we create a brute force primality test in \Agda{}. The AKS
+algorithm requires a list of ``small'' primes so this algorithm will be used to
+generate that list.
 \section{Type Theory}
 In the rest of this Chapter we provide an informal motivation of Type Theory for a reader
 familiar with the standard foundations of mathematics, Set Theory. Our proof
@@ -118,7 +177,7 @@ We can transform this proposition into Type Theory just as we have before. Note
 that propositions are types so we can easily quantify over every proposition by
 quantifying over every type.
 \begin{align}
-  \label{eqn:set-LEM}
+  \label{eqn:type-LEM}
   \text{LEM} :\equiv \prod_{p  : \text{Type}} p \vee \neg p
 \end{align}
 In Set Theory the law of the excluded middle is assumed as an axiom of first
