@@ -42,7 +42,7 @@ this becomes untenable. For instance say we tried to test the primality of any
 prime used in RSA. These primes hover around $2^{4096}$ in size and even at a
 rate of 10 billion divisibility checks a second it would take $100$ times the
 length of the universe to finish. Thus a computational complexity that is
-polynomial in the size of the input $\BigO{\Lg{n}^c}$ is desired. \\
+polynomial in the size of the description of the input $\BigO{\Lg{n}^c}$ is desired. \\
 
 In 1975, a deterministic polynomial time primality test was designed by Miller.
 Unfortunately this test required the
@@ -60,7 +60,7 @@ problem. Thus it was big news when Manindra Agrawal, Neeraj Kayal,and Nitin
 Saxena announced that they had created a unconditional deterministic
 primality test that runs in polynomial time $\BigO{\Lg{n}^{15/2}}$ \cite{aks}.
 This accomplishment is especially impressive considering that the last two
-authors where undergraduate researches at the time of publication (2002). The
+authors where undergraduate researchers at the time of publication (2002). The
 last names of these authors are abbreviated to yield the name of this algorithm,
 AKS. The correctness proof of this algorithm is comparably simpler to all the
 previous algorithms listed above, requiring only undergraduate levels of number
@@ -81,7 +81,7 @@ This being said we estimate to have completed formalizing 75\% of the required
 concepts and this work can be found in the following git repository
 \url{https://github.com/mckeankylej/thesis}. The required and completed concepts
 include but are not limited to a GCD function that works over an arbitrary
-euclidean domain, a polynomial datatype that forms a euclidean domain,
+Euclidean Domain, a polynomial datatype that forms a Euclidean Domain,
 a modular ring datatype, a proven correct exponentiation by squaring algorithm,
 and a brute force primality test. In this thesis we will specifically cover the
 last two concepts. \\
@@ -107,18 +107,18 @@ sources: a topological perspective \cite{hott-book}, a categorical perspective
 \subsection{History}
 \label{sec:history}
 Type Theory was created by Bertrand Russell as an alternate foundation for
-mathematics in order to, quash the plethora of
+mathematics in order to quash the plethora of
 paradoxes plaguing Set Theory at the turn of the century. The paradoxes
 where eventually resolved and type theory faded into obscurity. It resurfaced in
 the 1940's when Alonzo Church applied it to his \textit{lambda calculus}. This
-application began a reassurance in which multiple authors steadily improved the
+application began a resurgence in which multiple authors steadily improved the
 expressivity of Type Theory. This culminated with Per Martin-L\"{o}f's
 dependent, intuitionistic type theory often called
 \textit{Martin-L\"{o}f Type Theory} \cite{martin-lof}.
 This theory is considered by many as the foundations of the field. The
 programming language \Agda{} that we will come to know in this thesis is a
 variant of his Type Theory. This being said the field is vast and there are many
-Type Theories created with wildly different axioms and properties in mind.
+type theories created with wildly different axioms and properties in mind.
 \subsection{The Typing Relation}
 \label{sec:typing-relation}
 The primitive concept underlying Type Theory is the \textit{typing relation},
@@ -130,7 +130,7 @@ $\{ \, \text{true}, \, 0, \, \emptyset \, \}$
 is inexpressible in Type Theory as types are ``homogeneous''. More importantly
 there is not an equivalent concept of a non-membership ($\notin$) in most Type
 Theories. Instead we say $2$ does not have type boolean or we say $2$ is not
-well typed as a boolean. Thus while its sensible to ask the set theoretic question
+well typed as a boolean. Thus while it is sensible to ask the set theoretic question
 ``Is $a$ a member of $A$ for some pre-existing objects $a$ and $A$?''. Type
 theoretically we are not permitted to consider objects without their type and
 every object has a type from creation. For instance, we can define the booleans
@@ -203,7 +203,7 @@ This is the type of our first decision procedure. A value of this type would
 prove that the two numbers are equal or prove that the two numbers are unequal.
 Finding a value of this type is as simple as describing a decision procedure.
 Simply count $n$ and $m$ down by $1$. If both numbers reach $0$ at the same time
-return that they are equal otherwise return that they are unequal. \\
+then they are equal otherwise they are unequal. \\
 
 Keep in mind that assuming the law of the excluded middle also invalidates the
 entire purpose of this thesis. We can define a proposition that represents
