@@ -24,5 +24,4 @@ gen: init
 		parallel agda --latex --latex-dir=${OUTDIR} --only-scope-checking {} ::: *.lagda.tex
 
 build:
-		cd ${OUTDIR} && latexmk -pdf Thesis.tex
-
+		cd ${OUTDIR} && latexmk -pdf Thesis.tex && cp Thesis.pdf McKeanAlice_FinalDraft.pdf
