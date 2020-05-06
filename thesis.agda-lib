@@ -1,2 +1,2 @@
 depend: standard-library agda-ring-solver
-include: proofs tex
+include: proofs tex defense

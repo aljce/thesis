@@ -1,0 +1,308 @@
+\documentclass{beamer}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathbbol}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+\DeclarePairedDelimiter\Parens{\lparen}{\rparen}
+\DeclarePairedDelimiter\Floor{\lfloor}{\rfloor}
+\usepackage{gauss}
+\usepackage{relsize}
+
+\usepackage{xcolor}
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[links]{agda}
+\usepackage{newunicodechar}
+\newunicodechar{λ}{\ensuremath{\mathnormal\lambda}}
+\newunicodechar{→}{\ensuremath{\mathnormal\to}}
+\newunicodechar{∀}{\ensuremath{\mathnormal\forall}}
+\newunicodechar{𝔹}{\ensuremath{\mathbb{B}}}
+\newunicodechar{ℕ}{\ensuremath{\mathbb{N}}}
+\newunicodechar{₁}{\ensuremath{{}_1}}
+\newunicodechar{¹}{\ensuremath{{}^1}}
+\newunicodechar{₂}{\ensuremath{{}_2}}
+\newunicodechar{²}{\ensuremath{{}^2}}
+\newunicodechar{₃}{\ensuremath{{}_3}}
+\newunicodechar{³}{\ensuremath{{}^3}}
+\newunicodechar{₄}{\ensuremath{{}_4}}
+\newunicodechar{⁴}{\ensuremath{{}^4}}
+\newunicodechar{ᵇ}{\ensuremath{{}^b}}
+\newunicodechar{⁺}{\ensuremath{{}^+}}
+\newunicodechar{≡}{\small {\ensuremath{\equiv}}}
+\newunicodechar{≢}{\small {\ensuremath{\not\equiv}}}
+\newunicodechar{≟}{\small {\ensuremath{\stackrel{?}{=}}}}
+\newunicodechar{∙}{\ensuremath{\cdot}}
+\newunicodechar{×}{\ensuremath{\times}}
+\newunicodechar{ε}{\ensuremath{\varepsilon}}
+\newunicodechar{∎}{\ensuremath{\rule{1ex}{1.2ex}}}
+\newunicodechar{⟨}{\ensuremath{\langle}}
+\newunicodechar{⟩}{\ensuremath{\rangle}}
+\newunicodechar{ˡ}{\ensuremath{{}^l}}
+\newunicodechar{ʳ}{\ensuremath{{}^r}}
+\newunicodechar{∷}{\ensuremath{::}}
+\newunicodechar{ⁱ}{\ensuremath{{}^i}}
+\newunicodechar{ʰ}{\ensuremath{{}^h}}
+\newunicodechar{ℓ}{\ensuremath{\ell}}
+\newunicodechar{⁻}{\ensuremath{{}^{-}}}
+\newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{𝕓}{\ensuremath{\mathbb{b}}}
+\newunicodechar{⇓}{\ensuremath{\Downarrow}}
+\newunicodechar{⇑}{\ensuremath{\Uparrow}}
+\newunicodechar{⇒}{\ensuremath{\Rightarrow}}
+\newunicodechar{⇐}{\ensuremath{\Leftarrow}}
+\newunicodechar{⟦}{\ensuremath{\llbracket}}
+\newunicodechar{⟧}{\ensuremath{\rrbracket}}
+\newunicodechar{✓}{\ensuremath{\checkmark}}
+\newunicodechar{∣}{\ensuremath{\mid}}
+\newunicodechar{∤}{\ensuremath{\nmid}}
+\newunicodechar{¬}{\ensuremath{\neg}}
+\newunicodechar{⊥}{\ensuremath{\bot}}
+\newcommand{\Dotdiv}{%
+  \mathbin{%
+    \vphantom{+}%
+    \text{%
+      \mathsurround=0pt%
+      \ooalign{%
+        \noalign{\kern-.35ex}%
+        \hidewidth$\smash{\cdot}$\hidewidth\cr%
+        \noalign{\kern.35ex}%
+        $-$\cr%
+      }%
+    }%
+  }%
+}
+\newunicodechar{∸}{\ensuremath{\Dotdiv}}
+\newunicodechar{≤}{\ensuremath{\leq}}
+\newunicodechar{≱}{\ensuremath{\not\geq}}
+\newunicodechar{≮}{\ensuremath{\not<}}
+\newunicodechar{≺}{\ensuremath{\prec}}
+\newunicodechar{⊂}{\ensuremath{\subset}}
+\newunicodechar{∨}{\ensuremath{\wedge}}
+
+\usepackage{pifont}
+\newcommand{\cmark}{\text{\ding{51}}}
+\newcommand{\xmark}{\text{\ding{55}}}
+
+\newcommand{\Agda}[0]{Agda}
+
+\newcommand{\BigO}[1]{\ensuremath{O\Parens{#1}}}
+
+\newcommand{\Lg}[1]{\ensuremath{\text{lg}\Parens{#1}}}
+
+\setlength{\parindent}{0pt}
+
+\usetheme{metropolis}
+\title{
+  A Replication of the AKS\\
+  Primality Decision Algorithm
+}
+\date{8 May 2020}
+\author{Alice McKean}
+\institute{
+  The Division of Mathematical and Natural Sciences \\
+  Reed College
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{\Agda{} Introduction}
+  % Imagine not having to grade any math homework ever again or mathematics journals not
+  % needing peer review. This is the world \Agda{} and other \textit{proof assistants}
+  % hope to bring about. \\
+  \Agda{} is a \textit{proof assistant}. It can verify the correctness of
+  arbitrarily complex proofs in higher order logic \cite{agda}. \\
+  Its not magic though, it can only perform the most basic proof search. This
+  sets it apart from other tools in this area, like SAT solvers. \\
+  In this thesis, we will attempt to verify the AKS primality decision procedure
+  in \Agda{}.
+\end{frame}
+
+\section{Primality Decision Algorithms}
+
+\begin{frame}{Problem Definition}
+  In this thesis we investigate \textit{decision algorithms} for the following
+  language.
+  \begin{align*}
+    \text{PRIMES} = \{ \, p \, | \text{ such that } p \text{ is a prime number } \}
+  \end{align*}
+  An obvious brute force solution follows from the definition of prime numbers.
+  Just try all the divisors less than $p$ and if nothing divides $p$ return YES. \\
+
+  This algorithm is linear in the size of the input $\BigO{n}$ we desire an
+  algorithm with polynomial run-time in the size of the description of
+  the input $\BigO{\Lg{n}^c}$.
+\end{frame}
+\begin{frame}{Algorithm Characterization}
+  These three dimensions are how we will compare primality decision algorithms.
+  \begin{itemize}
+    \item \textit{Computational Complexity} standard run-time analysis
+    \item \textit{Determinism} if the algorithm requires probabilistic primitives
+    \item \textit{Conditionality} an algorithm is conditional it's correctness
+      depends on unproven conjecture
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{History}
+  Now we will discuss a rough history of the development of primality decision
+  algorithms.
+  \begin{itemize}
+    \item<1-> Miller's Primality Test, deterministic, polynomial time but requires
+      \textit{Extended Riemann Hypothesis} \cite{miller}
+    \item<2-> Rabin's Primality Test, polynomial time, unconditional but
+      non-deterministic \cite{rabin}
+    \item<3-> Adleman, Pomerance, and Rumely, deterministic, unconditional and
+      sub-exponential
+      $\BigO{\Lg{n}^{c \, \text{lg} \, \text{lg} \, \text{lg} \, n}}$ \cite{apr}. 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{AKS}
+  Agrawal, Kayal,and Saxena created a unconditional, deterministic, polynomial
+  time $\BigO{\Lg{n}^{15/2}}$ primality decision algorithm. \cite{aks}. \\
+
+  The correctness proof of this algorithm is comparably simpler to all the
+  previous algorithms listed above, requiring only undergraduate levels of number
+  theory. This property makes AKS a great candidate for a ``replication'' in
+  \Agda{}. \\
+
+  Next we explore some psuedo-code describing AKS adapted from Micheal Smid's
+  AKS analysis \cite{smid}.
+\end{frame}
+
+\begin{frame}{AKS (Pseudo Code)}
+  \scriptsize
+  \begin{algorithmic}
+    \Function{IsPrime}{$n$}
+    \State $r \leftarrow 2$
+    \While{true}
+      \If{$gcd(r, n) = 1$}
+        \State \textbf{return} NO
+      \EndIf
+      \State $q \leftarrow$ largest prime factor of $r - 1$
+      \If{$q \geq 2 \sqrt{r} \, \Lg{n} + 2$ and
+        $n^{(r - 1) / q} \not\equiv 1 \text{ mod } r$}
+        \State \textbf{break}
+      \EndIf
+      \State $r \leftarrow$ next prime after $r$
+    \EndWhile
+    \For{$a \leftarrow 1$ \textbf{to} $\Floor[\big]{2 \sqrt{r} \, \Lg{n}} + 1$}
+      \If{$(x - a)^n \not\equiv (x^n - a) \text{ mod } (x^r - 1) \text{ in } \mathbb{Z}_n[x]$}
+        \State \textbf{return} NO
+      \EndIf
+    \EndFor
+    \If{$n$ is a perfect power}
+      \State \textbf{return} NO
+    \Else
+      \State \textbf{return} YES
+    \EndIf
+    \EndFunction
+  \end{algorithmic}
+\end{frame}
+
+\begin{frame}{Primitive Concepts}
+  \begin{center}
+    \begin{tabular}{c|c|c}
+      Concept & Formalized & In Thesis \\
+      \hline
+      Define Primality & \cmark & \cmark \\
+      Looping Constructs & \cmark & \cmark \\
+      Prime Stream & \cmark & \cmark \\
+      Square Root & \xmark & \xmark \\
+      Binary Logarithm & \cmark & \cmark \\
+      Modular Field & \cmark & \xmark \\
+      Polynomials & \cmark & \xmark \\
+      Polynomial Division & \cmark & \xmark \\
+      Exponentiation & \cmark & \cmark \\
+      Testing Perfect Powers & \xmark & \xmark \\
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\section{Formalized Proofs}
+
+\begin{frame}{Type Theory}
+The primitive concept underlying Type Theory is the \textit{typing relation},
+namely a \textit{term} $a$ has \textit{type} $A$ written $a : A$. \\
+In the language of Set Theory this would represent ``a is an element of the set A''
+denoted $a \in A$. \\
+Types differ from sets in many ways. For instance the perfectly valid set
+$\{ \, \text{true}, \, 0, \, \emptyset \, \}$
+is inexpressible in Type Theory as types are ``homogeneous''. \\
+``Is $b$ a member of $B$ for some pre-existing objects $b$ and $B$?'' is
+nonsense in Type Theory. One can not talk about objects without their type.
+\end{frame}
+
+\begin{frame}{Booleans}
+  \begin{code}[hide]
+    open import Relation.Binary.PropositionalEquality
+      using (_≡_; _≢_; module ≡-Reasoning)
+      renaming (refl to ≡-refl; sym to ≡-sym; cong to ≡-cong)
+    open ≡-Reasoning
+  \end{code}
+  \begin{code}
+    data 𝔹 : Set where
+      false : 𝔹
+      true  : 𝔹
+
+    not : 𝔹 → 𝔹
+    not false = true
+    not true  = false
+
+    not-example : 𝔹
+    not-example = not false
+    
+    not-involution : ∀ (b : 𝔹) → not (not b) ≡ b
+    not-involution false = ≡-refl
+    not-involution true = ≡-refl
+  \end{code}
+\end{frame}
+
+\begin{frame}{Natural Numbers}
+  \begin{code}
+    data ℕ : Set where
+      zero : ℕ
+      suc  : ℕ → ℕ
+
+    three : ℕ
+    three = suc (suc (suc zero))
+
+    _+_ : ℕ → ℕ → ℕ
+    zero + n = n
+    suc n + m = suc (n + m)
+  \end{code}
+\end{frame}
+
+\begin{frame}{Addition is Associative}
+  \begin{code}
+    Associative : ∀ {A : Set} → (A → A → A) → Set
+    Associative {A} _∙_
+      = ∀ (x y z : A) → (x ∙ (y ∙ z)) ≡ ((x ∙ y) ∙ z)
+
+    +-assoc : Associative _+_
+    +-assoc zero y z = ≡-refl
+    +-assoc (suc x) y z = begin
+      suc x + (y + z)   ≡⟨⟩
+      suc (x + (y + z)) ≡⟨ ≡-cong suc (+-assoc x y z) ⟩
+      suc ((x + y) + z) ≡⟨⟩
+      (suc (x + y) + z) ≡⟨⟩
+      (suc x + y) + z   ∎
+  \end{code}
+\end{frame}
+
+\begin{frame}[allowframebreaks]{Citations}
+  \nocite{gnu-parallel}
+  \bibliographystyle{apalike}
+  \bibliography{citations}
+\end{frame}
+
+\end{document}
